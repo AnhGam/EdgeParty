@@ -1,0 +1,63 @@
+# This .gitignore file is optimized for Unity projects (Merged & Improved)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+# Memory dumps & Captures
+/[Mm]emoryCaptures/
+# Asset meta data safety (Ensure meta files are tracked)
+!/[Aa]ssets/**/*.meta
+# Unity3D generated meta files for ignored extensions
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+# Asset compute cache
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/[Ll]ayout.bin
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/[Cc]atalog.bin
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+# Temporary auto-generated Android Assets
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+# Builds
+*.apk
+*.aab
+*.unitypackage
+# IDE specific files (Visual Studio, Rider, VS Code)
+.vs/
+.idea/
+.vscode/
+/*.sln
+/*.csproj
+/*.dotSettings
+/*.user
+/*.userprefs
+/*.unityproj
+/*.booproj
+/*.suo
+/*.cache
+/*.pdb
+*.sln.iml
+.vsconfig
+ExportedObj/
+.consulo/
+# Gradle cache directory
+.gradle/
+# Crashlytics generated file
+crashlytics-build.properties
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+# Others
+sysinfo.txt
+/[Aa]ssets/Plugins/Editor/JetBrains*
+/[Aa]ssets/Plugins/bin/
+/[Aa]ssets/Plugins/obj/
