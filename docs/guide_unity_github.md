@@ -7,8 +7,8 @@ Tài liệu này hướng dẫn cách thiết lập và làm việc nhóm để 
 ## 1. CÀI ĐẶT CÔNG CỤ (BẮT BUỘC)
 
 ### 1.1. Unity Editor & Modules
-Tất cả thành viên **PHẢI** sử dụng đúng phiên bản: **2022.3.25f1**.
-**Quan trọng**: Mở **Unity Hub** -> Tab **Installs** -> Nhấn bánh răng cạnh bản 2022.3.25f1 -> **Add Modules**. Cài đặt đủ 3 cái sau:
+Tất cả thành viên **PHẢI** sử dụng đúng phiên bản: **6000.3.12f1**.
+**Quan trọng**: Mở **Unity Hub** -> Tab **Installs** -> Nhấn bánh răng cạnh bản 6000.3.12f1 -> **Add Modules**. Cài đặt đủ 3 cái sau:
 *   **Linux Build Support (IL2CPP)**
 *   **Linux Build Support (Mono)**
 *   **Linux Dedicated Server Build Support**
