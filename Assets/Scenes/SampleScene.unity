@@ -131,7 +131,7 @@ GameObject:
   - component: {fileID: 238186170}
   - component: {fileID: 238186169}
   - component: {fileID: 238186168}
-  - component: {fileID: 238186167}
+  - component: {fileID: 238186172}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -139,19 +139,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &238186167
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 238186166}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8e59423c44774c74d9a1e6ef6d23e6a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.ConnectionManagement.EdgegapServerStarter
-  portMapName: gameport
 --- !u!114 &238186168
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -252,6 +239,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &238186172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 238186166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b32be7f7a5c32a4ab551e891fd404d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.ConnectionManagement.EdgegapServerStarter
+  portMapName: gameport
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
