@@ -14,6 +14,41 @@ namespace EdgeParty.ConnectionManagement
         private string _serverPort = "7777";
         private string _statusMsg = "";
 
+        private void Start()
+        {
+            var nm = NetworkManager.Singleton;
+            if (nm != null)
+            {
+                nm.OnClientConnectedCallback += OnClientConnected;
+                nm.OnClientDisconnectCallback += OnClientDisconnect;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
+            }
+        }
+
+        private void OnClientConnected(ulong id)
+        {
+            if (NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
+            {
+                Debug.Log($"<color=green>[ClientConnectionUI] SUCCESS:</color> Connected to Server as Client ID: {id}");
+            }
+        }
+
+        private void OnClientDisconnect(ulong id)
+        {
+            if (NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
+            {
+                Debug.LogWarning("<color=red>[ClientConnectionUI] DISCONNECTED:</color> Connection lost or closed by server.");
+            }
+        }
+
 #if !UNITY_SERVER || UNITY_EDITOR
         private void OnGUI()
         {
