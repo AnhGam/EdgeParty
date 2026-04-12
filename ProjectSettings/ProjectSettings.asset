@@ -837,7 +837,7 @@ PlayerSettings:
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
     Server: EDGEGAP_PLUGIN_SERVERS
-    Standalone: EDGEGAP_PLUGIN_SERVERS
+    Standalone: EDGEGAP_PLUGIN_SERVERS;UNITY_PIPELINE_URP
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend: {}
