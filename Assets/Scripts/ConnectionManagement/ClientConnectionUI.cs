@@ -75,7 +75,7 @@ namespace EdgeParty.ConnectionManagement
                 _serverPort = GUILayout.TextField(_serverPort);
                 GUILayout.EndHorizontal();
 
-                if (GUILayout.Button("CONNECT TO SERVER"))
+                if (GUILayout.Button("CONNECT TO SERVER (CLIENT)"))
                 {
                     if (ushort.TryParse(_serverPort, out ushort port))
                     {
@@ -93,6 +93,22 @@ namespace EdgeParty.ConnectionManagement
                     {
                         _statusMsg = "Invalid Port!";
                         Debug.LogError("[ClientConnectionUI] Invalid Port number!");
+                    }
+                }
+
+                if (GUILayout.Button("START HOST (SERVER + CLIENT) - FOR LOCAL TEST"))
+                {
+                    if (ushort.TryParse(_serverPort, out ushort port))
+                    {
+                        utp.SetConnectionData(_serverIp, port);
+                        if (networkManager.StartHost())
+                        {
+                            _statusMsg = "Hosting...";
+                        }
+                        else
+                        {
+                            _statusMsg = "Failed to start host!";
+                        }
                     }
                 }
 
