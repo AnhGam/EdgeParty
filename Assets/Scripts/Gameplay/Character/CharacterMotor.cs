@@ -141,7 +141,7 @@ namespace EdgeParty.Gameplay.Character
                 ghostRoot.rotation = Quaternion.Slerp(ghostRoot.rotation, Quaternion.LookRotation(_facingDir, Vector3.up), Time.fixedDeltaTime * 10f);
             }
 
-            // Sync physics pelvis rotation to ghost animator's pelvis (Active Ragdoll magic)
+            // 1. Torque-based rotation matching (Core upright logic)
             Quaternion targetRot = ghostPelvis.rotation;
             Quaternion deltaRot = targetRot * Quaternion.Inverse(pelvisRigidbody.rotation);
 
@@ -152,6 +152,15 @@ namespace EdgeParty.Gameplay.Character
             {
                 Vector3 torque = axis.normalized * (angle * rotationSpeed);
                 pelvisRigidbody.AddTorque(torque, ForceMode.Acceleration);
+            }
+
+            // 2. Velocity-based matching (Combat snappiness & "Blender feel")
+            // This forces the physical pelvis to match the ANIMATED velocity of the ghost.
+            if (Mathf.Abs(angle) > 0.01f)
+            {
+                Vector3 worldAngularVel = axis.normalized * (angle * Mathf.Deg2Rad / Time.fixedDeltaTime);
+                // We use a lerp to avoid infinite jitter, but with a high enough value to feel "meaty"
+                pelvisRigidbody.angularVelocity = Vector3.Lerp(pelvisRigidbody.angularVelocity, worldAngularVel, 0.4f);
             }
         }
 
