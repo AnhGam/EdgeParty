@@ -78,27 +78,40 @@ namespace EdgeParty.ConnectionManagement
                 _bones[i] = _rigidbodies[i].transform;
             }
 
+            // Self-healing: Search for controllers in parents or siblings
             _playerController = GetComponent<EdgeParty.Gameplay.Character.PlayerController>();
-            if (_playerController != null)
+            if (_playerController == null) _playerController = GetComponentInParent<EdgeParty.Gameplay.Character.PlayerController>();
+            if (_playerController == null) _playerController = GetComponentInChildren<EdgeParty.Gameplay.Character.PlayerController>();
+
+            var animCtrl = GetComponent<EdgeParty.Gameplay.Character.CharacterAnimationController>();
+            if (animCtrl == null) animCtrl = GetComponentInParent<EdgeParty.Gameplay.Character.CharacterAnimationController>();
+            if (animCtrl == null) animCtrl = GetComponentInChildren<EdgeParty.Gameplay.Character.CharacterAnimationController>();
+            
+            // If still null, we might need to search the root hierarchy
+            if (animCtrl == null && transform.root != null)
+                animCtrl = transform.root.GetComponentInChildren<EdgeParty.Gameplay.Character.CharacterAnimationController>();
+
+            if (animCtrl != null)
             {
-                _ghostAnimator = _playerController.ghostAnimator;
+                _ghostAnimator = animCtrl.ghostAnimator;
             }
-            else
+            
+            if (_ghostAnimator == null)
             {
+                // Fallback to searching the whole hierarchy for ANY animator if the controller didn't have one
                 _ghostAnimator = GetComponentInChildren<Animator>();
+                if (_ghostAnimator == null && transform.root != null)
+                    _ghostAnimator = transform.root.GetComponentInChildren<Animator>();
             }
         }
 
         public override void OnNetworkSpawn()
         {
-            // NẾU LÀ CLIENT (Không phải Server): BIẾN TOÀN TẬP THÀNH BÙ NHÌN KINEMATIC
-            // Vì Server-Authoritative, Player không được tự mô phỏng Physics cục bộ
             bool isOffline = NetworkManager.Singleton != null && !NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer;
             bool isPureClient = IsClient && !IsServer && !isOffline;
 
             if (isPureClient)
             {
-                // Diệt gọn cấu trúc Physics để cấm đụng độ nội bộ
                 var scripts = GetComponentsInChildren<EdgeParty.Gameplay.Character.RagdollBoneFollower>();
                 foreach (var script in scripts) Destroy(script);
 
@@ -121,9 +134,8 @@ namespace EdgeParty.ConnectionManagement
 
         private void Update()
         {
-            if (!IsSpawned) return;
+            if (!IsSpawned || NetworkManager.Singleton == null) return;
 
-            // CHỈ CÓ SERVER mới được quyền đo tọa độ xương phát cho trần gian
             if (IsServer)
             {
                 if (Time.time - _lastSendTime >= (1f / syncRate))

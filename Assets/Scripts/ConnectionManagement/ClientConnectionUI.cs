@@ -30,6 +30,21 @@ namespace EdgeParty.ConnectionManagement
             {
                 NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
                 NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
+                
+                // BIỆN PHÁP AN TOÀN: Nếu tắt UI mà manager vẫn chạy, ép shutdown để nhả Port
+                if (NetworkManager.Singleton.IsListening)
+                {
+                    NetworkManager.Singleton.Shutdown();
+                }
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            // Đảm bảo nhả Port 7777 về cho Windows khi tắt App/Editor
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
             }
         }
 
@@ -100,6 +115,9 @@ namespace EdgeParty.ConnectionManagement
                 {
                     if (ushort.TryParse(_serverPort, out ushort port))
                     {
+                        // BIỆN PHÁP AN TOÀN: Nếu đang chạy dở cái gì đó, ép Shutdown trước khi mở Port mới
+                        if (networkManager.IsListening) networkManager.Shutdown();
+
                         utp.SetConnectionData(_serverIp, port);
                         if (networkManager.StartHost())
                         {

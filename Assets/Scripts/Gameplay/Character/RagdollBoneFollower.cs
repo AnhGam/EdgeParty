@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace EdgeParty.Gameplay.Character
 {
-    public enum BoneCategory { Torso, Head, Arm, Leg }
+    public enum BoneCategory { Torso, Head, Arm, Leg, Tail }
 
     [RequireComponent(typeof(ConfigurableJoint))]
     public class RagdollBoneFollower : MonoBehaviour
