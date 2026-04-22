@@ -9,8 +9,13 @@ namespace EdgeParty.Gameplay.Character
     {
         public BoneCategory category;
         public Transform targetBone;
+        
+        [Header("Enhanced Power")]
+        [Range(0f, 1f)] public float gravityCompensation = 0f;
+        [Range(0f, 1f)] public float velocitySync = 0.5f;
 
         private ConfigurableJoint _joint;
+        private Rigidbody _rb;
         private Quaternion _startingLocalRotation;
         private Quaternion _localToJointSpace;
         private Quaternion _jointToLocalSpace;
@@ -20,33 +25,28 @@ namespace EdgeParty.Gameplay.Character
         private float _originalYZSpring;
         private float _originalYZDamper;
 
-        // Root bone (pelvis) rotation is handled by PlayerController.MoveRotation,
-        // not by spring targetRotation, to avoid the two fighting each other.
         private bool _isRootBone;
 
         private void Awake()
         {
             _joint = GetComponent<ConfigurableJoint>();
+            _rb = GetComponent<Rigidbody>();
             _startingLocalRotation = transform.localRotation;
             _isRootBone = (_joint.connectedBody == null);
 
-            // Cache the hand-tuned spring and damper values from the Joint Inspector
+            // Cache original joint settings
             _originalXSpring = _joint.angularXDrive.positionSpring;
             _originalXDamper = _joint.angularXDrive.positionDamper;
             _originalYZSpring = _joint.angularYZDrive.positionSpring;
             _originalYZDamper = _joint.angularYZDrive.positionDamper;
 
-            // Joint space calculation (mstevenson/ConfigurableJointExtensions)
+            // Joint space calculation
             Vector3 forward = Vector3.Cross(_joint.axis, _joint.secondaryAxis).normalized;
             Vector3 up = Vector3.Cross(forward, _joint.axis).normalized;
             _localToJointSpace = Quaternion.LookRotation(forward, up);
             _jointToLocalSpace = Quaternion.Inverse(_localToJointSpace);
         }
 
-        /// <summary>
-        /// Scales the original Inspector spring and damper values by the given multiplier.
-        /// This preserves the user's hand-tuned balance ratio.
-        /// </summary>
         public void SetSpringMultiplier(float multiplier)
         {
             var xDrive = _joint.angularXDrive;
@@ -60,13 +60,10 @@ namespace EdgeParty.Gameplay.Character
             _joint.angularYZDrive = yzDrive;
         }
 
-        /// <summary>
-        /// Makes the bone limp (normal ragdoll).
-        /// </summary>
         public void SetLimp()
         {
             var xDrive = _joint.angularXDrive;
-            xDrive.positionSpring = 0.5f; // Very low to allow physics interaction
+            xDrive.positionSpring = 0.5f;
             xDrive.positionDamper = 0f;
             _joint.angularXDrive = xDrive;
 
@@ -78,10 +75,9 @@ namespace EdgeParty.Gameplay.Character
 
         private void FixedUpdate()
         {
-            // Root bone (pelvis) rotation is driven by PlayerController.MoveRotation.
-            // Setting targetRotation here would fight against it.
             if (_isRootBone || targetBone == null) return;
 
+            // 1. Position/Rotation Sync
             Quaternion targetRot = targetBone.localRotation;
             Quaternion resultRotation = _jointToLocalSpace
                                         * Quaternion.Inverse(targetRot)
@@ -89,6 +85,26 @@ namespace EdgeParty.Gameplay.Character
                                         * _localToJointSpace;
 
             _joint.targetRotation = resultRotation;
+
+            // 2. Gravity Compensation
+            if (gravityCompensation > 0 && _rb != null)
+            {
+                _rb.AddForce(-Physics.gravity * gravityCompensation, ForceMode.Acceleration);
+            }
+
+            // 3. Angular Velocity Matching (Combat Power)
+            if (velocitySync > 0 && _rb != null)
+            {
+                Quaternion delta = targetBone.rotation * Quaternion.Inverse(transform.rotation);
+                delta.ToAngleAxis(out float angle, out Vector3 axis);
+                if (angle > 180f) angle -= 360f;
+
+                if (Mathf.Abs(angle) > 0.01f)
+                {
+                    Vector3 worldAngularVel = axis.normalized * (angle * Mathf.Deg2Rad / Time.fixedDeltaTime);
+                    _rb.angularVelocity = Vector3.Lerp(_rb.angularVelocity, worldAngularVel, velocitySync);
+                }
+            }
         }
     }
 }
