@@ -20,9 +20,7 @@
                 <ui:VisualElement class="player-name-pill">
                     <ui:Label text="PLAYER_123" class="player-name-text" />
                 </ui:VisualElement>
-                <ui:VisualElement class="gem-pill">
-                    <ui:Label text="1,250 💎" class="gem-text" />
-                </ui:VisualElement>
+
             </ui:VisualElement>
         </ui:VisualElement>
 

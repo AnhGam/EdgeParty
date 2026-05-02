@@ -19,28 +19,17 @@
         <!-- Top App Bar -->
         <ui:VisualElement class="top-app-bar">
             <ui:VisualElement style="flex-direction: row; align-items: center;">
-                <ui:VisualElement class="avatar-container">
-                    <ui:VisualElement class="avatar-img" style="background-image: url('project://database/Assets/UI/Credits/Images/avatar.png');" />
-                </ui:VisualElement>
+
                 <ui:Label text="Edge Party" class="top-bar-title" />
             </ui:VisualElement>
             
-            <ui:VisualElement class="gem-pill">
-                <ui:Label text="1,250 💎" class="gem-text" />
-            </ui:VisualElement>
+
         </ui:VisualElement>
 
         <!-- Main Content Area -->
         <ui:VisualElement style="flex-grow: 1; align-items: center; justify-content: center; width: 100%;">
 
-            <!-- Decorative Pets -->
-            <ui:VisualElement class="side-pet-container side-pet-left">
-                <ui:VisualElement class="pet-img" style="background-image: url('project://database/Assets/UI/Credits/Images/monster.png');" />
-            </ui:VisualElement>
-            
-            <ui:VisualElement class="side-pet-container side-pet-right">
-                <ui:VisualElement class="pet-img" style="background-image: url('project://database/Assets/UI/Credits/Images/cat.png');" />
-            </ui:VisualElement>
+
 
             <!-- Credits Content Panel -->
             <ui:VisualElement class="glass-panel">

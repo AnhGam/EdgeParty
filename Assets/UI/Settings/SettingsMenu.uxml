@@ -27,15 +27,7 @@
             <!-- Bento Settings Grid -->
             <ui:VisualElement class="settings-grid">
                 
-                <!-- Floating Decorative Buddy Left -->
-                <ui:VisualElement class="side-buddy tilt-neg-1">
-                    <ui:VisualElement class="buddy-container">
-                        <ui:VisualElement class="buddy-img" style="background-image: url('project://database/Assets/UI/Settings/Images/gummy1.png');" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="buddy-badge">
-                        <ui:Label text="SPEEDY!" class="buddy-badge-text" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
+
 
                 <!-- Central Glass Controls -->
                 <ui:VisualElement class="center-controls">
@@ -79,15 +71,7 @@
 
                 </ui:VisualElement>
 
-                <!-- Floating Decorative Buddy Right -->
-                <ui:VisualElement class="side-buddy tilt-2">
-                    <ui:VisualElement class="buddy-container buddy-container-large">
-                        <ui:VisualElement class="buddy-img" style="background-image: url('project://database/Assets/UI/Settings/Images/gummy2.png');" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="buddy-badge buddy-badge-right">
-                        <ui:Label text="PARTY TIME!" class="buddy-badge-text buddy-badge-text-right" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
+
 
             </ui:VisualElement>
 
@@ -105,10 +89,7 @@
             <ui:Label text="v1.0.4 - EDGE PARTY" class="version-text" style="font-size: 14px; -unity-font-style: bold;" />
         </ui:VisualElement>
 
-        <ui:VisualElement class="bottom-right-pill">
-            <ui:Label text="1,250" class="gem-text" style="font-size: 32px; -unity-font-style: bold; margin-right: 8px;" />
-            <ui:Label text="💎" style="font-size: 24px;" />
-        </ui:VisualElement>
+
 
     </ui:VisualElement>
 </ui:UXML>

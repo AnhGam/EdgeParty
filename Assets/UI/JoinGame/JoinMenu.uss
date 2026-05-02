@@ -122,6 +122,8 @@
 /* TextField Styling */
 .custom-textfield {
     margin-bottom: 24px;
+    flex-direction: row;
+    align-items: center;
 }
 
 .custom-textfield > .unity-text-field__label {
@@ -129,10 +131,12 @@
     -unity-font-style: bold;
     color: var(--on-surface);
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 0;
     margin-left: 16px;
+    margin-right: 16px;
     padding: 0;
-    min-width: auto;
+    min-width: 120px;
+    -unity-text-align: middle-left;
 }
 
 .custom-textfield > .unity-text-field__input {
