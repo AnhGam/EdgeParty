@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:Style src="SettingsMenu.uss" />
+    
+    <ui:VisualElement class="settings-overlay" name="SettingsOverlay">
+        
+        <!-- Ambient Background Decorations -->
+        <ui:VisualElement class="ambient-bg">
+            <ui:VisualElement class="ambient-blob" style="top: 10%; left: 10%; width: 256px; height: 256px; background-color: rgba(96, 211, 148, 0.3);" />
+            <ui:VisualElement class="ambient-blob" style="bottom: 10%; right: 10%; width: 384px; height: 384px; background-color: rgba(129, 199, 232, 0.3);" />
+            <ui:VisualElement class="ambient-blob" style="top: 50%; left: 33%; width: 192px; height: 192px; background-color: rgba(252, 153, 131, 0.3);" />
+        </ui:VisualElement>
+
+        <ui:VisualElement style="width: 100%; height: 100%; align-items: center; justify-content: center; padding: 40px;">
+            
+            <!-- Header Branding -->
+            <ui:VisualElement class="header">
+                <ui:Label text="SETTINGS" class="header-title" />
+                <ui:VisualElement class="header-line" />
+            </ui:VisualElement>
+
+            <!-- Bento Settings Grid -->
+            <ui:VisualElement class="settings-grid">
+                
+                <!-- Floating Decorative Buddy Left -->
+                <ui:VisualElement class="side-buddy tilt-neg-1">
+                    <ui:VisualElement class="buddy-container">
+                        <ui:VisualElement class="buddy-img" style="background-image: url('project://database/Assets/UI/Settings/Images/gummy1.png');" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="buddy-badge">
+                        <ui:Label text="SPEEDY!" class="buddy-badge-text" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- Central Glass Controls -->
+                <ui:VisualElement class="center-controls">
+                    
+                    <!-- Audio Section -->
+                    <ui:VisualElement class="glass-panel tilt-1" style="margin-bottom: 24px;">
+                        <ui:VisualElement class="section-title-container">
+                            <ui:Label text="" class="material-icon icon-primary" />
+                            <ui:Label text="SOUNDS" class="section-title" />
+                        </ui:VisualElement>
+                        
+                        <ui:VisualElement class="slider-row">
+                            <ui:Label text="MUSIC" class="slider-label" />
+                            <ui:VisualElement class="slider-track">
+                                <ui:VisualElement class="slider-fill-music" />
+                                <ui:VisualElement class="slider-thumb slider-thumb-music" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        
+                        <ui:VisualElement class="slider-row">
+                            <ui:Label text="SFX" class="slider-label" />
+                            <ui:VisualElement class="slider-track">
+                                <ui:VisualElement class="slider-fill-sfx" />
+                                <ui:VisualElement class="slider-thumb slider-thumb-sfx" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <!-- Video Section -->
+                    <ui:VisualElement class="glass-panel tilt-neg-1">
+                        <ui:VisualElement class="section-title-container">
+                            <ui:Label text="" class="material-icon icon-tertiary" />
+                            <ui:Label text="GRAPHICS" class="section-title" />
+                        </ui:VisualElement>
+                        
+                        <ui:VisualElement class="graphics-grid">
+                            <ui:Button text="ULTRA QUALITY" class="graphics-btn" />
+                            <ui:Button text="60 FPS LIMIT" class="graphics-btn graphics-btn-inactive" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                </ui:VisualElement>
+
+                <!-- Floating Decorative Buddy Right -->
+                <ui:VisualElement class="side-buddy tilt-2">
+                    <ui:VisualElement class="buddy-container buddy-container-large">
+                        <ui:VisualElement class="buddy-img" style="background-image: url('project://database/Assets/UI/Settings/Images/gummy2.png');" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="buddy-badge buddy-badge-right">
+                        <ui:Label text="PARTY TIME!" class="buddy-badge-text buddy-badge-text-right" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+
+            <!-- The Big Return Button -->
+            <ui:Button name="ReturnBtn" class="bouncy-button">
+                <ui:Label text="" class="material-icon icon-white" />
+                <ui:Label text="RETURN" class="btn-text-large" style="margin-left: 16px;" />
+            </ui:Button>
+
+        </ui:VisualElement>
+
+        <!-- Corner Pills -->
+        <ui:VisualElement class="glass-panel bottom-left-pill">
+            <ui:VisualElement class="pulse-dot" />
+            <ui:Label text="v1.0.4 - EDGE PARTY" class="version-text" style="font-size: 14px; -unity-font-style: bold;" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="bottom-right-pill">
+            <ui:Label text="1,250" class="gem-text" style="font-size: 32px; -unity-font-style: bold; margin-right: 8px;" />
+            <ui:Label text="💎" style="font-size: 24px;" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:Style src="JoinMenu.uss" />
+
+    <ui:VisualElement class="join-overlay" name="JoinOverlay">
+        
+        <!-- Background Landscape -->
+        <ui:VisualElement class="bg-landscape" style="background-image: url('project://database/Assets/UI/JoinGame/Images/bg.png');" />
+
+        <!-- Top App Bar -->
+        <ui:VisualElement class="top-app-bar">
+            <ui:Label text="EDGE PARTY" class="top-bar-title" />
+            
+            <ui:VisualElement class="player-info-container">
+                <ui:VisualElement class="player-name-pill">
+                    <ui:Label text="PLAYER_123" class="player-name-text" />
+                </ui:VisualElement>
+                <ui:VisualElement class="gem-pill">
+                    <ui:Label text="1,250 💎" class="gem-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Main Content Area -->
+        <ui:VisualElement style="flex-grow: 1; align-items: center; justify-content: center; width: 100%;">
+
+            <!-- Join Form Panel -->
+            <ui:VisualElement class="glass-panel">
+                
+                <ui:VisualElement style="align-items: center;">
+                    <ui:Label text="JOIN GAME" class="join-title" />
+                    <ui:Label text="Enter the portal to start the chaos!" class="join-subtitle" />
+                </ui:VisualElement>
+
+                <!-- Input Section -->
+                <ui:VisualElement>
+                    <ui:TextField label="IP ADDRESS" value="192.168.1.1" class="custom-textfield" name="InputIP" />
+                    <ui:TextField label="PORT" value="7777" class="custom-textfield" name="InputPort" />
+                </ui:VisualElement>
+
+                <!-- Action Buttons -->
+                <ui:VisualElement style="margin-top: 16px;">
+                    <ui:Button text="JOIN" name="JoinConfirmBtn" class="btn-join" />
+                    <ui:Button text="RETURN" name="ReturnBtnJoin" class="btn-return" />
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>
