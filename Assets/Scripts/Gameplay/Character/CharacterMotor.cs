@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace EdgeParty.Gameplay.Character
 {
@@ -118,14 +118,21 @@ namespace EdgeParty.Gameplay.Character
             if (_isOneShotActive) force *= airControlFactor;
 
             Vector3 finalMoveDir = _moveDir;
-            
-            // Project movement onto slope if grounded
+
             if (IsGrounded)
             {
+                float slopeAngle = Vector3.Angle(Vector3.up, GroundNormal);
+
+                // Nếu dốc quá giới hạn, giảm movement force thay vì block hẳn
+                if (slopeAngle > slopeLimit)
+                {
+                    force *= Mathf.Clamp01(1f - (slopeAngle - slopeLimit) / 20f);
+                }
+
                 finalMoveDir = Vector3.ProjectOnPlane(_moveDir, GroundNormal).normalized;
-                
-                // Extra downward force to keep the character glued to the slope
-                pelvisRigidbody.AddForce(-GroundNormal * 10f, ForceMode.Acceleration);
+
+                // Tăng downward force lên để bám dốc tốt hơn
+                pelvisRigidbody.AddForce(-GroundNormal * 25f, ForceMode.Acceleration);
             }
 
             pelvisRigidbody.AddForce(finalMoveDir * force, ForceMode.Acceleration);
@@ -138,7 +145,8 @@ namespace EdgeParty.Gameplay.Character
             // Rotate visual root to face direction
             if (_facingDir.sqrMagnitude > 0.001f)
             {
-                ghostRoot.rotation = Quaternion.Slerp(ghostRoot.rotation, Quaternion.LookRotation(_facingDir, Vector3.up), Time.fixedDeltaTime * 10f);
+                float rotSpeed = _isOneShotActive ? 6f : 14f; // Nhanh hơn khi walk/run, chậm hơn khi attack
+                ghostRoot.rotation = Quaternion.Slerp(ghostRoot.rotation, Quaternion.LookRotation(_facingDir, Vector3.up), Time.fixedDeltaTime * rotSpeed);
             }
 
             // 1. Torque-based rotation matching (Core upright logic)
