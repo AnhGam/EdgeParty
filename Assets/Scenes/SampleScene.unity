@@ -1456,6 +1456,11 @@ PrefabInstance:
       propertyPath: uiDocument
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 447657499863088390, guid: 818402c0cf4136f49a88218c05ea8042,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2431026438211302177, guid: 818402c0cf4136f49a88218c05ea8042,
         type: 3}
       propertyPath: m_Name
