@@ -119,6 +119,118 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &339215846
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 339215848}
+  - component: {fileID: 339215847}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &339215847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339215846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d1853bd9c7cf78418068cd0c1a1aafa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Core.AudioManager
+  sounds:
+  - name: Click
+    clip: {fileID: 8300000, guid: 6fbffdf58d102f04195eb3ba5672b27c, type: 3}
+    volume: 0.8
+    pitch: 1
+    isMusic: 0
+  - name: Hover
+    clip: {fileID: 8300000, guid: 797b9a69a3982814c9dc23852695ddb6, type: 3}
+    volume: 0.4
+    pitch: 1.1
+    isMusic: 0
+  - name: Confirm
+    clip: {fileID: 8300000, guid: b6673ba3406ecca4d9d60e4fc85c2072, type: 3}
+    volume: 0.8
+    pitch: 1
+    isMusic: 0
+  - name: Punch
+    clip: {fileID: 8300000, guid: df8bf8601cf212941af82e5b5c0adc28, type: 3}
+    volume: 1
+    pitch: 1
+    isMusic: 0
+  - name: Kick
+    clip: {fileID: 8300000, guid: 787e07c81966ed641911c2b6a53ba091, type: 3}
+    volume: 1
+    pitch: 1
+    isMusic: 0
+  - name: PunchHeavy
+    clip: {fileID: 8300000, guid: 5fc4bd362706f1046a05cf7ee14aedf2, type: 3}
+    volume: 1
+    pitch: 0.9
+    isMusic: 0
+  - name: WeaponPan
+    clip: {fileID: 8300000, guid: e9f7994ca16fbca42a692f40f945ccb0, type: 3}
+    volume: 1
+    pitch: 1
+    isMusic: 0
+  - name: WeaponPanResonance
+    clip: {fileID: 8300000, guid: a1c566d8169469e4b8705e804ff57d40, type: 3}
+    volume: 0.9
+    pitch: 1
+    isMusic: 0
+  - name: WeaponBat
+    clip: {fileID: 8300000, guid: 5000fa729052e3046bf174189d541429, type: 3}
+    volume: 1
+    pitch: 1
+    isMusic: 0
+  - name: WeaponSlice
+    clip: {fileID: 8300000, guid: b5efc1196545989479fd6df4184d639b, type: 3}
+    volume: 1
+    pitch: 1
+    isMusic: 0
+  - name: Stun
+    clip: {fileID: 8300000, guid: 404cb7b46bc08a244b2eb15cc017412a, type: 3}
+    volume: 0.9
+    pitch: 1.2
+    isMusic: 0
+  - name: Footstep
+    clip: {fileID: 8300000, guid: 2916ff28d5cd7204e9e391e1b729685a, type: 3}
+    volume: 0.6
+    pitch: 1
+    isMusic: 0
+  - name: Fall
+    clip: {fileID: 8300000, guid: 6eaaab41e23b0de4ebdd09f1a9885476, type: 3}
+    volume: 0.8
+    pitch: 1
+    isMusic: 0
+  musicVolume: 0.5
+  sfxVolume: 1
+--- !u!4 &339215848
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339215846}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1116867287
 GameObject:
   m_ObjectHideFlags: 0
@@ -198,6 +310,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1328602539}
   - component: {fileID: 1328602538}
+  - component: {fileID: 1328602541}
+  - component: {fileID: 1328602540}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: Untagged
@@ -271,6 +385,58 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!81 &1328602540
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1328602537}
+  m_Enabled: 1
+--- !u!114 &1328602541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1328602537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &2090100783
 GameObject:
   m_ObjectHideFlags: 0
@@ -346,3 +512,4 @@ SceneRoots:
   - {fileID: 1328602539}
   - {fileID: 1116867290}
   - {fileID: 2090100786}
+  - {fileID: 339215848}
