@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6431731161974555876}
   - component: {fileID: 4838547721845571552}
-  - component: {fileID: 6762291534850698990}
+  - component: {fileID: 447657499863088390}
   m_Layer: 0
   m_Name: CharacterCustomization
   m_TagString: Untagged
@@ -46,16 +46,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5566633629cd4f446bc70ec9f3ecc85e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.CustomizationController
-  uiDocument: {fileID: 6762291534850698990}
+  uiDocument: {fileID: 447657499863088390}
   customizationData: {fileID: 11400000, guid: a9879148b1ebe974fabd765d34b6db3e, type: 2}
---- !u!114 &6762291534850698990
+--- !u!114 &447657499863088390
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2431026438211302177}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: 
@@ -222,7 +222,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6b83d0a2ec539b46a8a053a7c7ab419, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.PreviewCameraLink
-  uiDocument: {fileID: 6762291534850698990}
+  uiDocument: {fileID: 0}
   containerName: PreviewContainer
   textureSize: 512
 --- !u!1 &6119974905879320103
@@ -453,110 +453,11 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4545614330657355559}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8632219853986348538, guid: 472b7551a02d49949b751cfa17f30f57,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2152146473470977802}
-    - targetCorrespondingSourceObject: {fileID: 8632219853986348538, guid: 472b7551a02d49949b751cfa17f30f57,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4142226782172505040}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 472b7551a02d49949b751cfa17f30f57, type: 3}
---- !u!137 &4277539918871928603 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 625995697322681588, guid: 472b7551a02d49949b751cfa17f30f57,
-    type: 3}
-  m_PrefabInstance: {fileID: 3743375442401131503}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &4915936388296427029 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8632219853986348538, guid: 472b7551a02d49949b751cfa17f30f57,
-    type: 3}
-  m_PrefabInstance: {fileID: 3743375442401131503}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &2152146473470977802
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4915936388296427029}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2872912102
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
---- !u!114 &4142226782172505040
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4915936388296427029}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c18b76bb6ff7ce54297b6be49d249114, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.NetworkPlayerAppearance
-  ShowTopMostFoldoutHeaderGroup: 1
-  data: {fileID: 11400000, guid: a9879148b1ebe974fabd765d34b6db3e, type: 2}
-  headBone: {fileID: 6270085922893834981}
-  neckBone: {fileID: 8430327468478315505}
-  characterRenderer: {fileID: 4277539918871928603}
-  hatIndex:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: -1
-  glassesIndex:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: -1
-  necklaceIndex:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: -1
-  emotionIndex:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 1
-  colorIndex:
-    UpdateTraits:
-      MinSecondsBetweenUpdates: 0
-      MaxSecondsBetweenUpdates: 0
-    m_InternalValue: 1
 --- !u!4 &5724984104280333487 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8971204080225380160, guid: 472b7551a02d49949b751cfa17f30f57,
-    type: 3}
-  m_PrefabInstance: {fileID: 3743375442401131503}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &6270085922893834981 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7273583656881279242, guid: 472b7551a02d49949b751cfa17f30f57,
-    type: 3}
-  m_PrefabInstance: {fileID: 3743375442401131503}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &8430327468478315505 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5119939713723219998, guid: 472b7551a02d49949b751cfa17f30f57,
     type: 3}
   m_PrefabInstance: {fileID: 3743375442401131503}
   m_PrefabAsset: {fileID: 0}
