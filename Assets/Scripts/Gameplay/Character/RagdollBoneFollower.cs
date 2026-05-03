@@ -9,11 +9,16 @@ namespace EdgeParty.Gameplay.Character
     {
         public BoneCategory category;
         public Transform targetBone;
-        
+
         [Header("Enhanced Power")]
         [Range(0f, 1f)] public float gravityCompensation = 0f;
-        [Range(0f, 1f)] public float velocitySync = 0.5f;
+        [Range(0f, 1f)] public float velocitySync = 0.3f;
 
+        [Header("Combat Override")]
+        [Tooltip("Velocity sync used during punch swing (higher = snappier hit)")]
+        [Range(0f, 1f)] public float combatVelocitySync = 0.92f;
+
+        // Runtime
         private ConfigurableJoint _joint;
         private Rigidbody _rb;
         private Quaternion _startingLocalRotation;
@@ -26,6 +31,7 @@ namespace EdgeParty.Gameplay.Character
         private float _originalYZDamper;
 
         private bool _isRootBone;
+        private bool _isCombatActive;
 
         private void Awake()
         {
@@ -34,13 +40,11 @@ namespace EdgeParty.Gameplay.Character
             _startingLocalRotation = transform.localRotation;
             _isRootBone = (_joint.connectedBody == null);
 
-            // Cache original joint settings
             _originalXSpring = _joint.angularXDrive.positionSpring;
             _originalXDamper = _joint.angularXDrive.positionDamper;
             _originalYZSpring = _joint.angularYZDrive.positionSpring;
             _originalYZDamper = _joint.angularYZDrive.positionDamper;
 
-            // Joint space calculation
             Vector3 forward = Vector3.Cross(_joint.axis, _joint.secondaryAxis).normalized;
             Vector3 up = Vector3.Cross(forward, _joint.axis).normalized;
             _localToJointSpace = Quaternion.LookRotation(forward, up);
@@ -49,51 +53,45 @@ namespace EdgeParty.Gameplay.Character
 
         public void SetSpringMultiplier(float multiplier)
         {
-            var xDrive = _joint.angularXDrive;
-            xDrive.positionSpring = _originalXSpring * multiplier;
-            xDrive.positionDamper = _originalXDamper * multiplier; 
-            _joint.angularXDrive = xDrive;
+            var xd = _joint.angularXDrive;
+            xd.positionSpring = _originalXSpring * multiplier;
+            xd.positionDamper = _originalXDamper * multiplier;
+            _joint.angularXDrive = xd;
 
-            var yzDrive = _joint.angularYZDrive;
-            yzDrive.positionSpring = _originalYZSpring * multiplier;
-            yzDrive.positionDamper = _originalYZDamper * multiplier;
-            _joint.angularYZDrive = yzDrive;
+            var yzd = _joint.angularYZDrive;
+            yzd.positionSpring = _originalYZSpring * multiplier;
+            yzd.positionDamper = _originalYZDamper * multiplier;
+            _joint.angularYZDrive = yzd;
+        }
+
+        public void SetCombatMode(bool active)
+        {
+            _isCombatActive = active;
         }
 
         public void SetLimp()
         {
-            var xDrive = _joint.angularXDrive;
-            xDrive.positionSpring = 0.5f;
-            xDrive.positionDamper = 0f;
-            _joint.angularXDrive = xDrive;
-
-            var yzDrive = _joint.angularYZDrive;
-            yzDrive.positionSpring = 0.5f;
-            yzDrive.positionDamper = 0f;
-            _joint.angularYZDrive = yzDrive;
+            var xd = _joint.angularXDrive; xd.positionSpring = 0.5f; xd.positionDamper = 0f; _joint.angularXDrive = xd;
+            var yd = _joint.angularYZDrive; yd.positionSpring = 0.5f; yd.positionDamper = 0f; _joint.angularYZDrive = yd;
         }
 
         private void FixedUpdate()
         {
             if (_isRootBone || targetBone == null) return;
 
-            // 1. Position/Rotation Sync
+            // 1. Rotation targeting
             Quaternion targetRot = targetBone.localRotation;
-            Quaternion resultRotation = _jointToLocalSpace
-                                        * Quaternion.Inverse(targetRot)
-                                        * _startingLocalRotation
-                                        * _localToJointSpace;
+            _joint.targetRotation = _jointToLocalSpace
+                                    * Quaternion.Inverse(targetRot)
+                                    * _startingLocalRotation
+                                    * _localToJointSpace;
 
-            _joint.targetRotation = resultRotation;
-
-            // 2. Gravity Compensation
-            if (gravityCompensation > 0 && _rb != null)
-            {
+            // 2. Gravity compensation
+            if (gravityCompensation > 0f && _rb != null)
                 _rb.AddForce(-Physics.gravity * gravityCompensation, ForceMode.Acceleration);
-            }
 
-            // 3. Angular Velocity Matching (Combat Power)
-            if (velocitySync > 0 && _rb != null)
+            // 3. Velocity sync (higher during combat for snappy punch)
+            if (_rb != null)
             {
                 Quaternion delta = targetBone.rotation * Quaternion.Inverse(transform.rotation);
                 delta.ToAngleAxis(out float angle, out Vector3 axis);
@@ -101,8 +99,9 @@ namespace EdgeParty.Gameplay.Character
 
                 if (Mathf.Abs(angle) > 0.01f)
                 {
-                    Vector3 worldAngularVel = axis.normalized * (angle * Mathf.Deg2Rad / Time.fixedDeltaTime);
-                    _rb.angularVelocity = Vector3.Lerp(_rb.angularVelocity, worldAngularVel, velocitySync);
+                    float sync = _isCombatActive ? combatVelocitySync : velocitySync;
+                    Vector3 worldAngVel = axis.normalized * (angle * Mathf.Deg2Rad / Time.fixedDeltaTime);
+                    _rb.angularVelocity = Vector3.Lerp(_rb.angularVelocity, worldAngVel, sync);
                 }
             }
         }

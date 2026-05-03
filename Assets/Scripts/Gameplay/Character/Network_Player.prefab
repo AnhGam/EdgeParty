@@ -105,6 +105,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.CharacterAnimationController
   ghostAnimator: {fileID: 8688124606735904938}
   ghostRoot: {fileID: 7833220074001554887}
+  baseLayerIndex: 0
+  upperBodyLayerIndex: 1
   idleState: IdleA
   walkState: Walk
   walkLState: WalkL
@@ -114,10 +116,20 @@ MonoBehaviour:
   runRState: RunR
   jumpState: Jump
   dashState: Dash
-  attackState: RightATK
-  airAttackState: AirATK
+  inAirState: None
+  atk1State: ATK1
+  atk2State: ATK2
+  atk3State: ATK3
+  airAtkState: AirATK
+  comboInputWindow: 0.45
+  hitboxStartTime: 0.25
+  hitboxEndTime: 0.65
+  attackAnimSpeed: 1.1
   attackCooldown: 0.5
   dashCooldown: 5
+  upperBodyBlendSpeed: 8
+  rightFistHitbox: {fileID: 4882725126804455087}
+  leftFistHitbox: {fileID: 4004676142601550833}
 --- !u!1 &5938457940907122348
 GameObject:
   m_ObjectHideFlags: 0
@@ -174,6 +186,7 @@ GameObject:
   - component: {fileID: 3439953757200522320}
   - component: {fileID: 3774352780325988922}
   - component: {fileID: 8377088752942287334}
+  - component: {fileID: 5148444696591683540}
   m_Layer: 0
   m_Name: Network_Player
   m_TagString: Untagged
@@ -241,6 +254,46 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   syncRate: 20
   smoothSpeed: 15
+--- !u!114 &5148444696591683540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8387300168563289691}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7da4cc36c0e83244ba0d075ef5ac583c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.PlayerStats
+  ShowTopMostFoldoutHeaderGroup: 1
+  maxHealth: 100
+  healthRegenDelay: 5
+  healthRegenRate: 0
+  maxStamina: 100
+  sprintDrainRate: 20
+  attackStaminaCost: 15
+  dashStaminaCost: 25
+  staminaRegenRate: 12
+  staminaRegenDelay: 1.2
+  speedMultiplier: 1
+  knockbackForce: 18
+  knockbackUpRatio: 0.4
+  CurrentHealth:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 100
+  CurrentStamina:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 100
+  IsDead:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
 --- !u!1001 &1731414485212254871
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1601,6 +1654,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 3
   targetBone: {fileID: 5015569590704355796}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!1 &646948680488673055 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9147547051764429671, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -1750,6 +1806,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 6052188170560379951}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!135 &2595720828652313025
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -1932,6 +1991,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 4
   targetBone: {fileID: 631062941255187818}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!1 &1203003996016621907 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7401978476234429739, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -2081,6 +2143,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 4
   targetBone: {fileID: 2595738063785553947}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!54 &2235506582889290885 stripped
 Rigidbody:
   m_CorrespondingSourceObject: {fileID: 7570248138902057213, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -2107,6 +2172,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 4327099786958990279}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!1 &3201649565324951049 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6514028770167509617, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -2127,6 +2195,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 7596024044511189806}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!1 &3321472933303308633 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6345800567652498721, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -2276,6 +2347,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 1705469818662978172}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!65 &3645092680317371920
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2317,12 +2391,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 5199435541786708261}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!54 &3790753403412358815 stripped
 Rigidbody:
   m_CorrespondingSourceObject: {fileID: 4797327374889208551, guid: 472b7551a02d49949b751cfa17f30f57,
     type: 3}
   m_PrefabInstance: {fileID: 8505313936679660664}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &4004676142601550833 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4727519902125479817, guid: 472b7551a02d49949b751cfa17f30f57,
+    type: 3}
+  m_PrefabInstance: {fileID: 8505313936679660664}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9035012002576892862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2e2a15181a366347b2b2765d9e2d6ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.PunchHitbox
+--- !u!114 &4882725126804455087 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3875942677362365143, guid: 472b7551a02d49949b751cfa17f30f57,
+    type: 3}
+  m_PrefabInstance: {fileID: 8505313936679660664}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8834464622766396169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2e2a15181a366347b2b2765d9e2d6ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.PunchHitbox
 --- !u!1 &5855502590550349039 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2831107628033800343, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -2472,6 +2573,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 8645075299245135672}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!1 &6833667352404703778 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2945039380156012122, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -2621,6 +2725,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 4
   targetBone: {fileID: 5280032451306069506}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!1 &7173730213904019803 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1551143078012919075, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -2770,6 +2877,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 3137588556159779683}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!135 &8654057408874591036
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -2940,6 +3050,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 4
   targetBone: {fileID: 5224359538568393781}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!1 &7686657050870496052 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2063928645178316620, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -3089,6 +3202,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 3146017951875691992}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!65 &1351273392558278970
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3259,6 +3375,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 4
   targetBone: {fileID: 5451155371703064535}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!54 &8343303319317069384 stripped
 Rigidbody:
   m_CorrespondingSourceObject: {fileID: 414806001527771696, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -3414,6 +3533,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 3131653135684952760}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92
 --- !u!1 &9035012002576892862 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 822538591225049030, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -3563,3 +3685,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 2942709182614245075}
+  gravityCompensation: 0
+  velocitySync: 0.3
+  combatVelocitySync: 0.92

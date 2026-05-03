@@ -5,8 +5,7 @@ using EdgeParty.Gameplay.Camera;
 namespace EdgeParty.Gameplay.Character
 {
     /// <summary>
-    /// The main coordinator for the player character.
-    /// Orchestrates input, physics movement, and animation states.
+    /// Main coordinator. Now also wires PlayerStats into combat actions.
     /// </summary>
     public class PlayerController : NetworkBehaviour
     {
@@ -14,6 +13,7 @@ namespace EdgeParty.Gameplay.Character
         public CharacterMotor motor;
         public CharacterAnimationController animController;
         public PlayerInputHandler inputHandler;
+        public PlayerStats stats;               // ← new
 
         [Header("Legacy References (Hidden - Used by Editor Tools)")]
         [HideInInspector] public Rigidbody pelvisRigidbody;
@@ -29,31 +29,27 @@ namespace EdgeParty.Gameplay.Character
         public NetworkVariable<float> tailMultiplier = new NetworkVariable<float>(1f);
 
         [Header("Settings")]
-        public float combatBoostMultiplier = 5f;
+        public float combatBoostMultiplier = 8f;
 
         private RagdollBoneFollower[] _followers;
 
-        private void OnValidate()
-        {
-            SyncLegacyReferences();
-        }
+        private void OnValidate() => SyncLegacyReferences();
 
         private void Awake()
         {
             _followers = GetComponentsInChildren<RagdollBoneFollower>();
-            
-            // Deep search: Search from the root of this player hierarchy
+
             Transform root = transform.root;
             if (motor == null) motor = root.GetComponentInChildren<CharacterMotor>();
             if (animController == null) animController = root.GetComponentInChildren<CharacterAnimationController>();
             if (inputHandler == null) inputHandler = root.GetComponentInChildren<PlayerInputHandler>();
-            
-            // Search for legacy references globally in this prefab hierarchy if missing
+            if (stats == null) stats = root.GetComponentInChildren<PlayerStats>();
+
             if (ghostRoot == null) ghostRoot = root.Find("Chibi_Monkey_00_Ghost");
             if (pelvisRigidbody == null)
             {
-                var allRbs = root.GetComponentsInChildren<Rigidbody>();
-                foreach (var rb in allRbs) if (rb.name.ToLower().Contains("pelvis")) { pelvisRigidbody = rb; break; }
+                foreach (var rb in root.GetComponentsInChildren<Rigidbody>())
+                    if (rb.name.ToLower().Contains("pelvis")) { pelvisRigidbody = rb; break; }
             }
 
             SyncLegacyReferences();
@@ -62,39 +58,27 @@ namespace EdgeParty.Gameplay.Character
 
         private void IgnoreInternalCollisions()
         {
-            var colliders = transform.root.GetComponentsInChildren<Collider>();
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                for (int j = i + 1; j < colliders.Length; j++)
-                {
-                    Physics.IgnoreCollision(colliders[i], colliders[j]);
-                }
-            }
+            var cols = transform.root.GetComponentsInChildren<Collider>();
+            for (int i = 0; i < cols.Length; i++)
+                for (int j = i + 1; j < cols.Length; j++)
+                    Physics.IgnoreCollision(cols[i], cols[j]);
         }
 
         private void SyncLegacyReferences()
         {
             if (motor != null)
             {
-                // Only sync if these are NOT null, to prevent overwriting inspector values with null
                 if (pelvisRigidbody != null) motor.pelvisRigidbody = pelvisRigidbody;
                 if (ghostRoot != null) motor.ghostRoot = ghostRoot;
                 if (ghostPelvis != null) motor.ghostPelvis = ghostPelvis;
-                
-                // Final deep search fallback for motor's pelvis
                 if (motor.pelvisRigidbody == null)
-                {
-                    var allRbs = transform.root.GetComponentsInChildren<Rigidbody>();
-                    foreach (var rb in allRbs) if (rb.name.ToLower().Contains("pelvis")) { motor.pelvisRigidbody = rb; break; }
-                }
+                    foreach (var rb in transform.root.GetComponentsInChildren<Rigidbody>())
+                        if (rb.name.ToLower().Contains("pelvis")) { motor.pelvisRigidbody = rb; break; }
             }
-
             if (animController != null)
             {
                 if (ghostAnimator != null) animController.ghostAnimator = ghostAnimator;
                 if (ghostRoot != null) animController.ghostRoot = ghostRoot;
-                
-                // Final fallback for animController's animator if still null
                 if (animController.ghostAnimator == null)
                     animController.ghostAnimator = GetComponentInChildren<Animator>();
             }
@@ -102,20 +86,21 @@ namespace EdgeParty.Gameplay.Character
 
         public override void OnNetworkSpawn()
         {
-            if (IsOwner)
-            {
-                AssignCameraTarget();
-            }
+            if (IsOwner) AssignCameraTarget();
 
-            // Đăng ký sự kiện thay đổi giá trị cho tất cả các xương
             legMultiplier.OnValueChanged += OnMultiplierChanged;
             armMultiplier.OnValueChanged += OnMultiplierChanged;
             torsoMultiplier.OnValueChanged += OnMultiplierChanged;
             headMultiplier.OnValueChanged += OnMultiplierChanged;
             tailMultiplier.OnValueChanged += OnMultiplierChanged;
-
-            // Cập nhật lần đầu khi spawn
             ApplyBoneMultipliers();
+
+            // Wire death/respawn into animator
+            if (stats != null)
+            {
+                stats.OnDied += () => animController?.OnDeath();
+                stats.OnRespawned += () => animController?.OnRespawn();
+            }
         }
 
         public override void OnNetworkDespawn()
@@ -127,52 +112,52 @@ namespace EdgeParty.Gameplay.Character
             tailMultiplier.OnValueChanged -= OnMultiplierChanged;
         }
 
-        private void OnMultiplierChanged(float previousValue, float newValue)
-        {
-            ApplyBoneMultipliers();
-        }
+        private void OnMultiplierChanged(float prev, float next) => ApplyBoneMultipliers();
 
         private void AssignCameraTarget()
         {
-            var cam = UnityEngine.Object.FindFirstObjectByType<ThirdPersonCamera>();
+            var cam = Object.FindFirstObjectByType<ThirdPersonCamera>();
             if (cam != null && motor != null)
-            {
                 cam.target = motor.pelvisRigidbody != null ? motor.pelvisRigidbody.transform : transform;
-            }
         }
 
         private void Update()
         {
-            if (IsServerActive())
-            {
-                UpdateAnimatorState();
-                ApplyBoneMultipliers(); // Continuous update to handle combat boost
-            }
+            if (!IsServerActive()) return;
+            UpdateAnimatorState();
+            ApplyBoneMultipliers();
         }
 
-        private bool IsServerActive()
-        {
-            return IsServer || NetworkManager.Singleton == null || (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer);
-        }
+        private bool IsServerActive() =>
+            IsServer || NetworkManager.Singleton == null
+            || (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer);
 
         private void UpdateAnimatorState()
         {
             if (motor != null && animController != null)
-            {
                 motor.SetOneShotActive(animController.IsPlayingOneShot);
-            }
         }
 
-        // ================= HOOKS FOR INPUT HANDLER (SERVER SIDE) =================
-        
+        // ─── Input hooks ──────────────────────────────────────────────────
+
         public void OnInputReceived_Server(Vector3 moveDir, bool isRunning)
         {
-            if (motor != null) motor.SetMovementInput(moveDir, isRunning);
-            if (animController != null) animController.SetMovementInput(moveDir, isRunning);
+            if (stats != null && stats.IsDead.Value) return;
+
+            // Drain sprint stamina if actually running
+            if (isRunning && moveDir.sqrMagnitude > 0.01f)
+                stats?.DrainSprintStamina(Time.deltaTime);
+
+            // Block sprint if out of stamina
+            bool canRun = isRunning && (stats == null || stats.HasStaminaToSprint);
+
+            motor?.SetMovementInput(moveDir, canRun);
+            animController?.SetMovementInput(moveDir, canRun);
         }
 
         public void OnJumpTriggered_Server(Vector3 moveDir)
         {
+            if (stats != null && stats.IsDead.Value) return;
             if (motor != null && animController != null && motor.IsGrounded)
             {
                 motor.ApplyJump(moveDir);
@@ -182,19 +167,18 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnDashTriggered_Server()
         {
-            if (motor != null && animController != null && animController.CanDash())
-            {
-                motor.ApplyDash();
-                animController.TriggerDash();
-            }
+            if (stats != null && stats.IsDead.Value) return;
+            if (animController == null || !animController.CanDash()) return;
+            if (stats != null && !stats.SpendDashStamina()) return;   // check + deduct
+
+            motor?.ApplyDash();
+            animController.TriggerDash();
         }
 
         public void OnAttackTriggered_Server()
         {
-            if (animController != null && animController.CanAttack())
-            {
-                animController.TriggerAttack();
-            }
+            if (stats != null && stats.IsDead.Value) return;
+            animController?.TriggerAttack();
         }
 
         public void SetRagdollStrength(float factor)
@@ -209,23 +193,23 @@ namespace EdgeParty.Gameplay.Character
         private void ApplyBoneMultipliers()
         {
             if (_followers == null) return;
-            
-            float armBoost = 1f;
-            if (animController != null && animController.IsAttacking)
-            {
-                armBoost = combatBoostMultiplier;
-            }
+            bool attacking = animController != null && animController.IsAttacking;
 
             foreach (var f in _followers)
             {
-                switch (f.category)
+                bool isArm = f.category == BoneCategory.Arm;
+                f.SetCombatMode(isArm && attacking);
+
+                float mult = f.category switch
                 {
-                    case BoneCategory.Leg: f.SetSpringMultiplier(legMultiplier.Value); break;
-                    case BoneCategory.Arm: f.SetSpringMultiplier(armMultiplier.Value * armBoost); break;
-                    case BoneCategory.Torso: f.SetSpringMultiplier(torsoMultiplier.Value); break;
-                    case BoneCategory.Head: f.SetSpringMultiplier(headMultiplier.Value); break;
-                    case BoneCategory.Tail: f.SetSpringMultiplier(tailMultiplier.Value); break;
-                }
+                    BoneCategory.Leg => legMultiplier.Value,
+                    BoneCategory.Arm => armMultiplier.Value * (attacking ? combatBoostMultiplier : 1f),
+                    BoneCategory.Torso => torsoMultiplier.Value,
+                    BoneCategory.Head => headMultiplier.Value,
+                    BoneCategory.Tail => tailMultiplier.Value,
+                    _ => 1f
+                };
+                f.SetSpringMultiplier(mult);
             }
         }
     }
