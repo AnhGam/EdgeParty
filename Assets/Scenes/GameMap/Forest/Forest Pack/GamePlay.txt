@@ -1,0 +1,18 @@
+Ý tưởng
+Map rừng có nhiều vật cản
+Người chơi combat + đẩy xuống vực
+Có khu vực cao thấp
+Trốn sau cây/đá
+
+Gameplay Loop
+
+Spawn player thanh 2 team
+Chạy quanh map
+Đấm → knockback
+Grab → kéo đối thủ
+Bị đánh mạnh → ragdoll
+Rơi khỏi map → chết + điểm cho đối thủ
+Nhặt iteam, tiền để + điểm cho team mình
+Hết thời gian Team nào nhiều điểm hơn thắng
+
+
