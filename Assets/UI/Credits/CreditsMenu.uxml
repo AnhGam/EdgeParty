@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:Style src="CreditsMenu.uss" />
+
+    <ui:VisualElement class="credits-overlay" name="CreditsOverlay">
+        
+        <!-- Background Decoration -->
+        <ui:VisualElement class="ambient-bg" style="opacity: 0.2;">
+            <ui:VisualElement class="ambient-blob blob-1" />
+            <ui:VisualElement class="ambient-blob blob-2" />
+            <ui:VisualElement class="ambient-blob blob-3" />
+        </ui:VisualElement>
+
+        <!-- Top App Bar -->
+        <ui:VisualElement class="top-app-bar">
+            <ui:VisualElement style="flex-direction: row; align-items: center;">
+
+                <ui:Label text="Edge Party" class="top-bar-title" />
+            </ui:VisualElement>
+            
+
+        </ui:VisualElement>
+
+        <!-- Main Content Area -->
+        <ui:VisualElement style="flex-grow: 1; align-items: center; justify-content: center; width: 100%;">
+
+
+
+            <!-- Credits Content Panel -->
+            <ui:VisualElement class="glass-panel">
+                <ui:VisualElement class="inner-glow-border" />
+                
+                <ui:VisualElement style="align-items: center; margin-bottom: 32px;">
+                    <ui:Label text="HALL OF FAME" class="credits-title" />
+                    <ui:Label text="The legends behind Edge Party" class="credits-subtitle" />
+                </ui:VisualElement>
+
+                <ui:ScrollView class="credits-scrollview">
+                    <ui:VisualElement class="credits-grid">
+                        
+                        <!-- Engineering -->
+                        <ui:VisualElement class="category-block">
+                            <ui:Label text="ENGINEERING" class="category-title cat-eng" />
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="Lead Architect" class="credit-role" />
+                                <ui:Label text="Gummy Dev" class="credit-name name-eng" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="Physics Master" class="credit-role" />
+                                <ui:Label text="Bouncy Bot" class="credit-name name-eng" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="Server Chaos" class="credit-role" />
+                                <ui:Label text="Lag Slayer" class="credit-name name-eng" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                        <!-- Visual Arts -->
+                        <ui:VisualElement class="category-block">
+                            <ui:Label text="VISUAL ARTS" class="category-title cat-art" />
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="Lead Artist" class="credit-role" />
+                                <ui:Label text="Pastel Pixie" class="credit-name name-art" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="Pet Sculptor" class="credit-role" />
+                                <ui:Label text="Clay Master" class="credit-name name-art" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="UI/UX Magic" class="credit-role" />
+                                <ui:Label text="Glass Wizard" class="credit-name name-art" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                        <!-- Audio -->
+                        <ui:VisualElement class="category-block">
+                            <ui:Label text="AUDIO" class="category-title cat-audio" />
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="Music Composer" class="credit-role" />
+                                <ui:Label text="Synth Wave" class="credit-name name-audio" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="SFX Designer" class="credit-role" />
+                                <ui:Label text="Boing Expert" class="credit-name name-audio" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                        <!-- Team Lead -->
+                        <ui:VisualElement class="category-block">
+                            <ui:Label text="TEAM LEAD" class="category-title cat-lead" />
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="Executive Producer" class="credit-role" />
+                                <ui:Label text="Chief Chaos" class="credit-name name-lead" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="credit-item">
+                                <ui:Label text="Community Lead" class="credit-role" />
+                                <ui:Label text="Party Host" class="credit-name name-lead" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                    </ui:VisualElement>
+                </ui:ScrollView>
+
+                <!-- Return Button -->
+                <ui:Button name="ReturnBtnCredits" class="bouncy-button">
+                    <ui:VisualElement class="btn-gloss" />
+                    <ui:Label text="RETURN" class="btn-text" />
+                </ui:Button>
+
+            </ui:VisualElement>
+
+            <!-- Footer Text -->
+            <ui:Label text="Special thanks to all our beta testers and the chaotic community for making Edge Party possible!" class="footer-text" />
+            
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

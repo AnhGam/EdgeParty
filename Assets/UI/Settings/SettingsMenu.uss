@@ -1,0 +1,291 @@
+/* Cấu hình màu từ Tailwind config */
+:root {
+    --bg-color: #f8f9fa;
+    --primary: #006d41;
+    --primary-container: #60d394;
+    --on-primary-container: #005834;
+    --on-primary: #ffffff;
+    --tertiary-container: #81c7e8;
+    --tertiary: #0d6683;
+    --secondary-container: #fc9983;
+    --on-secondary-container: #762f20;
+    --surface-container: #edeeef;
+    --surface-container-low: #f3f4f5;
+    --surface-container-highest: #e1e3e4;
+    --on-surface-variant: #3e4a41;
+    --outline: #6e7a70;
+    --outline-variant: #bdcabe;
+}
+
+/* Kính mờ (Glass Panel) */
+.glass-panel {
+    background-color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.8);
+    border-width: 2px;
+    border-radius: 24px;
+    padding: 32px;
+}
+
+.tilt-1 { rotate: 1deg; }
+.tilt-neg-1 { rotate: -1deg; }
+.tilt-2 { rotate: 2.5deg; }
+
+/* Nút bấm nảy (Bouncy Button) */
+.bouncy-button {
+    background-color: var(--primary);
+    color: var(--on-primary);
+    border-radius: 100px;
+    border-color: var(--primary-container);
+    border-width: 0;
+    border-bottom-width: 6px;
+    padding: 24px 64px;
+    flex-direction: row;
+    align-items: center;
+    transition: scale 0.2s, translate 0.2s, border-bottom-width 0.2s;
+}
+
+.bouncy-button:hover {
+    scale: 1.05 1.05;
+    background-color: rgba(0, 109, 65, 0.9);
+}
+
+.bouncy-button:active {
+    translate: 0 4px;
+    border-bottom-width: 0px;
+}
+
+.btn-text-large {
+    font-size: 32px;
+    -unity-font-style: bold;
+    color: white;
+}
+
+/* Lớp lồng màn hình (Overlay) */
+.settings-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--bg-color); /* Nền đặc để che khuất hoàn toàn MainMenu */
+    align-items: center;
+    justify-content: center;
+}
+
+/* Các cục màu trang trí Background */
+.ambient-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+}
+.ambient-blob {
+    position: absolute;
+    border-radius: 500px;
+}
+
+.header {
+    align-items: center;
+    margin-bottom: 48px;
+}
+
+.header-title {
+    font-size: 48px;
+    -unity-font-style: bold-and-italic;
+    color: var(--primary);
+    text-shadow: 0 4px 0 white;
+    rotate: -1deg;
+    text-transform: uppercase;
+}
+
+.header-line {
+    height: 8px;
+    width: 128px;
+    background-color: var(--primary-container);
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+/* Lưới Settings */
+.settings-grid {
+    flex-direction: row;
+    width: 100%;
+    max-width: 1200px;
+    margin-bottom: 64px;
+}
+
+.side-buddy {
+    width: 25%;
+    align-items: center;
+    justify-content: center;
+}
+
+.buddy-container {
+    width: 200px;
+    height: 200px;
+    border-radius: 32px;
+    border-width: 4px;
+    border-color: white;
+    background-color: white;
+    overflow: hidden; /* Cắt phần ảnh thừa ra khỏi viền bo góc */
+}
+
+.buddy-container-large {
+    width: 224px;
+    height: 224px;
+}
+
+.buddy-img {
+    width: 100%;
+    height: 100%;
+}
+
+.buddy-badge {
+    position: absolute;
+    bottom: -16px;
+    background-color: rgba(255,255,255,0.9);
+    padding: 4px 16px;
+    border-radius: 16px;
+    border-width: 1px;
+    border-color: white;
+}
+
+.buddy-badge-text {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: var(--primary);
+}
+
+.buddy-badge-right {
+    background-color: var(--secondary-container);
+    right: 0;
+}
+
+.buddy-badge-text-right {
+    color: var(--on-secondary-container);
+}
+
+.center-controls {
+    width: 50%;
+}
+
+.section-title-container {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.section-title {
+    font-size: 32px;
+    -unity-font-style: bold;
+    color: var(--on-surface-variant);
+    margin-left: 16px;
+}
+
+.slider-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.slider-label {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: var(--outline);
+    width: 96px;
+}
+
+.slider-track {
+    flex-grow: 1;
+    height: 24px;
+    background-color: var(--surface-container);
+    border-radius: 12px;
+}
+
+.slider-fill-music {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 75%;
+    background-color: var(--primary-container);
+    border-radius: 12px;
+}
+
+.slider-fill-sfx {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 50%;
+    background-color: var(--tertiary-container);
+    border-radius: 12px;
+}
+
+.slider-thumb {
+    position: absolute;
+    top: 50%;
+    translate: -50% -50%;
+    width: 40px; height: 40px;
+    background-color: white;
+    border-radius: 20px;
+    border-width: 4px;
+}
+.slider-thumb-music { left: 75%; border-color: var(--primary-container); }
+.slider-thumb-sfx { left: 50%; border-color: var(--tertiary-container); }
+
+.graphics-grid {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.graphics-btn {
+    width: 48%;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    border-width: 2px;
+    background-color: var(--surface-container-highest);
+    color: var(--primary);
+    border-color: var(--primary-container);
+}
+
+.graphics-btn-inactive {
+    background-color: var(--surface-container-low);
+    color: var(--outline);
+    border-color: transparent;
+}
+
+/* Corner Pills */
+.bottom-left-pill {
+    position: absolute;
+    bottom: 32px; left: 32px;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 24px;
+    border-radius: 24px;
+}
+
+.pulse-dot {
+    width: 8px; height: 8px;
+    background-color: var(--primary);
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.bottom-right-pill {
+    position: absolute;
+    bottom: 32px; right: 32px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(255,255,255,0.6);
+    padding: 12px 24px;
+    border-radius: 16px;
+    border-width: 4px;
+    border-color: rgba(255,255,255,0.8);
+    rotate: -1deg;
+}
+
+/* Tái sử dụng class icon để chờ người dùng nạp Font Asset */
+.material-icon {
+    font-size: 32px;
+}
+
+.icon-primary { color: var(--primary); }
+.icon-tertiary { color: var(--tertiary); }
+.icon-white { color: white; font-size: 36px; }
+
+.version-text { color: var(--outline-variant); }
+.gem-text { color: var(--primary); }
