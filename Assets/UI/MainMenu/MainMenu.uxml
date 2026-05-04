@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:Style src="MainMenu.uss" />
+    <ui:Template src="../Settings/SettingsMenu.uxml" name="SettingsMenu" />
+    <ui:Template src="../Credits/CreditsMenu.uxml" name="CreditsMenu" />
+    <ui:Template src="../JoinGame/JoinMenu.uxml" name="JoinMenu" />
+    
+    <!-- Màn hình chính -->
+    <ui:VisualElement class="main-container">
+
+        <!-- Scenery Placeholders -->
+        <ui:VisualElement class="scenery-container">
+            <ui:VisualElement class="cloud cloud-1" />
+            <ui:VisualElement class="cloud cloud-2" />
+            <ui:VisualElement class="cloud cloud-3" />
+            
+            <!-- Ground -->
+            <ui:VisualElement class="ground ground-left" />
+            <ui:VisualElement class="ground ground-right" />
+            
+            <!-- Stylized Trees & Bushes (Left Side) -->
+            <ui:VisualElement class="trees-left">
+                <ui:VisualElement class="tree-1">
+                    <ui:VisualElement class="tree-1-highlight" />
+                </ui:VisualElement>
+                <ui:VisualElement class="tree-2" />
+            </ui:VisualElement>
+
+            <!-- Stylized Trees & Bushes (Right Side) -->
+            <ui:VisualElement class="trees-right">
+                <ui:VisualElement class="tree-3" />
+                <ui:VisualElement class="tree-4" />
+            </ui:VisualElement>
+
+            <!-- Chubby Bear -->
+            <ui:VisualElement class="bear-container">
+                <ui:VisualElement class="bear-body">
+                    <ui:VisualElement class="bear-ear bear-ear-left" />
+                    <ui:VisualElement class="bear-ear bear-ear-right" />
+                    <ui:VisualElement class="bear-eyes">
+                        <ui:VisualElement class="bear-eye" />
+                        <ui:VisualElement class="bear-eye" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="bear-snout">
+                        <ui:VisualElement class="bear-nose" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="bear-blush bear-blush-left" />
+                    <ui:VisualElement class="bear-blush bear-blush-right" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Chubby Cat -->
+            <ui:VisualElement class="cat-container">
+                <ui:VisualElement class="cat-body">
+                    <ui:VisualElement class="cat-ear cat-ear-left" />
+                    <ui:VisualElement class="cat-ear cat-ear-right" />
+                    <ui:VisualElement class="cat-face">
+                        <ui:VisualElement class="cat-eyes">
+                            <ui:VisualElement class="cat-eye" />
+                            <ui:VisualElement class="cat-eye" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="cat-nose" />
+                        <ui:VisualElement class="cat-whiskers">
+                            <ui:VisualElement class="cat-whisker" />
+                            <ui:VisualElement class="cat-whisker" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Chubby Bird -->
+            <ui:VisualElement class="bird-container">
+                <ui:VisualElement class="bird-body">
+                    <ui:VisualElement class="bird-wing bird-wing-left" />
+                    <ui:VisualElement class="bird-wing bird-wing-right" />
+                    <ui:VisualElement class="bird-face">
+                        <ui:VisualElement class="bird-eyes">
+                            <ui:VisualElement class="bird-eye" />
+                            <ui:VisualElement class="bird-eye" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="bird-beak" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Game Logo -->
+        <ui:VisualElement class="logo-container">
+            <ui:Label text="EDGE PARTY" class="logo-text" />
+        </ui:VisualElement>
+
+        <!-- Navigation Menu -->
+        <ui:VisualElement class="nav-menu">
+            <!-- Primary Actions -->
+            <ui:VisualElement class="primary-actions">
+                <ui:Button name="HostGameBtn" class="btn btn-primary">
+                    <ui:VisualElement class="btn-highlight" />
+                    <ui:VisualElement class="btn-content">
+                        <ui:Label text="" class="material-icon" />
+                        <ui:Label text="HOST GAME" class="btn-text" />
+                    </ui:VisualElement>
+                </ui:Button>
+                
+                <ui:Button name="JoinGameBtn" class="btn btn-tertiary">
+                    <ui:VisualElement class="btn-highlight" />
+                    <ui:VisualElement class="btn-content">
+                        <ui:Label text="" class="material-icon" />
+                        <ui:Label text="JOIN GAME" class="btn-text" />
+                    </ui:VisualElement>
+                </ui:Button>
+            </ui:VisualElement>
+
+            <!-- Secondary Actions -->
+            <ui:VisualElement class="secondary-actions">
+                <ui:Button name="SettingsBtn" class="btn btn-secondary flex-col">
+                    <ui:VisualElement class="btn-highlight" />
+                    <ui:VisualElement class="btn-content-col">
+                        <ui:Label text="" class="material-icon-lg" />
+                        <ui:Label text="SETTINGS" class="btn-text-sm" />
+                    </ui:VisualElement>
+                </ui:Button>
+
+                <ui:Button name="CreditsBtn" class="btn btn-secondary flex-col">
+                    <ui:VisualElement class="btn-highlight" />
+                    <ui:VisualElement class="btn-content-col">
+                        <ui:Label text="" class="material-icon-lg" />
+                        <ui:Label text="CREDITS" class="btn-text-sm" />
+                    </ui:VisualElement>
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+    <!-- Overlay Cài Đặt (Mặc định ẩn, điều khiển qua C#) -->
+    <ui:Instance template="SettingsMenu" name="SettingsPanel" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: none;" />
+
+    <!-- Overlay Credits (Mặc định ẩn, điều khiển qua C#) -->
+    <ui:Instance template="CreditsMenu" name="CreditsPanel" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: none;" />
+
+    <!-- Overlay Join Game (Mặc định ẩn, điều khiển qua C#) -->
+    <ui:Instance template="JoinMenu" name="JoinPanel" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: none;" />
+</ui:UXML>
