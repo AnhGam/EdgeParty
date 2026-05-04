@@ -1,0 +1,48 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Style src="../USS/HUDStyle.uss" />
+    <ui:VisualElement class="hud-container">
+        <!-- Top Right Buttons -->
+        <ui:VisualElement name="TopRightBar" class="top-right-bar">
+            <ui:Button name="SoundButton" class="soft-button">
+                <ui:VisualElement name="SoundIcon" class="icon-sound" />
+            </ui:Button>
+            <ui:Button name="SettingsButton" class="soft-button">
+                <ui:VisualElement name="SettingsIcon" class="icon-settings" />
+            </ui:Button>
+            <ui:Button name="ExitButton" class="soft-button">
+                <ui:VisualElement name="ExitIcon" class="icon-exit" />
+            </ui:Button>
+        </ui:VisualElement>
+
+        <!-- Right Side Instructions -->
+        <ui:VisualElement name="InstructionPanel" class="instruction-panel">
+            <ui:VisualElement class="instruction-item">
+                <ui:Label text="RUN" class="instruction-label" />
+                <ui:Label text="SHIFT" class="key-cap" />
+            </ui:VisualElement>
+            <ui:VisualElement class="instruction-item">
+                <ui:Label text="PUNCH" class="instruction-label" />
+                <ui:Label text="L-CLICK" class="key-cap" />
+            </ui:VisualElement>
+            <ui:VisualElement class="instruction-item">
+                <ui:Label text="GRAB" class="instruction-label" />
+                <ui:Label text="HOLD L-CLICK" class="key-cap" style="padding-left: 12px; padding-right: 12px;" />
+            </ui:VisualElement>
+            <ui:VisualElement class="instruction-item">
+                <ui:Label text="JUMP" class="instruction-label" />
+                <ui:Label text="SPACE" class="key-cap" style="width: 80px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Dynamic Bottom Area -->
+        <ui:VisualElement name="BottomArea" class="bottom-center-area">
+            <ui:VisualElement name="DynamicBar" class="dynamic-bar">
+                <!-- Populated via script -->
+                <ui:Label text="CTRL" class="key-cap" />
+                <ui:Label text="J" class="key-cap" />
+                <ui:Label text="F" class="key-cap" />
+                <ui:Label text="BOOST" class="instruction-label" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
