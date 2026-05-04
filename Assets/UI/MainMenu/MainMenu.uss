@@ -1,0 +1,222 @@
+/* Color Palette from Tailwind */
+:root {
+    --bg-color: #f8f9fa;
+    
+    /* Primary */
+    --primary-container: #60d394;
+    --on-primary-container: #005834;
+    --primary: #006d41;
+
+    /* Tertiary */
+    --tertiary-container: #81c7e8;
+    --on-tertiary-container: #00536d;
+
+    /* Secondary / Surface */
+    --surface-container-high: #e7e8e9;
+    --on-surface: #191c1d;
+    --squishy-shadow-secondary: #762f20;
+}
+
+.main-container {
+    flex-grow: 1;
+    background-color: var(--bg-color);
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    overflow: hidden;
+}
+
+.logo-container {
+    margin-bottom: 64px;
+    rotate: -2deg;
+    scale: 1.1 1.1;
+}
+
+.logo-text {
+    font-size: 80px;
+    -unity-font-style: bold-and-italic;
+    color: var(--primary);
+    text-shadow: 0px 10px 0px rgba(0, 88, 52, 1);
+    letter-spacing: -2px;
+}
+
+.nav-menu {
+    flex-direction: column;
+    width: 100%;
+    max-width: 600px;
+    align-items: stretch;
+}
+
+.primary-actions {
+    flex-direction: column;
+    margin-bottom: 24px;
+}
+
+.secondary-actions {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.secondary-actions .btn {
+    width: 48%;
+}
+
+.btn {
+    border-radius: 16px;
+    border-width: 0px;
+    border-bottom-width: 12px;
+    padding: 24px 40px;
+    margin-bottom: 24px;
+    transition: scale 0.15s, rotate 0.15s, translate 0.1s;
+    overflow: hidden;
+}
+
+.btn:hover {
+    scale: 1.05 1.05;
+}
+
+.btn:active {
+    translate: 0px 8px;
+    border-bottom-width: 4px;
+}
+
+.btn-primary {
+    background-color: var(--primary-container);
+    border-bottom-color: var(--on-primary-container);
+}
+
+.btn-primary:hover {
+    rotate: -1deg;
+}
+
+.btn-tertiary {
+    background-color: var(--tertiary-container);
+    border-bottom-color: var(--on-tertiary-container);
+}
+
+.btn-tertiary:hover {
+    rotate: 1deg;
+}
+
+.btn-secondary {
+    background-color: var(--surface-container-high);
+    border-bottom-color: var(--squishy-shadow-secondary);
+    border-bottom-width: 10px;
+}
+
+.btn-highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+
+.btn-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-content-col {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-text {
+    font-size: 32px;
+    -unity-font-style: bold;
+    color: var(--on-primary-container);
+    margin-left: 24px;
+}
+
+.btn-tertiary .btn-text {
+    color: var(--on-tertiary-container);
+}
+
+.btn-secondary .btn-text-sm {
+    font-size: 24px;
+    -unity-font-style: bold;
+    color: var(--on-surface);
+    margin-top: 12px;
+}
+
+/* Material Icons */
+.material-icon {
+    font-size: 48px;
+    color: var(--on-primary-container);
+}
+.btn-tertiary .material-icon {
+    color: var(--on-tertiary-container);
+}
+.material-icon-lg {
+    font-size: 48px;
+    color: var(--on-surface);
+}
+
+/* --- SCENERY & CSS ART --- */
+.scenery-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+
+/* Clouds */
+.cloud { position: absolute; background-color: rgba(255, 255, 255, 0.6); border-radius: 100px; }
+.cloud-1 { top: 10%; left: 10%; width: 240px; height: 120px; }
+.cloud-2 { top: 25%; right: 20%; width: 200px; height: 100px; opacity: 0.4; }
+.cloud-3 { top: 30%; left: 33%; width: 280px; height: 140px; opacity: 0.3; }
+
+/* Ground Glows */
+.ground { position: absolute; bottom: -10%; width: 40%; height: 40%; border-radius: 500px; }
+.ground-left { left: -5%; background-color: rgba(0, 109, 65, 0.1); }
+.ground-right { right: -5%; background-color: rgba(13, 102, 131, 0.1); }
+
+/* Trees Left */
+.trees-left { position: absolute; bottom: 0; left: 32px; flex-direction: row; align-items: flex-end; scale: 1.25 1.25; transform-origin: bottom left; }
+.tree-1 { width: 96px; height: 192px; background-color: var(--primary); border-radius: 100px; }
+.tree-1-highlight { position: absolute; top: 16px; left: 16px; width: 48px; height: 80px; background-color: rgba(96, 211, 148, 0.3); border-radius: 100px; }
+.tree-2 { width: 128px; height: 128px; background-color: var(--primary-container); border-radius: 100px; margin-left: -32px; margin-bottom: 8px; }
+
+/* Trees Right */
+.trees-right { position: absolute; bottom: 0; right: 32px; flex-direction: row; align-items: flex-end; scale: 1.25 1.25; transform-origin: bottom right; }
+.tree-3 { width: 160px; height: 160px; background-color: #fc9983; border-radius: 100px; margin-bottom: 16px; }
+.tree-4 { width: 80px; height: 224px; background-color: #964736; border-radius: 100px; margin-left: -64px; }
+
+/* Chubby Bear */
+.bear-container { position: absolute; bottom: 25%; left: 64px; }
+.bear-body { position: relative; width: 192px; height: 192px; background-color: #8B4513; border-radius: 100px; align-items: center; justify-content: center; border-bottom-width: 8px; border-bottom-color: rgba(0,0,0,0.2); }
+.bear-ear { position: absolute; width: 48px; height: 48px; background-color: #8B4513; border-radius: 100px; border-bottom-width: 4px; border-bottom-color: rgba(0,0,0,0.1); top: -8px; }
+.bear-ear-left { left: -8px; }
+.bear-ear-right { right: -8px; }
+.bear-eyes { flex-direction: row; justify-content: space-between; width: 64px; margin-top: 8px; }
+.bear-eye { width: 12px; height: 12px; background-color: black; border-radius: 6px; }
+.bear-snout { width: 40px; height: 24px; background-color: rgba(255,255,255,0.8); border-radius: 12px; margin-top: 8px; align-items: center; justify-content: center; }
+.bear-nose { width: 12px; height: 8px; background-color: black; border-radius: 4px; margin-bottom: 4px; }
+.bear-blush { position: absolute; top: 50%; width: 16px; height: 8px; background-color: rgba(244, 114, 182, 0.4); border-radius: 4px; }
+.bear-blush-left { left: 24px; }
+.bear-blush-right { right: 24px; }
+
+/* Chubby Cat */
+.cat-container { position: absolute; bottom: 33%; right: 48px; }
+.cat-body { position: relative; width: 160px; height: 160px; background-color: #E0E0E0; border-radius: 100px; border-bottom-width: 8px; border-bottom-color: rgba(0,0,0,0.1); }
+.cat-ear { position: absolute; width: 48px; height: 48px; background-color: #E0E0E0; border-radius: 4px; rotate: 45deg; top: -16px; }
+.cat-ear-left { left: 24px; }
+.cat-ear-right { right: 24px; }
+.cat-face { position: absolute; left: 0; right: 0; top: 0; bottom: 0; align-items: center; justify-content: center; padding-top: 16px; }
+.cat-eyes { flex-direction: row; justify-content: space-between; width: 72px; }
+.cat-eye { width: 12px; height: 12px; background-color: black; border-radius: 6px; }
+.cat-nose { width: 8px; height: 4px; background-color: #f9a8d4; border-radius: 2px; margin-top: 12px; }
+.cat-whiskers { flex-direction: row; justify-content: space-between; width: 64px; margin-top: 4px; opacity: 0.2; }
+.cat-whisker { width: 24px; height: 2px; background-color: black; }
+
+/* Chubby Bird */
+.bird-container { position: absolute; bottom: 80px; right: 25%; }
+.bird-body { position: relative; width: 112px; height: 112px; background-color: var(--tertiary-container); border-radius: 60px; border-bottom-width: 6px; border-bottom-color: rgba(0,0,0,0.1); align-items: center; justify-content: center; }
+.bird-wing { position: absolute; top: 40px; width: 32px; height: 32px; background-color: var(--tertiary-container); border-radius: 16px; }
+.bird-wing-left { left: -16px; rotate: -20deg; }
+.bird-wing-right { right: -16px; rotate: 20deg; }
+.bird-face { align-items: center; }
+.bird-eyes { flex-direction: row; justify-content: space-between; width: 32px; margin-bottom: 4px; }
+.bird-eye { width: 8px; height: 8px; background-color: black; border-radius: 4px; }
+.bird-beak { width: 16px; height: 16px; background-color: #fb923c; border-radius: 4px; rotate: 45deg; }
