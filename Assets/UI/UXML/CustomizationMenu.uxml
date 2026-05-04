@@ -1,0 +1,36 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="../USS/HUDStyle.uss" />
+    <Style src="../USS/CustomizationStyle.uss" />
+    
+    <ui:VisualElement name="ScreenRoot" class="screen-root">
+        <ui:VisualElement name="MainContainer" class="custom-panel">
+            <!-- Header -->
+            <ui:VisualElement class="custom-header">
+                <ui:Button name="BackButton" class="back-button" />
+                <ui:Label text="CUSTOMIZE CHARACTER" class="header-title" />
+            </ui:VisualElement>
+
+            <!-- Middle Section -->
+            <ui:VisualElement class="middle-section">
+                <!-- Character Preview Area -->
+                <ui:VisualElement name="PreviewContainer" class="preview-container" />
+
+                <!-- Category Selection (Now on the right) -->
+                <ui:VisualElement class="category-grid">
+                    <ui:Button name="BtnHats" class="category-button selected" text="HATS" />
+                    <ui:Button name="BtnGlasses" class="category-button" text="GLASSES" />
+                    <ui:Button name="BtnNeck" class="category-button" text="NECK" />
+                    <ui:Button name="BtnFaces" class="category-button" text="FACES" />
+                    <ui:Button name="BtnColors" class="category-button" text="COLORS" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Item Selection Grid -->
+            <ui:VisualElement class="item-selection-area">
+                <ui:ScrollView name="ItemScroll" class="item-scroll" mode="Horizontal">
+                    <ui:VisualElement name="ItemGrid" class="item-grid" />
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
