@@ -1,0 +1,212 @@
+.screen-root {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.custom-panel {
+    width: 900px;
+    height: 700px;
+    background-image: url('../Textures/UI_Panel_Bg.png');
+    border-radius: 60px;
+    border-width: 12px;
+    border-color: #ffffff;
+    padding: 35px;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.custom-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.back-button {
+    width: 70px;
+    height: 70px;
+    background-image: url('../Textures/Icon_Back_Cute.png');
+    background-color: transparent;
+    border-width: 0;
+    -unity-background-scale-mode: scale-to-fit;
+    margin-right: 25px;
+    transition-duration: 0.2s;
+}
+
+.back-button:hover {
+    scale: 1.15;
+    -unity-background-image-tint-color: #fff9db;
+}
+
+.header-title {
+    font-size: 42px;
+    -unity-font-style: bold;
+    color: #5d5d5d;
+    letter-spacing: 3px;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: #ffffff;
+}
+
+.middle-section {
+    flex-direction: row;
+    height: 336px;
+    margin-bottom: 26px; /* 20px base + 6px extra offset */
+}
+
+.preview-container {
+    width: 300px; 
+    height: 336px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 40px;
+    align-items: center;
+    justify-content: center;
+    border-width: 6px;
+    border-color: #ffffff;
+    overflow: hidden;
+}
+
+.preview-label {
+    position: absolute;
+    top: 20px;
+    color: #adb5bd;
+    font-size: 18px;
+    letter-spacing: 5px;
+}
+
+.category-grid {
+    flex-grow: 1;
+    margin-left: 40px;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.category-button {
+    width: 100%;
+    height: 60px;
+    border-radius: 30px;
+    background-color: #ffffff;
+    border-width: 5px;
+    border-color: #f1f3f5;
+    color: #777777;
+    font-size: 20px;
+    -unity-font-style: bold;
+    transition-duration: 0.3s;
+}
+
+.category-button:hover {
+    scale: 1.05;
+    border-color: #ffcc33;
+}
+
+.category-button.selected {
+    background-color: #ffcc33;
+    border-color: #ff9900;
+    color: #ffffff;
+}
+
+.item-selection-area {
+    height: 180px;
+    background-color: #ffffff;
+    border-radius: 30px;
+    padding: 15px;
+    border-width: 4px;
+    border-color: #dee2e6;
+}
+
+.item-scroll {
+    flex-grow: 1;
+}
+
+/* Cute Yellow Scrollbar Styling */
+.item-scroll Scroller {
+    background-color: transparent;
+    border-width: 0;
+}
+
+/* Hide Vertical Scroll Entirely */
+.item-scroll Scroller.unity-scroll-view__vertical-scroller {
+    display: none;
+    opacity: 0;
+    width: 0;
+}
+
+/* Horizontal Scroll Bar Customization */
+.item-scroll Scroller.unity-scroll-view__horizontal-scroller {
+    height: 16px;
+    margin-top: 10px;
+}
+
+.item-scroll #unity-slider {
+    margin: 0;
+}
+
+.item-scroll #unity-tracker {
+    background-color: #f1f3f5;
+    border-radius: 8px;
+    border-width: 0;
+}
+
+.item-scroll #unity-dragger {
+    background-color: #ffcc33;
+    border-radius: 8px;
+    width: 60px;
+    height: 12px;
+    border-width: 0;
+    margin-top: 2px;
+}
+
+.item-scroll #unity-dragger:hover {
+    background-color: #ffd43b;
+    scale: 1.05;
+}
+
+/* Hide arrow buttons */
+.item-scroll .unity-scroller__low-button,
+.item-scroll .unity-scroller__high-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.item-grid {
+    flex-direction: row;
+    padding: 5px;
+}
+
+.item-card {
+    width: 120px;
+    height: 120px;
+    background-color: #f1f3f5;
+    margin: 5px;
+    border-radius: 20px;
+    border-width: 4px;
+    border-color: transparent;
+    transition-duration: 0.2s;
+}
+
+.item-card:hover {
+    scale: 1.1;
+    border-color: #ffcc33;
+    background-color: #fff9db;
+}
+
+.item-icon {
+    flex-grow: 1;
+    margin: 15px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.item-card:active {
+    scale: 0.95;
+    background-color: #ffcc33;
+}
+
+.item-label {
+    flex-grow: 1;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    color: #555555;
+    font-size: 14px;
+    -unity-font-style: bold;
+    padding: 10px;
+}
