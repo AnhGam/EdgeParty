@@ -1,75 +1,102 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Unity.Netcode;
 using EdgeParty.Gameplay.Camera;
 
 namespace EdgeParty.Gameplay.Character
 {
+    /// <summary>
+    /// The main coordinator for the player character.
+    /// Orchestrates input, physics movement, and animation states.
+    /// </summary>
     public class PlayerController : NetworkBehaviour
     {
-        [Header("References")]
-        public Rigidbody pelvisRigidbody;
-        public Transform ghostRoot;
-        public Transform ghostPelvis;
-        public Animator ghostAnimator;
+        [Header("Components")]
+        public CharacterMotor motor;
+        public CharacterAnimationController animController;
+        public PlayerInputHandler inputHandler;
 
-        [Header("Movement")]
-        public float walkForce = 75f;
-        public float runForce = 125f;
-        public float jumpImpulse = 50f;
-        public float dashImpulse = 100f;
-        public float rotationSpeed = 5f;
-        [Range(0f, 1f)] public float airControlFactor = 0.15f;
+        [Header("Legacy References (Hidden - Used by Editor Tools)")]
+        [HideInInspector] public Rigidbody pelvisRigidbody;
+        [HideInInspector] public Transform ghostRoot;
+        [HideInInspector] public Transform ghostPelvis;
+        [HideInInspector] public Animator ghostAnimator;
 
-        [Header("Bone Category Strength")]
-        [Range(1f, 100f)] public float legMultiplier = 1f;  
-        [Range(1f, 100f)] public float armMultiplier = 1f;
-        [Range(1f, 100f)] public float torsoMultiplier = 1f;
-        [Range(1f, 100f)] public float headMultiplier = 1f;
+        [Header("Bone Strength Settings (Networked)")]
+        public NetworkVariable<float> legMultiplier = new NetworkVariable<float>(1f);
+        public NetworkVariable<float> armMultiplier = new NetworkVariable<float>(1f);
+        public NetworkVariable<float> torsoMultiplier = new NetworkVariable<float>(1f);
+        public NetworkVariable<float> headMultiplier = new NetworkVariable<float>(1f);
+        public NetworkVariable<float> tailMultiplier = new NetworkVariable<float>(1f);
 
-        [Header("Animation States")]
-        public string noneState = "None";
-        public string idleState = "IdleA";
-        public string walkState = "Walk";
-        public string runState = "Run";
-        public string jumpState = "Jump";
-        public string dashState = "Dash";
+        [Header("Settings")]
+        public float combatBoostMultiplier = 5f;
 
-        private Transform _camTransform;
-        
-        // SERVER AUTHORITY CACHE
-        private Vector3 _serverMoveDir;
-        private bool _serverIsRunning;
-        private Vector3 _lastFacingDirection = Vector3.forward;
-        private bool _isPlayingOneShot;
-        private float _oneShotTimer;
-        private string _currentState = "";
-        
         private RagdollBoneFollower[] _followers;
-        private float _prevLegMul, _prevArmMul, _prevTorsoMul, _prevHeadMul;
+
+        private void OnValidate()
+        {
+            SyncLegacyReferences();
+        }
 
         private void Awake()
         {
-            if (global::UnityEngine.Camera.main != null)
-                _camTransform = global::UnityEngine.Camera.main.transform;
-                
             _followers = GetComponentsInChildren<RagdollBoneFollower>();
+            
+            // Deep search: Search from the root of this player hierarchy
+            Transform root = transform.root;
+            if (motor == null) motor = root.GetComponentInChildren<CharacterMotor>();
+            if (animController == null) animController = root.GetComponentInChildren<CharacterAnimationController>();
+            if (inputHandler == null) inputHandler = root.GetComponentInChildren<PlayerInputHandler>();
+            
+            // Search for legacy references globally in this prefab hierarchy if missing
+            if (ghostRoot == null) ghostRoot = root.Find("Chibi_Monkey_00_Ghost");
+            if (pelvisRigidbody == null)
+            {
+                var allRbs = root.GetComponentsInChildren<Rigidbody>();
+                foreach (var rb in allRbs) if (rb.name.ToLower().Contains("pelvis")) { pelvisRigidbody = rb; break; }
+            }
 
-            if (ghostAnimator != null)
-                ghostAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-
-            if (ghostRoot != null)
-                _lastFacingDirection = ghostRoot.forward;
+            SyncLegacyReferences();
+            IgnoreInternalCollisions();
         }
 
-        private void Start()
+        private void IgnoreInternalCollisions()
         {
-            ApplyBoneMultipliers();
-
-            bool isOffline = NetworkManager.Singleton == null || (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer);
-            if (isOffline)
+            var colliders = transform.root.GetComponentsInChildren<Collider>();
+            for (int i = 0; i < colliders.Length; i++)
             {
-                AssignCameraTarget();
+                for (int j = i + 1; j < colliders.Length; j++)
+                {
+                    Physics.IgnoreCollision(colliders[i], colliders[j]);
+                }
+            }
+        }
+
+        private void SyncLegacyReferences()
+        {
+            if (motor != null)
+            {
+                // Only sync if these are NOT null, to prevent overwriting inspector values with null
+                if (pelvisRigidbody != null) motor.pelvisRigidbody = pelvisRigidbody;
+                if (ghostRoot != null) motor.ghostRoot = ghostRoot;
+                if (ghostPelvis != null) motor.ghostPelvis = ghostPelvis;
+                
+                // Final deep search fallback for motor's pelvis
+                if (motor.pelvisRigidbody == null)
+                {
+                    var allRbs = transform.root.GetComponentsInChildren<Rigidbody>();
+                    foreach (var rb in allRbs) if (rb.name.ToLower().Contains("pelvis")) { motor.pelvisRigidbody = rb; break; }
+                }
+            }
+
+            if (animController != null)
+            {
+                if (ghostAnimator != null) animController.ghostAnimator = ghostAnimator;
+                if (ghostRoot != null) animController.ghostRoot = ghostRoot;
+                
+                // Final fallback for animController's animator if still null
+                if (animController.ghostAnimator == null)
+                    animController.ghostAnimator = GetComponentInChildren<Animator>();
             }
         }
 
@@ -79,246 +106,127 @@ namespace EdgeParty.Gameplay.Character
             {
                 AssignCameraTarget();
             }
+
+            // Đăng ký sự kiện thay đổi giá trị cho tất cả các xương
+            legMultiplier.OnValueChanged += OnMultiplierChanged;
+            armMultiplier.OnValueChanged += OnMultiplierChanged;
+            torsoMultiplier.OnValueChanged += OnMultiplierChanged;
+            headMultiplier.OnValueChanged += OnMultiplierChanged;
+            tailMultiplier.OnValueChanged += OnMultiplierChanged;
+
+            // Cập nhật lần đầu khi spawn
+            ApplyBoneMultipliers();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            legMultiplier.OnValueChanged -= OnMultiplierChanged;
+            armMultiplier.OnValueChanged -= OnMultiplierChanged;
+            torsoMultiplier.OnValueChanged -= OnMultiplierChanged;
+            headMultiplier.OnValueChanged -= OnMultiplierChanged;
+            tailMultiplier.OnValueChanged -= OnMultiplierChanged;
+        }
+
+        private void OnMultiplierChanged(float previousValue, float newValue)
+        {
+            ApplyBoneMultipliers();
         }
 
         private void AssignCameraTarget()
         {
             var cam = UnityEngine.Object.FindFirstObjectByType<ThirdPersonCamera>();
-            if (cam != null)
+            if (cam != null && motor != null)
             {
-                cam.target = pelvisRigidbody != null ? pelvisRigidbody.transform : transform;
+                cam.target = motor.pelvisRigidbody != null ? motor.pelvisRigidbody.transform : transform;
             }
         }
 
         private void Update()
         {
-            // 1. CHỈ CHỦ NHÂN (Hoặc Offline) mới được đọc bàn phím
-            bool isOffline = NetworkManager.Singleton != null && !NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer;
-            bool isLocalController = isOffline || IsOwner;
-
-            if (isLocalController)
+            if (IsServerActive())
             {
-                ReadAndSendInput(isOffline);
-            }
-
-            // 2. CHỈ TRÊN SERVER (Hoặc Offline) mới chạy Animation và tính hướng
-            bool canSimulate = isOffline || IsServer;
-            if (!canSimulate || ghostAnimator == null) return;
-
-            SimulateServerUpdate();
-        }
-
-        private void FixedUpdate()
-        {
-            bool isOffline = NetworkManager.Singleton != null && !NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer;
-            bool canSimulate = isOffline || IsServer;
-            if (!canSimulate) return;
-
-            SimulateServerPhysics();
-        }
-
-        // ================= INPUT (CHẠY TRÊN CLIENT/OWNER) =================
-        private void ReadAndSendInput(bool isOffline)
-        {
-            var keyboard = Keyboard.current;
-            if (keyboard == null) return;
-
-            Vector2 input = Vector2.zero;
-            if (keyboard.wKey.isPressed) input.y += 1;
-            if (keyboard.sKey.isPressed) input.y -= 1;
-            if (keyboard.aKey.isPressed) input.x -= 1;
-            if (keyboard.dKey.isPressed) input.x += 1;
-
-            bool isRunning = keyboard.leftShiftKey.isPressed;
-            Vector3 worldMoveDir = GetCameraRelativeDirection(input);
-
-            if (isOffline)
-            {
-                _serverMoveDir = worldMoveDir;
-                _serverIsRunning = isRunning;
-                if (keyboard.spaceKey.wasPressedThisFrame) TriggerJump(worldMoveDir);
-                else if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) TriggerDash();
-            }
-            else
-            {
-                // Bắn Input lên Server liên tục
-                SubmitInputServerRpc(worldMoveDir, isRunning);
-
-                // Bắn Trigger riêng lẻ để không bị hụt frame
-                if (keyboard.spaceKey.wasPressedThisFrame) TriggerJumpServerRpc(worldMoveDir);
-                else if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) TriggerDashServerRpc();
+                UpdateAnimatorState();
+                ApplyBoneMultipliers(); // Continuous update to handle combat boost
             }
         }
 
-        private Vector3 GetCameraRelativeDirection(Vector2 input)
+        private bool IsServerActive()
         {
-            if (_camTransform == null) return Vector3.zero;
-            Vector3 camForward = Vector3.ProjectOnPlane(_camTransform.forward, Vector3.up).normalized;
-            Vector3 camRight = Vector3.ProjectOnPlane(_camTransform.right, Vector3.up).normalized;
-            return (camForward * input.y + camRight * input.x).normalized;
+            return IsServer || NetworkManager.Singleton == null || (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer);
         }
 
-        // ================= RPCs (TRUYỀN INPUT LÊN SERVER) =================
-        [ServerRpc]
-        private void SubmitInputServerRpc(Vector3 moveDir, bool isRunning)
+        private void UpdateAnimatorState()
         {
-            _serverMoveDir = moveDir;
-            _serverIsRunning = isRunning;
-        }
-
-        [ServerRpc]
-        private void TriggerJumpServerRpc(Vector3 moveDir)
-        {
-            TriggerJump(moveDir);
-        }
-
-        [ServerRpc]
-        private void TriggerDashServerRpc()
-        {
-            TriggerDash();
-        }
-
-        // ================= SIMULATION (CHẠY TRÊN SERVER) =================
-        private void TriggerJump(Vector3 moveDir)
-        {
-            PlayState(jumpState, true);
-            _isPlayingOneShot = true;
-            _oneShotTimer = 0f;
-            _serverMoveDir = Vector3.zero;
-
-            if (pelvisRigidbody != null)
+            if (motor != null && animController != null)
             {
-                var vel = pelvisRigidbody.linearVelocity;
-                pelvisRigidbody.linearVelocity = new Vector3(vel.x * 0.3f, vel.y, vel.z * 0.3f);
-                pelvisRigidbody.AddForce(Vector3.up * jumpImpulse, ForceMode.Impulse);
-                
-                // Trợ lực nhỏ theo hướng camera để nhảy vọt tới
-                if (moveDir.sqrMagnitude > 0.01f)
-                    pelvisRigidbody.AddForce(moveDir * (jumpImpulse * 0.2f), ForceMode.Impulse);
+                motor.SetOneShotActive(animController.IsPlayingOneShot);
             }
         }
 
-        private void TriggerDash()
+        // ================= HOOKS FOR INPUT HANDLER (SERVER SIDE) =================
+        
+        public void OnInputReceived_Server(Vector3 moveDir, bool isRunning)
         {
-            PlayState(dashState, true);
-            _isPlayingOneShot = true;
-            _oneShotTimer = 0f;
-            _serverMoveDir = Vector3.zero;
+            if (motor != null) motor.SetMovementInput(moveDir, isRunning);
+            if (animController != null) animController.SetMovementInput(moveDir, isRunning);
+        }
 
-            if (pelvisRigidbody != null && ghostRoot != null)
+        public void OnJumpTriggered_Server(Vector3 moveDir)
+        {
+            if (motor != null && animController != null && motor.IsGrounded)
             {
-                Vector3 dashDir = ghostRoot.forward;
-                pelvisRigidbody.AddForce(dashDir * dashImpulse, ForceMode.Impulse);
+                motor.ApplyJump(moveDir);
+                animController.TriggerJump();
             }
         }
 
-        private void SimulateServerUpdate()
+        public void OnDashTriggered_Server()
         {
-            if (_prevLegMul != legMultiplier || _prevArmMul != armMultiplier ||
-                _prevTorsoMul != torsoMultiplier || _prevHeadMul != headMultiplier)
+            if (motor != null && animController != null && animController.CanDash())
             {
-                ApplyBoneMultipliers();
-            }
-
-            bool hasMovement = _serverMoveDir.sqrMagnitude > 0.01f;
-
-            if (_isPlayingOneShot)
-            {
-                _oneShotTimer += Time.deltaTime;
-                var info = ghostAnimator.GetCurrentAnimatorStateInfo(0);
-                
-                if ((info.IsName(_currentState) && info.normalizedTime >= 0.95f) || _oneShotTimer > 1.5f) 
-                {
-                    _isPlayingOneShot = false;
-                }
-                else 
-                {
-                    if (hasMovement)
-                    {
-                        _lastFacingDirection = _serverMoveDir;
-                    }
-                    return; 
-                }
-            }
-
-            if (hasMovement)
-            {
-                ApplyBoneMultipliers(); 
-                _lastFacingDirection = _serverMoveDir;
-
-                PlayState(_serverIsRunning ? runState : walkState);
-
-                var info = ghostAnimator.GetCurrentAnimatorStateInfo(0);
-                if (info.IsName(_currentState) && info.normalizedTime >= 1f)
-                {
-                    PlayState(_currentState, true);
-                }
-            }
-            else
-            {
-                _serverMoveDir = Vector3.zero;
-                ApplyBoneMultipliers();
-                PlayState(noneState); 
+                motor.ApplyDash();
+                animController.TriggerDash();
             }
         }
 
-        private void SimulateServerPhysics()
+        public void OnAttackTriggered_Server()
         {
-            if (pelvisRigidbody != null && ghostPelvis != null)
+            if (animController != null && animController.CanAttack())
             {
-                if (ghostRoot != null && _lastFacingDirection.sqrMagnitude > 0.001f)
-                {
-                    ghostRoot.rotation = Quaternion.LookRotation(_lastFacingDirection, Vector3.up);
-                }
-
-                Quaternion targetRot = ghostPelvis.rotation;
-                Quaternion deltaRot = targetRot * Quaternion.Inverse(pelvisRigidbody.rotation);
-
-                deltaRot.ToAngleAxis(out float angle, out Vector3 axis);
-                if (angle > 180f) angle -= 360f;
-
-                if (Mathf.Abs(angle) > 0.01f)
-                {
-                    Vector3 torque = axis.normalized * (angle * rotationSpeed);
-                    pelvisRigidbody.AddTorque(torque, ForceMode.Acceleration);
-                }
+                animController.TriggerAttack();
             }
-
-            if (pelvisRigidbody == null || _serverMoveDir.sqrMagnitude < 0.01f) return;
-
-            float force = _serverIsRunning ? runForce : walkForce;
-
-            if (_isPlayingOneShot)
-                force *= airControlFactor;
-
-            pelvisRigidbody.AddForce(_serverMoveDir * force, ForceMode.Acceleration);
         }
 
-        private void PlayState(string stateName, bool restart = false)
+        public void SetRagdollStrength(float factor)
         {
-            if (ghostAnimator == null) return;
-            if (!restart && _currentState == stateName) return;
-            ghostAnimator.Play(stateName, 0, restart ? 0f : -1f);
-            _currentState = stateName;
+            if (!IsServer) return;
+            legMultiplier.Value = factor;
+            armMultiplier.Value = factor;
+            torsoMultiplier.Value = factor;
+            headMultiplier.Value = factor;
         }
 
         private void ApplyBoneMultipliers()
         {
             if (_followers == null) return;
+            
+            float armBoost = 1f;
+            if (animController != null && animController.IsAttacking)
+            {
+                armBoost = combatBoostMultiplier;
+            }
+
             foreach (var f in _followers)
             {
                 switch (f.category)
                 {
-                    case BoneCategory.Leg: f.SetSpringMultiplier(legMultiplier); break;
-                    case BoneCategory.Arm: f.SetSpringMultiplier(armMultiplier); break;
-                    case BoneCategory.Torso: f.SetSpringMultiplier(torsoMultiplier); break;
-                    case BoneCategory.Head: f.SetSpringMultiplier(headMultiplier); break;
+                    case BoneCategory.Leg: f.SetSpringMultiplier(legMultiplier.Value); break;
+                    case BoneCategory.Arm: f.SetSpringMultiplier(armMultiplier.Value * armBoost); break;
+                    case BoneCategory.Torso: f.SetSpringMultiplier(torsoMultiplier.Value); break;
+                    case BoneCategory.Head: f.SetSpringMultiplier(headMultiplier.Value); break;
+                    case BoneCategory.Tail: f.SetSpringMultiplier(tailMultiplier.Value); break;
                 }
             }
-            _prevLegMul = legMultiplier;
-            _prevArmMul = armMultiplier;
-            _prevTorsoMul = torsoMultiplier;
-            _prevHeadMul = headMultiplier;
         }
     }
 }

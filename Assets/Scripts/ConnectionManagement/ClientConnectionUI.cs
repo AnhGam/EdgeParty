@@ -10,8 +10,6 @@ namespace EdgeParty.ConnectionManagement
     /// </summary>
     public class ClientConnectionUI : MonoBehaviour
     {
-        private string _serverIp = "127.0.0.1";
-        private string _serverPort = "7777";
         private string _statusMsg = "";
 
         private void Start()
@@ -30,6 +28,21 @@ namespace EdgeParty.ConnectionManagement
             {
                 NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
                 NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
+                
+                // BIỆN PHÁP AN TOÀN: Nếu tắt UI mà manager vẫn chạy, ép shutdown để nhả Port
+                if (NetworkManager.Singleton.IsListening)
+                {
+                    NetworkManager.Singleton.Shutdown();
+                }
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            // Đảm bảo nhả Port 7777 về cho Windows khi tắt App/Editor
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                NetworkManager.Singleton.Shutdown();
             }
         }
 
@@ -66,49 +79,54 @@ namespace EdgeParty.ConnectionManagement
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("IP:", GUILayout.Width(50));
-                _serverIp = GUILayout.TextField(_serverIp);
+                string dummyIp = "127.0.0.1";
+                GUILayout.TextField(dummyIp);
                 GUILayout.EndHorizontal();
 
-                // Lưu ý: Người chơi PHẢI nhập External Port lấy từ Edgegap
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Port:", GUILayout.Width(50));
-                _serverPort = GUILayout.TextField(_serverPort);
+                string dummyPort = "7777";
+                GUILayout.TextField(dummyPort);
                 GUILayout.EndHorizontal();
 
-                if (GUILayout.Button("CONNECT TO SERVER (CLIENT)"))
+                if (GUILayout.Button("CONNECT TO LOCALHOST (TEST)"))
                 {
-                    if (ushort.TryParse(_serverPort, out ushort port))
+                    utp.SetConnectionData("127.0.0.1", 7777);
+                    _statusMsg = "Connecting to localhost...";
+                    
+                    if (!networkManager.StartClient())
                     {
-                        utp.SetConnectionData(_serverIp, port);
-                        _statusMsg = "Connecting...";
-                        Debug.Log($"[ClientConnectionUI] Attempting connection to {_serverIp}:{port}...");
-                        
-                        if (!networkManager.StartClient())
-                        {
-                            _statusMsg = "Failed to start client!";
-                            Debug.LogError("[ClientConnectionUI] StartClient() returned false.");
-                        }
-                    }
-                    else
-                    {
-                        _statusMsg = "Invalid Port!";
-                        Debug.LogError("[ClientConnectionUI] Invalid Port number!");
+                        _statusMsg = "Failed to start client!";
+                        Debug.LogError("[ClientConnectionUI] StartClient() returned false.");
                     }
                 }
 
-                if (GUILayout.Button("START HOST (SERVER + CLIENT) - FOR LOCAL TEST"))
+                if (GUILayout.Button("FIND MATCH (EDGEGAP)"))
                 {
-                    if (ushort.TryParse(_serverPort, out ushort port))
+                    if (MatchmakingManager.Instance != null)
                     {
-                        utp.SetConnectionData(_serverIp, port);
-                        if (networkManager.StartHost())
-                        {
-                            _statusMsg = "Hosting...";
-                        }
-                        else
-                        {
-                            _statusMsg = "Failed to start host!";
-                        }
+                        MatchmakingManager.Instance.StartMatchmakingFlow();
+                        _statusMsg = "Matchmaking...";
+                    }
+                    else
+                    {
+                        _statusMsg = "MatchmakingManager not found!";
+                    }
+                }
+
+                if (GUILayout.Button("START HOST (FOR LOCAL TEST)"))
+                {
+                    // BIỆN PHÁP AN TOÀN: Nếu đang chạy dở cái gì đó, ép Shutdown trước khi mở Port mới
+                    if (networkManager.IsListening) networkManager.Shutdown();
+
+                    utp.SetConnectionData("127.0.0.1", 7777);
+                    if (networkManager.StartHost())
+                    {
+                        _statusMsg = "Hosting on localhost...";
+                    }
+                    else
+                    {
+                        _statusMsg = "Failed to start host!";
                     }
                 }
 
