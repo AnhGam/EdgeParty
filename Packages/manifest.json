@@ -2,6 +2,7 @@
   "dependencies": {
     "com.edgegap.unity-matchmaking-sdk": "https://github.com/edgegap/edgegap-unity-matchmaking-sdk.git",
     "com.edgegap.unity-servers-plugin": "https://github.com/edgegap/edgegap-unity-plugin.git",
+    "com.unity.cinemachine": "2.10.7",
     "com.unity.collab-proxy": "2.12.4",
     "com.unity.dedicated-server": "2.0.2",
     "com.unity.ide.rider": "3.0.39",
@@ -18,7 +19,7 @@
     "com.unity.toonshader": "0.13.0-preview",
     "com.unity.ugui": "2.0.0",
     "com.unity.visualscripting": "1.9.11",
-    "com.veriorpies.parrelsync": "file:D:/Antigravity/Game/ParrelSync-master/ParrelSync",
+    "com.veriorpies.parrelsync": "https://github.com/VeriorPies/ParrelSync.git?path=/ParrelSync",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",
     "com.unity.modules.ai": "1.0.0",

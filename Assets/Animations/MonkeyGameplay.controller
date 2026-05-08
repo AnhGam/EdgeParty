@@ -1,5 +1,18 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-9034598958930412380
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0573d8c0bfff2ac4b87d0e63a86d1fd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  jumpClip: {fileID: 8300000, guid: a7e5af5adcb13be4788dace244fe6392, type: 3}
 --- !u!1102 &-8331622239807194603
 AnimatorState:
   serializedVersion: 6
@@ -27,6 +40,19 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
+--- !u!114 &-7259099397545316879
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed7f9f213a8be7d4b9ee9422ade306ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  runClip: {fileID: 8300000, guid: 8e086235433f5f545a52cc6d24b1303e, type: 3}
 --- !u!1102 &-6366998444891671166
 AnimatorState:
   serializedVersion: 6
@@ -87,7 +113,7 @@ AnimatorStateMachine:
   m_StateMachineTransitions: {}
   m_StateMachineBehaviours: []
   m_AnyStatePosition: {x: 10, y: 0, z: 0}
-  m_EntryPosition: {x: 50, y: 120, z: 0}
+  m_EntryPosition: {x: 50, y: 200, z: 0}
   m_ExitPosition: {x: 800, y: 120, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
   m_DefaultState: {fileID: -322336773626378497}
@@ -193,6 +219,19 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
+--- !u!114 &6113046877286341149
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9a91187bf77df94987e6cb235763750, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  dashClip: {fileID: 0}
 --- !u!1102 &8504481506747746155
 AnimatorState:
   serializedVersion: 6
@@ -220,3 +259,16 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
+--- !u!114 &8901042579441499231
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1399ee6a8b2372d44b7580a7f907e233, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  walkClip: {fileID: 8300000, guid: 21018319179440c43af4d2c934141e79, type: 3}

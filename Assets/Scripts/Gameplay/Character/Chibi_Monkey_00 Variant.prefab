@@ -397,6 +397,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: -1937671338539732422}
+    - targetCorrespondingSourceObject: {fileID: 8603064644883837947, guid: d2d3d08afa80216409ebf3bd241ea899,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1882783201237886617}
     - targetCorrespondingSourceObject: {fileID: 6239528333133075653, guid: d2d3d08afa80216409ebf3bd241ea899,
         type: 3}
       insertIndex: -1
@@ -2442,7 +2446,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 4021775717
+  GlobalObjectIdHash: 1920536143
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -2478,8 +2482,6 @@ MonoBehaviour:
   dashImpulse: 85
   rotationSpeed: 10
   airControlFactor: 0.5
-  idleDelay: 20
-  yawOffset: -90
   legMultiplier: 1
   armMultiplier: 1
   torsoMultiplier: 1
@@ -2505,3 +2507,25 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   syncRate: 20
   smoothSpeed: 15
+--- !u!114 &1882783201237886617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8632219853986348538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b733703baf14cc419c60cb67333b56c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.PlayerAudioController
+  ShowTopMostFoldoutHeaderGroup: 1
+  ghostAnimator: {fileID: 0}
+  walkClip: {fileID: 8300000, guid: 21018319179440c43af4d2c934141e79, type: 3}
+  runClip: {fileID: 8300000, guid: 8e086235433f5f545a52cc6d24b1303e, type: 3}
+  jumpClip: {fileID: 8300000, guid: a7e5af5adcb13be4788dace244fe6392, type: 3}
+  dashClip: {fileID: 8300000, guid: 397d5725597ce09469af68a8af87b0ff, type: 3}
+  walkState: Walk
+  runState: Run
+  jumpState: Jump
+  dashState: Dash
