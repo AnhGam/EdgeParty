@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace EdgeParty.Gameplay.Character
 {
-    public enum BoneCategory { Torso, Head, Arm, Leg, Tail }
+    public enum BoneCategory { Torso, Arm, Leg, Head, Tail, Other }
 
     [RequireComponent(typeof(ConfigurableJoint))]
     public class RagdollBoneFollower : MonoBehaviour
@@ -10,13 +10,13 @@ namespace EdgeParty.Gameplay.Character
         public BoneCategory category;
         public Transform targetBone;
 
-        [Header("Enhanced Power")]
+        [Header("Follow Settings")]
         [Range(0f, 1f)] public float gravityCompensation = 0f;
         [Range(0f, 1f)] public float velocitySync = 0.3f;
-
-        [Header("Combat Override")]
-        [Tooltip("Velocity sync used during punch swing (higher = snappier hit)")]
-        [Range(0f, 1f)] public float combatVelocitySync = 0.92f;
+        
+        [Header("Combat Boost")]
+        [Tooltip("Velocity sync used during attack/dash (higher = follows animation more precisely)")]
+        [Range(0f, 1f)] public float combatVelocitySync = 0.95f;
 
         // Runtime
         private ConfigurableJoint _joint;
@@ -37,22 +37,56 @@ namespace EdgeParty.Gameplay.Character
         {
             _joint = GetComponent<ConfigurableJoint>();
             _rb = GetComponent<Rigidbody>();
-            _startingLocalRotation = transform.localRotation;
-            _isRootBone = (_joint.connectedBody == null);
+            
+            // If this bone is the one with the CharacterMotor/PlayerController, it shouldn't follow itself
+            _isRootBone = (GetComponent<PlayerController>() != null || GetComponent<CharacterMotor>() != null);
 
+            if (_isRootBone || targetBone == null) return;
+
+            _startingLocalRotation = transform.localRotation;
+
+            // Setup joint space conversions
+            Vector3 forward = Vector3.Cross(_joint.axis, _joint.secondaryAxis).normalized;
+            Vector3 up = _joint.secondaryAxis;
+
+            // Safety check for collinear axes
+            if (forward.sqrMagnitude < 0.01f)
+            {
+                Debug.LogError($"[RagdollBoneFollower] Axis and SecondaryAxis are collinear on {name}! Physics will explode. Please make them perpendicular.");
+                forward = Vector3.forward;
+                up = Vector3.up;
+            }
+
+            _localToJointSpace = Quaternion.LookRotation(forward, up);
+            _jointToLocalSpace = Quaternion.Inverse(_localToJointSpace);
+
+            // Store original spring values
             _originalXSpring = _joint.angularXDrive.positionSpring;
             _originalXDamper = _joint.angularXDrive.positionDamper;
             _originalYZSpring = _joint.angularYZDrive.positionSpring;
             _originalYZDamper = _joint.angularYZDrive.positionDamper;
+        }
 
-            Vector3 forward = Vector3.Cross(_joint.axis, _joint.secondaryAxis).normalized;
-            Vector3 up = Vector3.Cross(forward, _joint.axis).normalized;
-            _localToJointSpace = Quaternion.LookRotation(forward, up);
-            _jointToLocalSpace = Quaternion.Inverse(_localToJointSpace);
+        private void OnEnable()
+        {
+            // Restore springs when enabled
+            SetSpringMultiplier(1f);
+        }
+
+        private void OnDisable()
+        {
+            // Go limp when disabled to avoid "infinite spinning" if targetRotation is stale
+            if (_joint != null)
+            {
+                var xd = _joint.angularXDrive; xd.positionSpring = 0.1f; _joint.angularXDrive = xd;
+                var yzd = _joint.angularYZDrive; yzd.positionSpring = 0.1f; _joint.angularYZDrive = yzd;
+            }
         }
 
         public void SetSpringMultiplier(float multiplier)
         {
+            if (_joint == null) return;
+
             var xd = _joint.angularXDrive;
             xd.positionSpring = _originalXSpring * multiplier;
             xd.positionDamper = _originalXDamper * multiplier;
@@ -79,31 +113,25 @@ namespace EdgeParty.Gameplay.Character
         {
             if (_isRootBone || targetBone == null) return;
 
-            // 1. Rotation targeting
-            Quaternion targetRot = targetBone.localRotation;
+            // Follow the animation strictly
+            // If combat is active and this isn't an arm, stay in neutral pose to avoid leg/pelvis warping during dash
+            Quaternion targetRot = (_isCombatActive && category != BoneCategory.Arm) 
+                ? _startingLocalRotation 
+                : targetBone.localRotation;
+
             _joint.targetRotation = _jointToLocalSpace
                                     * Quaternion.Inverse(targetRot)
                                     * _startingLocalRotation
                                     * _localToJointSpace;
 
             // 2. Gravity compensation
-            if (gravityCompensation > 0f && _rb != null)
-                _rb.AddForce(-Physics.gravity * gravityCompensation, ForceMode.Acceleration);
-
-            // 3. Velocity sync (higher during combat for snappy punch)
-            if (_rb != null)
+            if (gravityCompensation > 0.01f)
             {
-                Quaternion delta = targetBone.rotation * Quaternion.Inverse(transform.rotation);
-                delta.ToAngleAxis(out float angle, out Vector3 axis);
-                if (angle > 180f) angle -= 360f;
-
-                if (Mathf.Abs(angle) > 0.01f)
-                {
-                    float sync = _isCombatActive ? combatVelocitySync : velocitySync;
-                    Vector3 worldAngVel = axis.normalized * (angle * Mathf.Deg2Rad / Time.fixedDeltaTime);
-                    _rb.angularVelocity = Vector3.Lerp(_rb.angularVelocity, worldAngVel, sync);
-                }
+                _rb.AddForce(-Physics.gravity * (_rb.mass * gravityCompensation), ForceMode.Force);
             }
+
+            // 3. Velocity sync
+            // DEPRECATED: Position snapping removed to allow physical movement independent of ghost position.
         }
     }
 }

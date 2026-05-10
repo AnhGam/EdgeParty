@@ -193,12 +193,15 @@ namespace EdgeParty.Gameplay.Character
         private void ApplyBoneMultipliers()
         {
             if (_followers == null) return;
-            bool attacking = animController != null && animController.IsAttacking;
+            
+            // Treat Dash/Jump (OneShot) as an attack state for bone logic
+            bool attacking = animController != null && (animController.IsAttacking || animController.IsPlayingOneShot);
 
             foreach (var f in _followers)
             {
+                f.SetCombatMode(attacking);
+
                 bool isArm = f.category == BoneCategory.Arm;
-                f.SetCombatMode(isArm && attacking);
 
                 float mult = f.category switch
                 {
