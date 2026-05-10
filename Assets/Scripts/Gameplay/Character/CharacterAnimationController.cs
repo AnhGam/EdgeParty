@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 namespace EdgeParty.Gameplay.Character
@@ -59,8 +59,11 @@ namespace EdgeParty.Gameplay.Character
         [Tooltip("Cooldown AFTER a full combo before attacking again")]
         public float attackCooldown = 0.4f;
 
-        [Header("Dash Cooldown")]
+        [Header("Dash Settings")]
         public float dashCooldown = 1.5f;
+        public float dashAnimSpeed = 1.2f;
+        public string mirrorParam = "Mirror";
+        public string dashSpeedParam = "DashSpeed";
 
         [Header("Upper Body Layer Blend")]
         [Tooltip("How fast the upper-body layer weight blends in/out")]
@@ -101,6 +104,8 @@ namespace EdgeParty.Gameplay.Character
         // Timers
         private float _attackCooldownTimer;
         private float _dashTimer;
+        private bool _dashMirror;
+        private float _oneShotSafetyTimer;
 
         // ─────────────────────────────────────────────────────────────────
         private void Awake()
@@ -110,14 +115,16 @@ namespace EdgeParty.Gameplay.Character
 
         private void FindReferences()
         {
-            _motor = GetComponentInParent<CharacterMotor>() ?? GetComponent<CharacterMotor>();
+            _motor = GetComponentInParent<CharacterMotor>();
+            if (_motor == null) _motor = GetComponent<CharacterMotor>();
             if (_motor == null)
             {
                 var ctrl = GetComponentInParent<PlayerController>();
                 if (ctrl != null) _motor = ctrl.motor;
             }
 
-            _stats = GetComponentInParent<PlayerStats>() ?? GetComponentInChildren<PlayerStats>();
+            _stats = GetComponentInParent<PlayerStats>();
+            if (_stats == null) _stats = GetComponentInChildren<PlayerStats>();
         }
 
         // ─── Public input API (called by PlayerController on server) ──────
@@ -139,9 +146,23 @@ namespace EdgeParty.Gameplay.Character
         {
             if (!CanDash()) return;
             _dashTimer = dashCooldown;
+
+            // Toggle mirroring for alternating sides
+            _dashMirror = !_dashMirror;
+            if (ghostAnimator != null)
+            {
+                // Safety: check if parameters exist to avoid warnings if user hasn't added them yet
+                foreach (var param in ghostAnimator.parameters)
+                {
+                    if (param.name == mirrorParam) ghostAnimator.SetBool(mirrorParam, _dashMirror);
+                    if (param.name == dashSpeedParam) ghostAnimator.SetFloat(dashSpeedParam, dashAnimSpeed);
+                }
+            }
+
             PlayBaseState(dashState, restart: true);
             CurrentState = PlayerState.Dash;
             IsPlayingOneShot = true;
+            _oneShotSafetyTimer = 2.0f; // 2 second safety fallback
         }
 
         /// <summary>
@@ -150,22 +171,12 @@ namespace EdgeParty.Gameplay.Character
         /// </summary>
         public bool TriggerAttack()
         {
-            if (!CanAttack()) return false;
+            // Now repurposed to use the Dash animation as the primary attack
+            if (!CanDash()) return false;
             if (_stats != null && !_stats.HasStaminaForAttack) return false;
 
-            _stats?.SpendAttackStamina();
-
-            if (_upperBodyActive)
-            {
-                // Queue next combo hit during input window
-                var info = ghostAnimator != null ? ghostAnimator.GetCurrentAnimatorStateInfo(upperBodyLayerIndex) : default;
-                if (info.normalizedTime >= comboInputWindow)
-                    _comboQueued = true;
-            }
-            else
-            {
-                StartAttack();
-            }
+            if (_stats != null) _stats.SpendAttackStamina();
+            TriggerDash();
             return true;
         }
 
@@ -176,13 +187,16 @@ namespace EdgeParty.Gameplay.Character
 
             _attackCooldownTimer = Mathf.Max(0f, _attackCooldownTimer - dt);
             _dashTimer = Mathf.Max(0f, _dashTimer - dt);
+            if (IsPlayingOneShot) _oneShotSafetyTimer -= dt;
+
+            // Visual animation state machine should run on all clients
+            DetermineBaseState();
+            UpdateBaseAnimator();
+            ApplySpeedMultiplier();
 
             if (!IsServerActive()) return;
 
             UpdateUpperBody(dt);
-            DetermineBaseState();
-            UpdateBaseAnimator();
-            ApplySpeedMultiplier();
         }
 
         private bool IsServerActive()
@@ -286,8 +300,8 @@ namespace EdgeParty.Gameplay.Character
         {
             if (!_hitboxOpen) return;
             _hitboxOpen = false;
-            rightFistHitbox?.Deactivate();
-            leftFistHitbox?.Deactivate();
+            if (rightFistHitbox != null) rightFistHitbox.Deactivate();
+            if (leftFistHitbox != null) leftFistHitbox.Deactivate();
         }
 
         // ─── Base locomotion state machine ────────────────────────────────
@@ -304,13 +318,23 @@ namespace EdgeParty.Gameplay.Character
                 if (ghostAnimator != null)
                 {
                     var info = ghostAnimator.GetCurrentAnimatorStateInfo(baseLayerIndex);
-                    oneShotDone = info.IsName(_activeBaseState) && info.normalizedTime >= 0.95f;
+                    // Done if we transitioned out OR reached the end of the intended clip
+                    // We also check a small buffer (0.1s) to make sure we don't exit before the animator has even started the new state
+                    bool inCorrectState = info.IsName(_activeBaseState);
+                    oneShotDone = (info.normalizedTime >= 0.95f) || (inCorrectState == false && _oneShotSafetyTimer < 1.9f);
                 }
 
+                // Safety timeout fallback
+                if (_oneShotSafetyTimer <= 0f) oneShotDone = true;
+
                 if (landedFromJump || oneShotDone)
+                {
                     IsPlayingOneShot = false;
+                }
                 else
+                {
                     return;
+                }
             }
 
             if (_motor != null && !_motor.IsGrounded)
