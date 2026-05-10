@@ -1,35 +1,42 @@
 using UnityEngine;
 using Unity.Netcode;
 
-public class VoiceChatParticipant : NetworkBehaviour
+namespace EdgeParty.Infrastructure.VoiceChat
 {
-    [SerializeField] private string channelName = "MainLobby";
-    private float updateTimer;
-    private const float UpdateInterval = 0.3f; // Update 3 times per second (Recommended: 2-4)
-
-    public override void OnNetworkSpawn()
+    /// <summary>
+    /// Attach to player Prefab. Updates the local player's 3D position in Vivox
+    /// so other players hear positional audio relative to their distance.
+    /// Only runs on the local owner.
+    /// </summary>
+    [RequireComponent(typeof(NetworkObject))]
+    public class VoiceChatParticipant : NetworkBehaviour
     {
-        // Only the local player (owner) should update their own position in Vivox
-        // Vivox handles other participants' audio based on the listener's (local player) position
-        if (!IsOwner)
-        {
-            enabled = false;
-        }
-    }
+        [SerializeField] private string channelName = "MainLobby";
 
-    private void Update()
-    {
-        // Safety check: ensure we only run for the local owner
-        if (!IsOwner) return;
+        private float _timer;
+        private const float UpdateInterval = 0.25f; // 4 times/sec
 
-        updateTimer += Time.deltaTime;
-        if (updateTimer >= UpdateInterval)
+        public override void OnNetworkSpawn()
         {
-            updateTimer = 0f;
-            if (VoiceChatManager.Instance != null)
+            // Only the local owner controls their own 3D position in Vivox
+            if (!IsOwner)
             {
-                // Update this player's position in the Vivox 3D channel
-                VoiceChatManager.Instance.UpdateParticipantPosition(gameObject, channelName);
+                enabled = false;
+            }
+        }
+
+        private void Update()
+        {
+            if (!IsOwner) return;
+
+            _timer += Time.deltaTime;
+            if (_timer >= UpdateInterval)
+            {
+                _timer = 0f;
+                if (VoiceChatManager.Instance != null && VoiceChatManager.Instance.IsReady)
+                {
+                    VoiceChatManager.Instance.UpdateParticipantPosition(gameObject, channelName);
+                }
             }
         }
     }
