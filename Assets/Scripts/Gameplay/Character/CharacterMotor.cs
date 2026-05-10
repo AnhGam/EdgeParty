@@ -29,6 +29,7 @@ namespace EdgeParty.Gameplay.Character
 
         public bool IsGrounded { get; private set; }
         public Vector3 GroundNormal { get; private set; } = Vector3.up;
+        public float movementForceMultiplier { get; set; } = 1f;
 
         private Vector3 _moveDir;
         private bool _isRunning;
@@ -128,7 +129,7 @@ namespace EdgeParty.Gameplay.Character
                 pelvisRigidbody.AddForce(-GroundNormal * 10f, ForceMode.Acceleration);
             }
 
-            pelvisRigidbody.AddForce(finalMoveDir * force, ForceMode.Acceleration);
+            pelvisRigidbody.AddForce(finalMoveDir * (force * movementForceMultiplier), ForceMode.Acceleration);
         }
 
         private void ApplyRotation()

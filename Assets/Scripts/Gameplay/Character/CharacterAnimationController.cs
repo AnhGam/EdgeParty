@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace EdgeParty.Gameplay.Character
 {
-    public enum PlayerState { Idle, Walk, Run, Attack, Dash, InAir }
+    public enum PlayerState { Idle, Walk, Run, Attack, Dash, InAir, Grab }
 
     public class CharacterAnimationController : MonoBehaviour
     {
@@ -23,6 +23,7 @@ namespace EdgeParty.Gameplay.Character
         public string dashState = "Dash";
         public string attackState = "RightATK";
         public string airAttackState = "AirATK";
+        public string grabState = "Grab";
 
         [Header("Settings")]
         public float attackCooldown = 0.5f;
@@ -30,6 +31,7 @@ namespace EdgeParty.Gameplay.Character
 
         public PlayerState CurrentState { get; private set; } = PlayerState.Idle;
         public bool IsPlayingOneShot { get; private set; }
+        public bool IsGrabbing => CurrentState == PlayerState.Grab;
         public bool IsAttacking => CurrentState == PlayerState.Attack && IsPlayingOneShot;
 
         private CharacterMotor _motor;
@@ -131,10 +133,28 @@ namespace EdgeParty.Gameplay.Character
             IsPlayingOneShot = true;
         }
 
+        public void TriggerGrab()
+        {
+            if (CurrentState == PlayerState.Grab)
+            {
+                CurrentState = PlayerState.Idle;
+                IsPlayingOneShot = false;
+                PlayState(idleState, true);
+            }
+            else
+            {
+                PlayState(grabState, true);
+                CurrentState = PlayerState.Grab;
+                IsPlayingOneShot = true;
+            }
+        }
+
         private void DetermineState()
         {
             if (IsPlayingOneShot)
             {
+                if (CurrentState == PlayerState.Grab) return; // Keep grab active
+
                 var info = ghostAnimator.GetCurrentAnimatorStateInfo(0);
                 if (info.IsName(_activeStateName) && info.normalizedTime >= 0.95f)
                 {
