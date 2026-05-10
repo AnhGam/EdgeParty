@@ -1482,6 +1482,51 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.3485404, y: 0.24263856, z: 0.4506349}
   m_Center: {x: -0.17427082, y: 0.012398861, z: 0.0005507767}
+--- !u!1 &912300001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 912300003}
+  - component: {fileID: 912300002}
+  m_Layer: 0
+  m_Name: VoiceChatManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &912300002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 912300001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8689d6dc9e016894390f240de0ebec07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Infrastructure.VoiceChat.VoiceChatManager
+  defaultChannelName: MainLobby
+--- !u!4 &912300003
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 912300001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &962862296 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1234338331899025804, guid: 498537a621ebd73449afa864950e433a,
@@ -2814,3 +2859,4 @@ SceneRoots:
   - {fileID: 3061057717121210386}
   - {fileID: 1829360192472604918}
   - {fileID: 363830476}
+  - {fileID: 912300003}
