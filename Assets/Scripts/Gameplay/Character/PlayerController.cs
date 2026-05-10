@@ -58,10 +58,17 @@ namespace EdgeParty.Gameplay.Character
 
         private void IgnoreInternalCollisions()
         {
-            var cols = transform.root.GetComponentsInChildren<Collider>();
-            for (int i = 0; i < cols.Length; i++)
-                for (int j = i + 1; j < cols.Length; j++)
-                    Physics.IgnoreCollision(cols[i], cols[j]);
+            // Bỏ qua va chạm giữa TẤT CẢ các bộ phận trong cùng một nhân vật.
+            // Điều này cực kỳ quan trọng với Active Ragdoll để tránh việc tay đấm vào chân/đầu 
+            // gây ra phản lực làm nhân vật bị bắn đi hoặc xoay ngược.
+            var allColliders = transform.root.GetComponentsInChildren<Collider>();
+            for (int i = 0; i < allColliders.Length; i++)
+            {
+                for (int j = i + 1; j < allColliders.Length; j++)
+                {
+                    Physics.IgnoreCollision(allColliders[i], allColliders[j]);
+                }
+            }
         }
 
         private void SyncLegacyReferences()
@@ -200,6 +207,7 @@ namespace EdgeParty.Gameplay.Character
             foreach (var f in _followers)
             {
                 f.SetCombatMode(attacking);
+                f.SetOneShotMode(animController != null && animController.IsPlayingOneShot);
 
                 bool isArm = f.category == BoneCategory.Arm;
 
