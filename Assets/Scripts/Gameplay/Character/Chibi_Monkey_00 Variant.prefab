@@ -461,6 +461,18 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 3858312706857394914}
+    - targetCorrespondingSourceObject: {fileID: 848306153731334599, guid: d2d3d08afa80216409ebf3bd241ea899,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6826838460224391407}
+    - targetCorrespondingSourceObject: {fileID: 848306153731334599, guid: d2d3d08afa80216409ebf3bd241ea899,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4802887870631200712}
+    - targetCorrespondingSourceObject: {fileID: 848306153731334599, guid: d2d3d08afa80216409ebf3bd241ea899,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7239045389110622317}
     - targetCorrespondingSourceObject: {fileID: 2044385962494924157, guid: d2d3d08afa80216409ebf3bd241ea899,
         type: 3}
       insertIndex: -1
@@ -493,6 +505,18 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8688535340584684892}
+    - targetCorrespondingSourceObject: {fileID: 881954269667570032, guid: d2d3d08afa80216409ebf3bd241ea899,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6863718982378078283}
+    - targetCorrespondingSourceObject: {fileID: 881954269667570032, guid: d2d3d08afa80216409ebf3bd241ea899,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3358787892182385622}
+    - targetCorrespondingSourceObject: {fileID: 881954269667570032, guid: d2d3d08afa80216409ebf3bd241ea899,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5128413677684041726}
     - targetCorrespondingSourceObject: {fileID: 5375424609692152083, guid: d2d3d08afa80216409ebf3bd241ea899,
         type: 3}
       insertIndex: -1
@@ -738,6 +762,314 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 2
   targetBone: {fileID: 0}
+  gravityCompensation: 0
+  velocitySync: 0.5
+--- !u!1 &822538591225049030 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 848306153731334599, guid: d2d3d08afa80216409ebf3bd241ea899,
+    type: 3}
+  m_PrefabInstance: {fileID: 49530311958842881}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6826838460224391407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 822538591225049030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0018331c6ae024e4a9176d4b6567ca5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.GrabHandler
+  grabRadius: 0.3
+  grabOffset: {x: 0, y: 0, z: 0.2}
+  grabLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  breakForce: 2000
+--- !u!54 &4802887870631200712
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 822538591225049030}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!153 &7239045389110622317
+ConfigurableJoint:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 822538591225049030}
+  serializedVersion: 4
+  m_ConnectedBody: {fileID: 0}
+  m_ConnectedArticulationBody: {fileID: 0}
+  m_Anchor: {x: 0, y: 0, z: 0}
+  m_Axis: {x: 1, y: 0, z: 0}
+  m_AutoConfigureConnectedAnchor: 1
+  m_ConnectedAnchor: {x: 0, y: 0, z: 0}
+  m_SecondaryAxis: {x: 0, y: 1, z: 0}
+  m_XMotion: 2
+  m_YMotion: 2
+  m_ZMotion: 2
+  m_AngularXMotion: 2
+  m_AngularYMotion: 2
+  m_AngularZMotion: 2
+  m_LinearLimitSpring:
+    spring: 0
+    damper: 0
+  m_LinearLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_AngularXLimitSpring:
+    spring: 0
+    damper: 0
+  m_LowAngularXLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_HighAngularXLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_AngularYZLimitSpring:
+    spring: 0
+    damper: 0
+  m_AngularYLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_AngularZLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_TargetPosition: {x: 0, y: 0, z: 0}
+  m_TargetVelocity: {x: 0, y: 0, z: 0}
+  m_XDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_YDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_ZDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_TargetRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_TargetAngularVelocity: {x: 0, y: 0, z: 0}
+  m_RotationDriveMode: 0
+  m_AngularXDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_AngularYZDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_SlerpDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_ProjectionMode: 0
+  m_ProjectionDistance: 0.1
+  m_ProjectionAngle: 180
+  m_ConfiguredInWorldSpace: 0
+  m_SwapBodies: 0
+  m_BreakForce: Infinity
+  m_BreakTorque: Infinity
+  m_EnableCollision: 0
+  m_EnablePreprocessing: 1
+  m_MassScale: 1
+  m_ConnectedMassScale: 1
+--- !u!1 &905965910975020913 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 881954269667570032, guid: d2d3d08afa80216409ebf3bd241ea899,
+    type: 3}
+  m_PrefabInstance: {fileID: 49530311958842881}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6863718982378078283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905965910975020913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0018331c6ae024e4a9176d4b6567ca5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.GrabHandler
+  grabRadius: 0.3
+  grabOffset: {x: 0, y: 0, z: 0.2}
+  grabLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  breakForce: 2000
+--- !u!54 &3358787892182385622
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905965910975020913}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!153 &5128413677684041726
+ConfigurableJoint:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905965910975020913}
+  serializedVersion: 4
+  m_ConnectedBody: {fileID: 0}
+  m_ConnectedArticulationBody: {fileID: 0}
+  m_Anchor: {x: 0, y: 0, z: 0}
+  m_Axis: {x: 1, y: 0, z: 0}
+  m_AutoConfigureConnectedAnchor: 1
+  m_ConnectedAnchor: {x: 0, y: 0, z: 0}
+  m_SecondaryAxis: {x: 0, y: 1, z: 0}
+  m_XMotion: 2
+  m_YMotion: 2
+  m_ZMotion: 2
+  m_AngularXMotion: 2
+  m_AngularYMotion: 2
+  m_AngularZMotion: 2
+  m_LinearLimitSpring:
+    spring: 0
+    damper: 0
+  m_LinearLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_AngularXLimitSpring:
+    spring: 0
+    damper: 0
+  m_LowAngularXLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_HighAngularXLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_AngularYZLimitSpring:
+    spring: 0
+    damper: 0
+  m_AngularYLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_AngularZLimit:
+    limit: 0
+    bounciness: 0
+    contactDistance: 0
+  m_TargetPosition: {x: 0, y: 0, z: 0}
+  m_TargetVelocity: {x: 0, y: 0, z: 0}
+  m_XDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_YDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_ZDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_TargetRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_TargetAngularVelocity: {x: 0, y: 0, z: 0}
+  m_RotationDriveMode: 0
+  m_AngularXDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_AngularYZDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_SlerpDrive:
+    serializedVersion: 4
+    positionSpring: 0
+    positionDamper: 0
+    maximumForce: 3.4028233e+38
+    useAcceleration: 0
+  m_ProjectionMode: 0
+  m_ProjectionDistance: 0.1
+  m_ProjectionAngle: 180
+  m_ConfiguredInWorldSpace: 0
+  m_SwapBodies: 0
+  m_BreakForce: Infinity
+  m_BreakTorque: Infinity
+  m_EnableCollision: 0
+  m_EnablePreprocessing: 1
+  m_MassScale: 1
+  m_ConnectedMassScale: 1
 --- !u!1 &2085423629451254652 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2044385962494924157, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -910,6 +1242,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 2
   targetBone: {fileID: 0}
+  gravityCompensation: 0
+  velocitySync: 0.5
 --- !u!1 &4980112486900596233 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5022391431320940552, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1080,6 +1414,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 0}
+  gravityCompensation: 0
+  velocitySync: 0.5
 --- !u!1 &5347654836525219602 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5375424609692152083, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1250,6 +1586,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 1
   targetBone: {fileID: 0}
+  gravityCompensation: 0
+  velocitySync: 0.5
 --- !u!1 &6212916327763024580 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6239528333133075653, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1420,6 +1758,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 0}
+  gravityCompensation: 0
+  velocitySync: 0.5
 --- !u!1 &6444853533324177816 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6475982380793249689, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1592,6 +1932,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 2
   targetBone: {fileID: 0}
+  gravityCompensation: 0
+  velocitySync: 0.5
 --- !u!1 &6514028770167509617 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6541915142029417584, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1922,6 +2264,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 2
   targetBone: {fileID: 0}
+  gravityCompensation: 0
+  velocitySync: 0.5
 --- !u!1 &7747667731113824401 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7722205851399757456, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -2094,6 +2438,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 0}
+  gravityCompensation: 0
+  velocitySync: 0.5
 --- !u!1 &7943535162412650772 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7967690908504530709, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -2266,6 +2612,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 0}
+  gravityCompensation: 0
+  velocitySync: 0.5
 --- !u!1 &8611647934146250035 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8587607634627545906, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -2468,28 +2816,40 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.PlayerController
   ShowTopMostFoldoutHeaderGroup: 1
+  motor: {fileID: 0}
+  animController: {fileID: 0}
+  inputHandler: {fileID: 0}
   pelvisRigidbody: {fileID: 9051879061140968742}
   ghostRoot: {fileID: 0}
   ghostPelvis: {fileID: 0}
   ghostAnimator: {fileID: 0}
-  walkForce: 40
-  runForce: 55
-  jumpImpulse: 75
-  dashImpulse: 85
-  rotationSpeed: 10
-  airControlFactor: 0.5
-  idleDelay: 20
-  yawOffset: -90
-  legMultiplier: 1
-  armMultiplier: 1
-  torsoMultiplier: 1
-  headMultiplier: 1
-  noneState: None
-  idleState: IdleA
-  walkState: Walk
-  runState: Run
-  jumpState: Jump
-  dashState: Dash
+  legMultiplier:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  armMultiplier:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  torsoMultiplier:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  headMultiplier:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  tailMultiplier:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
+  combatBoostMultiplier: 5
+  tugOfWarBoost: 2.5
 --- !u!114 &-1937671338539732422
 MonoBehaviour:
   m_ObjectHideFlags: 0

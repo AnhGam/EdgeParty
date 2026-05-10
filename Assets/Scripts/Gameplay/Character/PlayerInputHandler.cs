@@ -83,6 +83,7 @@ namespace EdgeParty.Gameplay.Character
                 if (keyboard.spaceKey.wasPressedThisFrame) _controller.OnJumpTriggered_Server(worldMoveDir);
                 if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) _controller.OnDashTriggered_Server();
                 if (mouse != null && mouse.leftButton.wasPressedThisFrame) _controller.OnAttackTriggered_Server();
+                if (keyboard.eKey.wasPressedThisFrame) _controller.OnGrabTriggered_Server();
             }
             else
             {
@@ -94,6 +95,7 @@ namespace EdgeParty.Gameplay.Character
                 else if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) TriggerDashServerRpc();
                 
                 if (mouse != null && mouse.leftButton.wasPressedThisFrame) TriggerAttackServerRpc();
+                if (keyboard.eKey.wasPressedThisFrame) TriggerGrabServerRpc();
             }
         }
 
@@ -127,6 +129,12 @@ namespace EdgeParty.Gameplay.Character
         private void TriggerAttackServerRpc()
         {
             _controller.OnAttackTriggered_Server();
+        }
+
+        [ServerRpc]
+        private void TriggerGrabServerRpc()
+        {
+            _controller.OnGrabTriggered_Server();
         }
     }
 }

@@ -30,8 +30,10 @@ namespace EdgeParty.Gameplay.Character
 
         [Header("Settings")]
         public float combatBoostMultiplier = 5f;
+        public float tugOfWarBoost = 2.5f;
 
         private RagdollBoneFollower[] _followers;
+        private GrabHandler[] _grabHandlers;
 
         private void OnValidate()
         {
@@ -41,6 +43,7 @@ namespace EdgeParty.Gameplay.Character
         private void Awake()
         {
             _followers = GetComponentsInChildren<RagdollBoneFollower>();
+            _grabHandlers = GetComponentsInChildren<GrabHandler>();
             
             // Deep search: Search from the root of this player hierarchy
             Transform root = transform.root;
@@ -146,8 +149,27 @@ namespace EdgeParty.Gameplay.Character
             if (IsServerActive())
             {
                 UpdateAnimatorState();
+                UpdateTugOfWar();
                 ApplyBoneMultipliers(); // Continuous update to handle combat boost
             }
+        }
+
+        private void UpdateTugOfWar()
+        {
+            if (motor == null) return;
+
+            bool isAnyHandConnected = false;
+            
+            // Search handlers if not found yet (e.g. added at runtime)
+            if (_grabHandlers == null || _grabHandlers.Length == 0)
+                _grabHandlers = GetComponentsInChildren<GrabHandler>();
+
+            if (_grabHandlers != null)
+            {
+                foreach (var h in _grabHandlers) if (h.IsConnected) { isAnyHandConnected = true; break; }
+            }
+
+            motor.movementForceMultiplier = isAnyHandConnected ? tugOfWarBoost : 1f;
         }
 
         private bool IsServerActive()
@@ -197,6 +219,25 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
+        public void OnGrabTriggered_Server()
+        {
+            if (animController != null)
+            {
+                animController.TriggerGrab();
+                
+                // Sync grab handlers with the state
+                bool isGrabbing = animController.CurrentState == PlayerState.Grab;
+
+                if (_grabHandlers == null || _grabHandlers.Length == 0)
+                    _grabHandlers = GetComponentsInChildren<GrabHandler>();
+
+                if (_grabHandlers != null)
+                {
+                    foreach (var h in _grabHandlers) h.SetActive(isGrabbing);
+                }
+            }
+        }
+
         public void SetRagdollStrength(float factor)
         {
             if (!IsServer) return;
@@ -211,9 +252,19 @@ namespace EdgeParty.Gameplay.Character
             if (_followers == null) return;
             
             float armBoost = 1f;
-            if (animController != null && animController.IsAttacking)
+            float torsoBoost = 1f;
+
+            if (animController != null)
             {
-                armBoost = combatBoostMultiplier;
+                if (animController.CurrentState == PlayerState.Grab)
+                {
+                    armBoost = combatBoostMultiplier * 10f; // High stiffness for correct height
+                    torsoBoost = 3f; // Stable torso
+                }
+                else if (animController.IsAttacking)
+                {
+                    armBoost = combatBoostMultiplier;
+                }
             }
 
             foreach (var f in _followers)
@@ -222,7 +273,7 @@ namespace EdgeParty.Gameplay.Character
                 {
                     case BoneCategory.Leg: f.SetSpringMultiplier(legMultiplier.Value); break;
                     case BoneCategory.Arm: f.SetSpringMultiplier(armMultiplier.Value * armBoost); break;
-                    case BoneCategory.Torso: f.SetSpringMultiplier(torsoMultiplier.Value); break;
+                    case BoneCategory.Torso: f.SetSpringMultiplier(torsoMultiplier.Value * torsoBoost); break;
                     case BoneCategory.Head: f.SetSpringMultiplier(headMultiplier.Value); break;
                     case BoneCategory.Tail: f.SetSpringMultiplier(tailMultiplier.Value); break;
                 }
