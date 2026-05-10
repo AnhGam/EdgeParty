@@ -32,6 +32,7 @@ namespace EdgeParty.Gameplay.Character
 
         private bool _isRootBone;
         private bool _isCombatActive;
+        private bool _isOneShotMode;
 
         private void Awake()
         {
@@ -103,21 +104,25 @@ namespace EdgeParty.Gameplay.Character
             _isCombatActive = active;
         }
 
-        public void SetLimp()
+        public void SetOneShotMode(bool active)
         {
-            var xd = _joint.angularXDrive; xd.positionSpring = 0.5f; xd.positionDamper = 0f; _joint.angularXDrive = xd;
-            var yd = _joint.angularYZDrive; yd.positionSpring = 0.5f; yd.positionDamper = 0f; _joint.angularYZDrive = yd;
+            _isOneShotMode = active;
+        }
+
+        private bool _forceNaturalPose = false;
+
+        public void SetNaturalPose(bool enabled)
+        {
+            _forceNaturalPose = enabled;
         }
 
         private void FixedUpdate()
         {
             if (_isRootBone || targetBone == null) return;
 
-            // Follow the animation strictly
-            // If combat is active and this isn't an arm, stay in neutral pose to avoid leg/pelvis warping during dash
-            Quaternion targetRot = (_isCombatActive && category != BoneCategory.Arm) 
-                ? _startingLocalRotation 
-                : targetBone.localRotation;
+            // Nếu đang ép về tư thế tự nhiên (trạng thái None), ta bỏ qua animation của Ghost.
+            // Ngược lại, ta lấy rotation từ targetBone (Ghost).
+            Quaternion targetRot = _forceNaturalPose ? _startingLocalRotation : targetBone.localRotation;
 
             _joint.targetRotation = _jointToLocalSpace
                                     * Quaternion.Inverse(targetRot)

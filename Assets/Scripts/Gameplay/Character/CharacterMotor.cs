@@ -164,17 +164,38 @@ namespace EdgeParty.Gameplay.Character
 
             if (Mathf.Abs(angle) > 0.01f)
             {
-                Vector3 torque = axis.normalized * (angle * rotationSpeed);
+                // Tăng lực xoay (Torque) lên gấp 10 lần khi đang thực hiện đòn đánh (OneShot)
+                // để thắng được phản lực từ cánh tay vung ra.
+                float effectiveRotationSpeed = _isOneShotActive ? rotationSpeed * 10f : rotationSpeed;
+                Vector3 torque = axis.normalized * (angle * effectiveRotationSpeed);
                 pelvisRigidbody.AddTorque(torque, ForceMode.Acceleration);
             }
 
             // 2. Velocity-based matching (Combat snappiness & "Blender feel")
-            // This forces the physical pelvis to match the ANIMATED velocity of the ghost.
             if (Mathf.Abs(angle) > 0.01f)
             {
                 Vector3 worldAngularVel = axis.normalized * (angle * Mathf.Deg2Rad / Time.fixedDeltaTime);
-                // We use a lerp to avoid infinite jitter, but with a high enough value to feel "meaty"
-                pelvisRigidbody.angularVelocity = Vector3.Lerp(pelvisRigidbody.angularVelocity, worldAngularVel, 0.4f);
+                
+                // Ép hông khớp tuyệt đối với hướng nhìn khi đang đánh (1.0)
+                float matchFactor = _isOneShotActive ? 1.0f : 0.4f;
+                pelvisRigidbody.angularVelocity = Vector3.Lerp(pelvisRigidbody.angularVelocity, worldAngularVel, matchFactor);
+
+                // TRIỆT TIÊU PHẢN LỰC: Ép vận tốc góc khớp hoàn toàn với target 
+                // để không bị xoay hông lung tung khi tay vung ra.
+                if (_isOneShotActive)
+                {
+                    pelvisRigidbody.angularVelocity = worldAngularVel;
+                }
+            }
+
+            // 3. Joint-based assistance (Stabilization)
+            // Cập nhật targetRotation cho Joint của Pelvis để nó luôn xoay theo hướng Motor muốn.
+            // Điều này cho phép dùng Spring cực cao (1500+) mà không bị "dính" hướng.
+            var joint = pelvisRigidbody.GetComponent<ConfigurableJoint>();
+            if (joint != null)
+            {
+                // Tính toán targetRotation cho Joint (giả định axis/secondary axis mặc định)
+                joint.targetRotation = Quaternion.Inverse(targetRot);
             }
         }
 
