@@ -1,0 +1,55 @@
+# 1. LOẠI BỎ CÁC THƯ MỤC CỰC NẶNG CỦA UNITY (Nguồn: .gitignore của bạn)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+
+# 2. CHẶN SOURCE CODE (Vì Docker chỉ cần bản Build ở Builds/Linux)
+# Nếu bạn để Dockerfile ở thư mục gốc, hãy chặn các mục này để build siêu nhanh
+/[Aa]ssets/
+/[Pp]ackages/
+/[Pp]roject[Ss]ettings/
+/[Vv]ideo[Cc]aptures/
+
+# 3. CHẶN CÁC FILE RÁC & CẤU HÌNH (Nguồn: .gitignore của bạn)
+.vs/
+.idea/
+.vscode/
+/*.sln
+/*.csproj
+/*.dotSettings
+/*.user
+/*.userprefs
+/*.unityproj
+/*.booproj
+/*.suo
+/*.cache
+/*.pdb
+*.sln.iml
+.vsconfig
+ExportedObj/
+.consulo/
+.gradle/
+crashlytics-build.properties
+.git/
+
+# 4. CHẶN FILE HỆ ĐIỀU HÀNH
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+
+# 5. CHẶN CÁC BẢN BUILD KHÁC
+*.apk
+*.aab
+*.unitypackage
+
+# 6. CHẶN DỮ LIỆU DOCKER CỦA CHÍNH NÓ
+Dockerfile
+.dockerignore
