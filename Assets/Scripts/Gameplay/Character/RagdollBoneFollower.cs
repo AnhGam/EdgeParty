@@ -33,6 +33,9 @@ namespace EdgeParty.Gameplay.Character
         private bool _isRootBone;
         private bool _isCombatActive;
         private bool _isOneShotMode;
+        
+        private Quaternion _restRotation; // Tư thế rũ tự nhiên thực tế
+        private bool _restCaptured = false;
 
         private void Awake()
         {
@@ -50,10 +53,9 @@ namespace EdgeParty.Gameplay.Character
             Vector3 forward = Vector3.Cross(_joint.axis, _joint.secondaryAxis).normalized;
             Vector3 up = _joint.secondaryAxis;
 
-            // Safety check for collinear axes
-            if (forward.sqrMagnitude < 0.01f)
+            // Safety check for collinear axes (No log, just fallback for stability)
+            if (forward.sqrMagnitude < 0.001f)
             {
-                Debug.LogError($"[RagdollBoneFollower] Axis and SecondaryAxis are collinear on {name}! Physics will explode. Please make them perpendicular.");
                 forward = Vector3.forward;
                 up = Vector3.up;
             }
@@ -66,6 +68,21 @@ namespace EdgeParty.Gameplay.Character
             _originalXDamper = _joint.angularXDrive.positionDamper;
             _originalYZSpring = _joint.angularYZDrive.positionSpring;
             _originalYZDamper = _joint.angularYZDrive.positionDamper;
+
+            // Đợi một chút để trọng lực làm rũ tay xuống rồi mới lưu tư thế "tự nhiên"
+            Invoke(nameof(CaptureRestRotation), 0.5f);
+        }
+
+        public void CaptureCurrentPoseAsRest()
+        {
+            _restRotation = transform.localRotation;
+            _restCaptured = true;
+        }
+
+        private void CaptureRestRotation()
+        {
+            _restRotation = transform.localRotation;
+            _restCaptured = true;
         }
 
         private void OnEnable()
@@ -120,9 +137,17 @@ namespace EdgeParty.Gameplay.Character
         {
             if (_isRootBone || targetBone == null) return;
 
-            // Nếu đang ép về tư thế tự nhiên (trạng thái None), ta bỏ qua animation của Ghost.
+            // Nếu đang ép về tư thế tự nhiên (trạng thái None), ta dùng restRotation đã lưu.
             // Ngược lại, ta lấy rotation từ targetBone (Ghost).
-            Quaternion targetRot = _forceNaturalPose ? _startingLocalRotation : targetBone.localRotation;
+            Quaternion targetRot;
+            if (_forceNaturalPose && _restCaptured)
+            {
+                targetRot = _restRotation;
+            }
+            else
+            {
+                targetRot = targetBone.localRotation;
+            }
 
             _joint.targetRotation = _jointToLocalSpace
                                     * Quaternion.Inverse(targetRot)
