@@ -119,12 +119,10 @@ namespace EdgeParty.Gameplay.Character
         private bool _attackStateEntered;
 
         private float _dashTimer;
-        private float _idleTimer; // Timer cho trạng thái Idle sau 10s
         private float _attackCooldownTimer;
         private bool _dashMirror;
         private bool _attackMirror;
         private float _oneShotSafetyTimer;
-        private Quaternion _baseLeftArmRot; // Cached at start of attack
 
         // ─────────────────────────────────────────────────────────────────
         private void Awake()
@@ -265,49 +263,18 @@ namespace EdgeParty.Gameplay.Character
 
             CurrentState = PlayerState.Attack;
 
-            // 1. CHỤP ẢNH TƯ THẾ IDLE HIỆN TẠI (CHỈ ÁP DỤNG CHO CÁNH TAY)
-            if (_cachedFollowers == null) _cachedFollowers = transform.root.GetComponentsInChildren<RagdollBoneFollower>();
-            foreach (var f in _cachedFollowers)
-            {
-                if (f.category == BoneCategory.Arm) f.CaptureCurrentPoseAsRest();
-            }
-
             IsPlayingOneShot = true;
-            _idleTimer = 0f;
 
             // Tự động tính tổng thời gian dựa trên các phase để đồng bộ hóa việc khóa khớp
             totalAttackDuration = swingTime + holdTime + recoveryTime;
             _oneShotSafetyTimer = totalAttackDuration;
+
             _upperBodyActive = true;
             _hitboxOpen = false;
 
-            // LẤY BASE TỪ VẬT LÝ VÀ BOOST SPRING
             if (ghostAnimator != null)
             {
                 var ragdollRoot = transform.root;
-
-                // Boost Spring tay trái lên gấp 10 lần để vung cho mạnh
-                if (_cachedFollowers == null) _cachedFollowers = ragdollRoot.GetComponentsInChildren<RagdollBoneFollower>();
-                foreach (var f in _cachedFollowers)
-                {
-                    // CHỈ tác động đúng thèn vai (UpperArm), không đụng chạm gì đến cẳng tay
-                    if (f.name.ToLower() == "upperarm_l") f.SetSpringMultiplier(2.0f);
-                }
-
-                // Tìm xương tay trái vật lý
-                var leftArmPhys = ragdollRoot.GetComponentsInChildren<Rigidbody>()
-                    .FirstOrDefault(r => r.name.ToLower() == "upperarm_l");
-
-                if (leftArmPhys != null)
-                {
-                    _baseLeftArmRot = leftArmPhys.transform.localRotation;
-                }
-                else
-                {
-                    Transform leftGhost = ghostAnimator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
-                    if (leftGhost != null) _baseLeftArmRot = leftGhost.localRotation;
-                }
-
                 // KHÓA CỨNG CƠ THỂ VÀ MỞ TUNG CÁNH TAY
                 var allJoints = ragdollRoot.GetComponentsInChildren<ConfigurableJoint>();
                 foreach (var j in allJoints)
@@ -483,24 +450,19 @@ namespace EdgeParty.Gameplay.Character
             if (_moveDir.sqrMagnitude > 0.01f)
             {
                 CurrentState = _isRunning ? PlayerState.Run : PlayerState.Walk;
-                _idleTimer = 0f; // Reset timer khi di chuyển
             }
             else
             {
-                _idleTimer += Time.deltaTime;
-                // Nếu đứng yên quá 10s thì mới vào Idle, còn không thì ở None (mặc định)
-                if (_idleTimer >= 10f)
-                    CurrentState = PlayerState.Idle;
-                else
-                    CurrentState = PlayerState.None; // PlayerState.None needs to be added to enum
+                CurrentState = PlayerState.Idle;
             }
         }
 
         private void UpdateBaseAnimator()
         {
-            if (IsPlayingOneShot)
+            // Nếu là đòn Dash hoặc Jump, ta giữ nguyên animation của chúng
+            bool isSpecialAction = IsPlayingOneShot && (CurrentState == PlayerState.Dash || CurrentState == PlayerState.InAir);
+            if (isSpecialAction)
             {
-                // Khi đang chơi đòn đặc biệt (đấm/nhảy/dash), ta PHẢI kết nối lại với Ghost
                 if (_cachedFollowers != null)
                 {
                     foreach (var f in _cachedFollowers) f.SetNaturalPose(false);
@@ -514,31 +476,19 @@ namespace EdgeParty.Gameplay.Character
                 PlayerState.Run => GetDirectionalState(runState, runLState, runRState),
                 PlayerState.InAir => inAirState,
                 PlayerState.Idle => idleState,
-                _ => "None"
+                PlayerState.Attack => idleState, // Khi đấm procedural, giữ Animator ở Idle
+                _ => idleState
             };
 
             PlayBaseState(target);
 
-            // XỬ LÝ TƯ THẾ TỰ NHIÊN CHO TRẠNG THÁI NONE
-            bool isNone = target == "None";
+            // LUÔN LUÔN THEO ANIMATOR (Full Idle) - Bỏ Natural Pose
             if (_cachedFollowers == null) _cachedFollowers = transform.root.GetComponentsInChildren<RagdollBoneFollower>();
 
             foreach (var f in _cachedFollowers)
             {
-                // CHỈ ÁP DỤNG NATURAL POSE CHO CÁNH TAY (theo yêu cầu)
-                if (f.category == BoneCategory.Arm)
-                {
-                    f.SetNaturalPose(isNone);
-                    // Giảm nhẹ lực lò xo ở trạng thái None để tay rũ xuống tự nhiên hơn
-                    if (isNone) f.SetSpringMultiplier(0.6f);
-                    else f.SetSpringMultiplier(1f);
-                }
-                else
-                {
-                    // Các bộ phận khác luôn theo Animator, không dùng NaturalPose
-                    f.SetNaturalPose(false);
-                    f.SetSpringMultiplier(1f);
-                }
+                f.SetNaturalPose(false);
+                f.SetSpringMultiplier(1f);
             }
         }
 
@@ -655,7 +605,6 @@ namespace EdgeParty.Gameplay.Character
 
                 float t = Mathf.SmoothStep(0f, 1f, progress);
 
-                // Dùng các thông số từ Inspector
                 float zRotVal = Mathf.Lerp(0f, targetPunchZ, t);
 
                 // Trục X (Quật ngang) chỉ bắt đầu chạy khi tiến trình vượt qua hookStartThreshold
@@ -669,8 +618,11 @@ namespace EdgeParty.Gameplay.Character
                 Quaternion xRot = Quaternion.AngleAxis(xRotVal, Vector3.right);
                 Quaternion zRot = Quaternion.AngleAxis(zRotVal, Vector3.forward);
 
-                // Ghi đè rotation của xương ghost (đổi thứ tự nhân Y-X-Z để ổn định hơn)
-                leftUpperArm.localRotation = _baseLeftArmRot * yRot * xRot * zRot;
+                // CƠ CHẾ CỘNG DỒN (ADDITIVE): 
+                // Ta lấy rotation HIỆN TẠI của Idle (đã có breathing/motion) 
+                // rồi nhân thêm (offset) góc đấm vào.
+                // Khi progress về 0, nó sẽ tự động là Idle thuần túy.
+                leftUpperArm.localRotation *= Quaternion.Slerp(Quaternion.identity, yRot * xRot * zRot, t);
             }
         }
 
