@@ -2,6 +2,7 @@ using System;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace EdgeParty.ConnectionManagement
 {
@@ -45,9 +46,9 @@ namespace EdgeParty.ConnectionManagement
 
                 Debug.Log($"[EdgegapServerStarter] Calling StartServer() on Port {utp.ConnectionData.Port} (Listening on 0.0.0.0)...");
                 
-                if (!networkManager.StartServer())
+                if (networkManager.StartServer())
                 {
-                    Debug.LogError("[EdgegapServerStarter] Failed to start server.");
+                    NetworkManager.Singleton.SceneManager.LoadScene("DemoScene_Forest", LoadSceneMode.Single);
                 }
             }
         }
