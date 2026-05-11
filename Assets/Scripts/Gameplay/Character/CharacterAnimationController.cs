@@ -47,18 +47,19 @@ namespace EdgeParty.Gameplay.Character
         public string airAtkState = "AirATK";
 
         [Header("Attack Settings")]
-        public float attackDuration = 1.5f; 
-        
+        [Tooltip("Tổng thời gian đòn đánh (Tự động tính = Swing + Hold + Recovery)")]
+        public float totalAttackDuration = 1.5f;
+
         [Header("Attack Tuning (Procedural)")]
         [Range(-180f, 180f)] public float targetPunchZ = -90f;
         [Range(-180f, 180f)] public float targetPunchX = -130f;
         [Range(-180f, 180f)] public float targetPunchY = -30f;
-        
+
         [Space]
         public float swingTime = 0.8f;      // Thời gian vung ra
         public float holdTime = 0.2f;       // Thời gian giữ tư thế đấm
         public float recoveryTime = 0.5f;   // Thời gian thu tay về mượt mà
-        
+
         [Range(0f, 1f)]
         public float hookStartThreshold = 0.6f; // Chỉ bắt đầu quật X khi vung Z đã đạt 60%
 
@@ -214,43 +215,18 @@ namespace EdgeParty.Gameplay.Character
 
             _attackCooldownTimer = Mathf.Max(0f, _attackCooldownTimer - dt);
             _dashTimer = Mathf.Max(0f, _dashTimer - dt);
-            
+
             if (IsPlayingOneShot)
             {
                 float oldTimer = _oneShotSafetyTimer;
                 _oneShotSafetyTimer -= dt;
-                
+
                 // Khi kết thúc đòn đấm
                 if (oldTimer > 0 && _oneShotSafetyTimer <= 0)
                 {
                     IsPlayingOneShot = false;
-                    _upperBodyActive = false;
-                    
-                    // KHÔI PHỤC GIỚI HẠN VÀ SPRING
-                    var ragdollRoot = transform.root;
-                    var allJoints = ragdollRoot.GetComponentsInChildren<ConfigurableJoint>();
-                    foreach(var j in allJoints) {
-                        string n = j.name.ToLower();
-                        if(n.Contains("upperarm_l")) {
-                            j.angularXMotion = ConfigurableJointMotion.Limited;
-                            j.angularYMotion = ConfigurableJointMotion.Limited;
-                            j.angularZMotion = ConfigurableJointMotion.Limited;
-                        }
-                        else if (n.Contains("pelvis")) {
-                            // Khôi phục Pelvis về Free (hoặc trạng thái mặc định của bạn)
-                            j.angularXMotion = ConfigurableJointMotion.Free;
-                        }
-                        else if (n.Contains("spine")) {
-                            // Khôi phục Spine về Limited
-                            j.angularYMotion = ConfigurableJointMotion.Limited;
-                        }
-                    }
-
-                    // Trả spring về bình thường
-                    if (_cachedFollowers != null)
-                    {
-                        foreach(var f in _cachedFollowers) f.SetSpringMultiplier(1f);
-                    }
+                    // Trì hoãn việc giải phóng cơ thể 0.2s để triệt tiêu phản lực
+                    Invoke(nameof(FinalizeAttackCleanup), 0.2f);
                 }
             }
 
@@ -288,11 +264,20 @@ namespace EdgeParty.Gameplay.Character
             */
 
             CurrentState = PlayerState.Attack;
+
+            // 1. CHỤP ẢNH TƯ THẾ IDLE HIỆN TẠI (CHỈ ÁP DỤNG CHO CÁNH TAY)
+            if (_cachedFollowers == null) _cachedFollowers = transform.root.GetComponentsInChildren<RagdollBoneFollower>();
+            foreach (var f in _cachedFollowers)
+            {
+                if (f.category == BoneCategory.Arm) f.CaptureCurrentPoseAsRest();
+            }
+
             IsPlayingOneShot = true;
-            _idleTimer = 0f; 
-            
-            // Dùng attackDuration thay vì hằng số 0.5s
-            _oneShotSafetyTimer = attackDuration; 
+            _idleTimer = 0f;
+
+            // Tự động tính tổng thời gian dựa trên các phase để đồng bộ hóa việc khóa khớp
+            totalAttackDuration = swingTime + holdTime + recoveryTime;
+            _oneShotSafetyTimer = totalAttackDuration;
             _upperBodyActive = true;
             _hitboxOpen = false;
 
@@ -300,40 +285,49 @@ namespace EdgeParty.Gameplay.Character
             if (ghostAnimator != null)
             {
                 var ragdollRoot = transform.root;
-                
+
                 // Boost Spring tay trái lên gấp 10 lần để vung cho mạnh
                 if (_cachedFollowers == null) _cachedFollowers = ragdollRoot.GetComponentsInChildren<RagdollBoneFollower>();
-                foreach(var f in _cachedFollowers) {
-                    if (f.name.ToLower().Contains("upperarm_l")) f.SetSpringMultiplier(10f);
+                foreach (var f in _cachedFollowers)
+                {
+                    // CHỈ tác động đúng thèn vai (UpperArm), không đụng chạm gì đến cẳng tay
+                    if (f.name.ToLower() == "upperarm_l") f.SetSpringMultiplier(2.0f);
                 }
 
                 // Tìm xương tay trái vật lý
                 var leftArmPhys = ragdollRoot.GetComponentsInChildren<Rigidbody>()
-                    .FirstOrDefault(r => r.name.ToLower().Contains("upperarm_l"));
-                
-                if (leftArmPhys != null) {
+                    .FirstOrDefault(r => r.name.ToLower() == "upperarm_l");
+
+                if (leftArmPhys != null)
+                {
                     _baseLeftArmRot = leftArmPhys.transform.localRotation;
-                } else {
+                }
+                else
+                {
                     Transform leftGhost = ghostAnimator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
                     if (leftGhost != null) _baseLeftArmRot = leftGhost.localRotation;
                 }
-                
+
                 // KHÓA CỨNG CƠ THỂ VÀ MỞ TUNG CÁNH TAY
                 var allJoints = ragdollRoot.GetComponentsInChildren<ConfigurableJoint>();
-                foreach(var j in allJoints) {
+                foreach (var j in allJoints)
+                {
                     string n = j.name.ToLower();
-                    if(n.Contains("upperarm_l")) {
+                    if (n == "upperarm_l")
+                    {
                         j.angularXMotion = ConfigurableJointMotion.Free;
                         j.angularYMotion = ConfigurableJointMotion.Free;
                         j.angularZMotion = ConfigurableJointMotion.Free;
                     }
-                    else if (n.Contains("pelvis")) {
+                    else if (n.Contains("pelvis"))
+                    {
                         // Giới hạn Pelvis X để không bị ngửa ra sau (-5 đến 5 độ)
                         j.angularXMotion = ConfigurableJointMotion.Limited;
                         var limit = j.highAngularXLimit; limit.limit = 5f; j.highAngularXLimit = limit;
                         limit = j.lowAngularXLimit; limit.limit = -5f; j.lowAngularXLimit = limit;
                     }
-                    else if (n.Contains("spine")) {
+                    else if (n.Contains("spine"))
+                    {
                         // Khóa Angular Y của Spine để không bị xoay người quá đà gây nghiêng
                         j.angularYMotion = ConfigurableJointMotion.Locked;
                     }
@@ -363,8 +357,42 @@ namespace EdgeParty.Gameplay.Character
         private void StopAttack()
         {
             CloseHitbox();
-            _upperBodyActive = false;
+            // _upperBodyActive sẽ được set false trong FinalizeAttackCleanup
             _attackCooldownTimer = attackCooldown;
+        }
+
+        private void FinalizeAttackCleanup()
+        {
+            _upperBodyActive = false;
+
+            // KHÔI PHỤC GIỚI HẠN VÀ SPRING CHO CÁNH TAY
+            var ragdollRoot = transform.root;
+            var allJoints = ragdollRoot.GetComponentsInChildren<ConfigurableJoint>();
+            foreach (var j in allJoints)
+            {
+                string n = j.name.ToLower();
+                if (n == "upperarm_l")
+                {
+                    j.angularXMotion = ConfigurableJointMotion.Limited;
+                    j.angularYMotion = ConfigurableJointMotion.Limited;
+                    j.angularZMotion = ConfigurableJointMotion.Limited;
+                }
+                else if (n.Contains("pelvis"))
+                {
+                    // Khôi phục Pelvis về trạng thái vật lý bình thường
+                    j.angularXMotion = ConfigurableJointMotion.Free;
+                }
+                else if (n.Contains("spine"))
+                {
+                    j.angularYMotion = ConfigurableJointMotion.Limited;
+                }
+            }
+
+            // Trả spring về bình thường
+            if (_cachedFollowers != null)
+            {
+                foreach (var f in _cachedFollowers) f.SetSpringMultiplier(1f);
+            }
         }
 
         private void ManageHitbox(float normalizedTime)
@@ -410,17 +438,17 @@ namespace EdgeParty.Gameplay.Character
             {
                 bool landedFromJump = CurrentState == PlayerState.InAir
                                       && _motor != null && _motor.IsGrounded;
-                
+
                 bool oneShotDone = false;
 
                 if (ghostAnimator != null)
                 {
                     var info = ghostAnimator.GetCurrentAnimatorStateInfo(baseLayerIndex);
-                    
+
                     // NEW: Strict state checking. 
                     // Only consider the action "done" if we are actually IN the state and it's finished,
                     // OR if the safety timer has completely expired and we aren't even in the state yet (stuck).
-                    bool inActionState = info.IsName(dashState) || info.IsName(jumpState) || 
+                    bool inActionState = info.IsName(dashState) || info.IsName(jumpState) ||
                                         info.IsName(atk1State) || info.IsName(airAtkState);
 
                     if (inActionState)
@@ -494,15 +522,23 @@ namespace EdgeParty.Gameplay.Character
             // XỬ LÝ TƯ THẾ TỰ NHIÊN CHO TRẠNG THÁI NONE
             bool isNone = target == "None";
             if (_cachedFollowers == null) _cachedFollowers = transform.root.GetComponentsInChildren<RagdollBoneFollower>();
-            
-            foreach(var f in _cachedFollowers)
+
+            foreach (var f in _cachedFollowers)
             {
-                // Nếu là None, ép xương về tư thế mặc định của Prefab, bỏ qua Animator
-                f.SetNaturalPose(isNone);
-                
-                // Giảm nhẹ lực lò xo ở trạng thái None để tay rũ xuống tự nhiên hơn (0.6x thay vì 1x)
-                if (isNone) f.SetSpringMultiplier(0.6f);
-                else f.SetSpringMultiplier(1f);
+                // CHỈ ÁP DỤNG NATURAL POSE CHO CÁNH TAY (theo yêu cầu)
+                if (f.category == BoneCategory.Arm)
+                {
+                    f.SetNaturalPose(isNone);
+                    // Giảm nhẹ lực lò xo ở trạng thái None để tay rũ xuống tự nhiên hơn
+                    if (isNone) f.SetSpringMultiplier(0.6f);
+                    else f.SetSpringMultiplier(1f);
+                }
+                else
+                {
+                    // Các bộ phận khác luôn theo Animator, không dùng NaturalPose
+                    f.SetNaturalPose(false);
+                    f.SetSpringMultiplier(1f);
+                }
             }
         }
 
@@ -536,10 +572,10 @@ namespace EdgeParty.Gameplay.Character
         private void PlayUpperBodyState(string stateName)
         {
             if (ghostAnimator == null) return;
-            
+
             // EMERGENCY FALLBACK (Verified via MCP Scan):
             // If the Inspector is still sending 'ATK1', we force it to 'RightATK'.
-            if (stateName == "ATK1") 
+            if (stateName == "ATK1")
             {
                 atk1State = "RightATK";
                 stateName = "RightATK";
@@ -583,9 +619,9 @@ namespace EdgeParty.Gameplay.Character
             Transform leftUpperArm = ghostAnimator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
             if (leftUpperArm != null)
             {
-                // TỔNG THỜI GIAN: attackDuration (tổng 3 phase phải khớp với attackDuration)
-                float elapsed = attackDuration - _oneShotSafetyTimer;
-                
+                // TỔNG THỜI GIAN: Được tính động từ các phase
+                float elapsed = totalAttackDuration - _oneShotSafetyTimer;
+
                 float progress = 0f;
 
                 if (elapsed <= swingTime)
@@ -605,21 +641,23 @@ namespace EdgeParty.Gameplay.Character
                     float recoveryT = Mathf.Clamp01(recoveryElapsed / recoveryTime);
                     // Thu về từ 1.0 về 0.0
                     progress = 1.0f - Mathf.SmoothStep(0f, 1f, recoveryT);
-                    
+
                     // Trong lúc thu tay, ta cũng giảm dần lực Spring về bình thường
-                    if (_cachedFollowers != null) {
-                        foreach(var f in _cachedFollowers) {
-                            if (f.name.ToLower().Contains("upperarm_l")) 
+                    if (_cachedFollowers != null)
+                    {
+                        foreach (var f in _cachedFollowers)
+                        {
+                            if (f.name.ToLower() == "upperarm_l")
                                 f.SetSpringMultiplier(Mathf.Lerp(10f, 1f, recoveryT));
                         }
                     }
                 }
-                
+
                 float t = Mathf.SmoothStep(0f, 1f, progress);
 
                 // Dùng các thông số từ Inspector
                 float zRotVal = Mathf.Lerp(0f, targetPunchZ, t);
-                
+
                 // Trục X (Quật ngang) chỉ bắt đầu chạy khi tiến trình vượt qua hookStartThreshold
                 float xProgress = Mathf.Clamp01((progress - hookStartThreshold) / (1f - hookStartThreshold));
                 float xT = Mathf.SmoothStep(0f, 1f, xProgress);
@@ -627,12 +665,12 @@ namespace EdgeParty.Gameplay.Character
 
                 float yRotVal = Mathf.Lerp(0f, targetPunchY, t);
 
-                Quaternion zRot = Quaternion.AngleAxis(zRotVal, Vector3.forward);
-                Quaternion xRot = Quaternion.AngleAxis(xRotVal, Vector3.right);
                 Quaternion yRot = Quaternion.AngleAxis(yRotVal, Vector3.up);
+                Quaternion xRot = Quaternion.AngleAxis(xRotVal, Vector3.right);
+                Quaternion zRot = Quaternion.AngleAxis(zRotVal, Vector3.forward);
 
-                // Ghi đè rotation của xương ghost
-                leftUpperArm.localRotation = _baseLeftArmRot * zRot * xRot * yRot;
+                // Ghi đè rotation của xương ghost (đổi thứ tự nhân Y-X-Z để ổn định hơn)
+                leftUpperArm.localRotation = _baseLeftArmRot * yRot * xRot * zRot;
             }
         }
 
