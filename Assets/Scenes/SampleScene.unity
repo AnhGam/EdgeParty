@@ -1222,6 +1222,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3096613354075356913, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3096613354075356913, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
       propertyPath: combatVelocitySync
       value: 0.3
       objectReference: {fileID: 0}
@@ -1557,8 +1562,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4051844227949023155, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
+      propertyPath: swingTime
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4051844227949023155, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: recoveryTime
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4051844227949023155, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
       propertyPath: targetPunchX
-      value: -77
+      value: -88
       objectReference: {fileID: 0}
     - target: {fileID: 4051844227949023155, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1580,6 +1595,11 @@ PrefabInstance:
       propertyPath: hookStartThreshold
       value: 0.7
       objectReference: {fileID: 0}
+    - target: {fileID: 4051844227949023155, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: totalAttackDuration
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4078309440640400550, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Layer
@@ -1598,7 +1618,7 @@ PrefabInstance:
     - target: {fileID: 4107152706601343227, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: -20
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4107152706601343227, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1608,7 +1628,7 @@ PrefabInstance:
     - target: {fileID: 4107152706601343227, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionDamper
-      value: 10
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4107152706601343227, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1618,7 +1638,7 @@ PrefabInstance:
     - target: {fileID: 4107152706601343227, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionDamper
-      value: 10
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4107152706601343227, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1743,7 +1763,7 @@ PrefabInstance:
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: -97.304115
+      value: -177
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2098,17 +2118,17 @@ PrefabInstance:
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: -25.02828
+      value: -50
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_HighAngularXLimit.limit
-      value: 96.11021
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXLimitSpring.spring
-      value: 100
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2138,7 +2158,7 @@ PrefabInstance:
     - target: {fileID: 5926413060528181899, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: -20
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5926413060528181899, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2148,7 +2168,7 @@ PrefabInstance:
     - target: {fileID: 5926413060528181899, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionDamper
-      value: 10
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5926413060528181899, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2158,7 +2178,7 @@ PrefabInstance:
     - target: {fileID: 5926413060528181899, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionDamper
-      value: 10
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5926413060528181899, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
