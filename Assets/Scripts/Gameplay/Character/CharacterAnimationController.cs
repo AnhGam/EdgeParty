@@ -36,7 +36,7 @@ namespace EdgeParty.Gameplay.Character
         public float hitboxStartTime = 0.25f;
         public float hitboxEndTime = 0.65f;
         public float attackAnimSpeed = 1.1f;
-        public float attackCooldown = 0.4f;
+        public float attackCooldown = 3.0f;
 
         [Header("Dash Settings")]
         public float dashCooldown = 1.5f;
@@ -75,6 +75,7 @@ namespace EdgeParty.Gameplay.Character
         private float _attackCooldownTimer;
         private bool _dashMirror;
         private bool _attackMirror;
+        private bool _nextAttackIsLeft;
         private RagdollBoneFollower[] _cachedFollowers;
 
         // ─────────────────────────────────────────────────────────────────
@@ -176,8 +177,20 @@ namespace EdgeParty.Gameplay.Character
         {
             bool inAir = _motor != null && _motor.pelvisRigidbody != null && Mathf.Abs(_motor.pelvisRigidbody.linearVelocity.y) > 1.5f;
 
-            _attackMirror = false;
-            _currentAtkState = inAir ? airAtkState : atk1State;
+            if (!_nextAttackIsLeft)
+            {
+                // Right hand: normal attack
+                _attackMirror = false;
+                _currentAtkState = atk1State;
+                _nextAttackIsLeft = true;
+            }
+            else
+            {
+                // Left hand: dash attack
+                _attackMirror = false; // By default, the dash animation is already on the left, so we do not mirror it
+                _currentAtkState = dashState;
+                _nextAttackIsLeft = false;
+            }
 
             if (ghostAnimator != null)
             {
@@ -186,6 +199,10 @@ namespace EdgeParty.Gameplay.Character
                     if (param.name == "AttackSpeed")
                     {
                         ghostAnimator.SetFloat("AttackSpeed", attackAnimSpeed);
+                    }
+                    if (param.name == mirrorParam)
+                    {
+                        ghostAnimator.SetBool(mirrorParam, _attackMirror);
                     }
                 }
             }
@@ -204,7 +221,7 @@ namespace EdgeParty.Gameplay.Character
             if (!_upperBodyActive || ghostAnimator == null) return;
 
             var info = ghostAnimator.GetCurrentAnimatorStateInfo(0);
-            if (info.IsName(atk1State) || info.IsName(airAtkState))
+            if (info.IsName(atk1State) || info.IsName(airAtkState) || info.IsName(dashState))
             {
                 ManageHitbox(info.normalizedTime);
             }
@@ -242,7 +259,7 @@ namespace EdgeParty.Gameplay.Character
         {
             _hitboxOpen = true;
             var pelvis = _motor != null ? _motor.pelvisRigidbody : null;
-            PunchHitbox fist = rightFistHitbox; // Single-arm punch config uses right hand default
+            PunchHitbox fist = (_currentAtkState == dashState) ? leftFistHitbox : rightFistHitbox;
 
             if (fist != null)
                 fist.Activate(pelvis, _stats);
