@@ -393,10 +393,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 6688391216733882194}
-    - targetCorrespondingSourceObject: {fileID: 8603064644883837947, guid: d2d3d08afa80216409ebf3bd241ea899,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: -1937671338539732422}
     - targetCorrespondingSourceObject: {fileID: 6239528333133075653, guid: d2d3d08afa80216409ebf3bd241ea899,
         type: 3}
       insertIndex: -1
@@ -713,14 +709,14 @@ ConfigurableJoint:
   m_RotationDriveMode: 0
   m_AngularXDrive:
     serializedVersion: 4
-    positionSpring: 170
-    positionDamper: 13
+    positionSpring: 5
+    positionDamper: 5
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_AngularYZDrive:
     serializedVersion: 4
-    positionSpring: 170
-    positionDamper: 13
+    positionSpring: 5
+    positionDamper: 5
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_SlerpDrive:
@@ -754,9 +750,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 2
   targetBone: {fileID: 0}
-  gravityCompensation: 0.8
-  velocitySync: 0.3
-  combatVelocitySync: 0.92
 --- !u!1 &822538591225049030 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 848306153731334599, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -976,14 +969,14 @@ ConfigurableJoint:
   m_RotationDriveMode: 0
   m_AngularXDrive:
     serializedVersion: 4
-    positionSpring: 170
-    positionDamper: 13
+    positionSpring: 5
+    positionDamper: 5
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_AngularYZDrive:
     serializedVersion: 4
-    positionSpring: 170
-    positionDamper: 13
+    positionSpring: 5
+    positionDamper: 5
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_SlerpDrive:
@@ -1017,9 +1010,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 2
   targetBone: {fileID: 0}
-  gravityCompensation: 0.8
-  velocitySync: 0.3
-  combatVelocitySync: 0.92
 --- !u!1 &4980112486900596233 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5022391431320940552, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1190,9 +1180,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 0}
-  gravityCompensation: 0
-  velocitySync: 0.5
-  combatVelocitySync: 0.9
 --- !u!1 &5347654836525219602 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5375424609692152083, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1363,9 +1350,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 1
   targetBone: {fileID: 0}
-  gravityCompensation: 0
-  velocitySync: 0.5
-  combatVelocitySync: 0.9
 --- !u!1 &6212916327763024580 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6239528333133075653, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1536,9 +1520,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 0}
-  gravityCompensation: 0
-  velocitySync: 0.5
-  combatVelocitySync: 0.9
 --- !u!1 &6444853533324177816 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6475982380793249689, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1670,14 +1651,14 @@ ConfigurableJoint:
   m_RotationDriveMode: 0
   m_AngularXDrive:
     serializedVersion: 4
-    positionSpring: 170
-    positionDamper: 13
+    positionSpring: 30
+    positionDamper: 5
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_AngularYZDrive:
     serializedVersion: 4
-    positionSpring: 170
-    positionDamper: 13
+    positionSpring: 30
+    positionDamper: 5
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_SlerpDrive:
@@ -1704,16 +1685,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6444853533324177816}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4fd901e19d0c06d47af330f917dc080e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 2
   targetBone: {fileID: 0}
-  gravityCompensation: 0.8
-  velocitySync: 0.3
-  combatVelocitySync: 0.92
 --- !u!1 &6514028770167509617 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6541915142029417584, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -1727,7 +1705,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6514028770167509617}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: c0f606a6b0c0e504c8f5ac506b9b32c6, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -2003,14 +1981,14 @@ ConfigurableJoint:
   m_RotationDriveMode: 0
   m_AngularXDrive:
     serializedVersion: 4
-    positionSpring: 170
-    positionDamper: 13
+    positionSpring: 30
+    positionDamper: 5
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_AngularYZDrive:
     serializedVersion: 4
-    positionSpring: 170
-    positionDamper: 13
+    positionSpring: 30
+    positionDamper: 5
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_SlerpDrive:
@@ -2037,16 +2015,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7172485977189189419}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4fd901e19d0c06d47af330f917dc080e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 2
   targetBone: {fileID: 0}
-  gravityCompensation: 0.8
-  velocitySync: 0.3
-  combatVelocitySync: 0.92
 --- !u!1 &7747667731113824401 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7722205851399757456, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -2219,9 +2194,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 0}
-  gravityCompensation: 0
-  velocitySync: 0.5
-  combatVelocitySync: 0.9
 --- !u!1 &7943535162412650772 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7967690908504530709, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -2394,9 +2366,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 0
   targetBone: {fileID: 0}
-  gravityCompensation: 0
-  velocitySync: 0.5
-  combatVelocitySync: 0.9
 --- !u!1 &8611647934146250035 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8587607634627545906, guid: d2d3d08afa80216409ebf3bd241ea899,
@@ -2410,7 +2379,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8611647934146250035}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: c0f606a6b0c0e504c8f5ac506b9b32c6, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -2573,7 +2542,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 4023747290
+  GlobalObjectIdHash: 4021775717
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -2633,18 +2602,3 @@ MonoBehaviour:
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 1
   combatBoostMultiplier: 8
---- !u!114 &-1937671338539732422
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8632219853986348538}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 64dd99fa4a564744fbcaa6f07b31985c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.ConnectionManagement.ActiveRagdollSyncer
-  ShowTopMostFoldoutHeaderGroup: 1
-  syncRate: 20
-  smoothSpeed: 15

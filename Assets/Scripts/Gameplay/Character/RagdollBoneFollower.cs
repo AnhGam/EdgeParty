@@ -10,17 +10,7 @@ namespace EdgeParty.Gameplay.Character
         public BoneCategory category;
         public Transform targetBone;
 
-        [Header("Follow Settings")]
-        [Range(0f, 1f)] public float gravityCompensation = 0f;
-        [Range(0f, 1f)] public float velocitySync = 0.3f;
-        
-        [Header("Combat Boost")]
-        [Tooltip("Velocity sync used during attack/dash (higher = follows animation more precisely)")]
-        [Range(0f, 1f)] public float combatVelocitySync = 0.95f;
-
-        // Runtime
         private ConfigurableJoint _joint;
-        private Rigidbody _rb;
         private Quaternion _startingLocalRotation;
         private Quaternion _localToJointSpace;
         private Quaternion _jointToLocalSpace;
@@ -31,51 +21,22 @@ namespace EdgeParty.Gameplay.Character
         private float _originalYZDamper;
 
         private bool _isRootBone;
-        private bool _isCombatActive;
-        private bool _isOneShotMode;
-        
-        private Quaternion _restRotation; // Tư thế rũ tự nhiên thực tế
-        private bool _restCaptured = false;
 
         private void Awake()
         {
             _joint = GetComponent<ConfigurableJoint>();
-            _rb = GetComponent<Rigidbody>();
-            
-            // If this bone is the one with the CharacterMotor/PlayerController, it shouldn't follow itself
-            _isRootBone = (GetComponent<PlayerController>() != null || GetComponent<CharacterMotor>() != null);
-
-            if (_isRootBone) return;
-
+            _isRootBone = (_joint.connectedBody == null);
             _startingLocalRotation = transform.localRotation;
 
-            RecalculateJointSpace();
-
-            // Store original spring values
+            // Cache the hand-tuned spring and damper values from the Joint Inspector
             _originalXSpring = _joint.angularXDrive.positionSpring;
             _originalXDamper = _joint.angularXDrive.positionDamper;
             _originalYZSpring = _joint.angularYZDrive.positionSpring;
             _originalYZDamper = _joint.angularYZDrive.positionDamper;
 
-            // Đợi một chút để trọng lực làm rũ tay xuống rồi mới lưu tư thế "tự nhiên"
-            Invoke(nameof(CaptureRestRotation), 0.5f);
-        }
-
-        private void Start()
-        {
-            if (_isRootBone) return;
-
-            if (targetBone == null)
-            {
-                Debug.LogError($"[RagdollBoneFollower] targetBone is NULL on '{gameObject.name}'!", this);
-            }
-        }
-
-        private void RecalculateJointSpace()
-        {
-            if (_joint == null) return;
+            // Joint space calculation (mstevenson/ConfigurableJointExtensions)
             Vector3 forward = Vector3.Cross(_joint.axis, _joint.secondaryAxis).normalized;
-            Vector3 up = _joint.secondaryAxis;
+            Vector3 up = Vector3.Cross(forward, _joint.axis).normalized;
 
             // Safety check for collinear axes
             if (forward.sqrMagnitude < 0.001f)
@@ -88,93 +49,57 @@ namespace EdgeParty.Gameplay.Character
             _jointToLocalSpace = Quaternion.Inverse(_localToJointSpace);
         }
 
-        public void CaptureCurrentPoseAsRest()
-        {
-            _restRotation = transform.localRotation;
-            _restCaptured = true;
-        }
-
-        private void CaptureRestRotation()
-        {
-            _restRotation = transform.localRotation;
-            _restCaptured = true;
-        }
-
-        private void OnEnable()
-        {
-            // Restore springs when enabled
-            SetSpringMultiplier(1f);
-        }
-
-        private void OnDisable()
-        {
-            // Go limp when disabled to avoid "infinite spinning" if targetRotation is stale
-            if (_joint != null)
-            {
-                var xd = _joint.angularXDrive; xd.positionSpring = 0.1f; _joint.angularXDrive = xd;
-                var yzd = _joint.angularYZDrive; yzd.positionSpring = 0.1f; _joint.angularYZDrive = yzd;
-            }
-        }
-
+        /// <summary>
+        /// Scales the original Inspector spring and damper values by the given multiplier.
+        /// This preserves the user's hand-tuned balance ratio.
+        /// </summary>
         public void SetSpringMultiplier(float multiplier)
         {
             if (_joint == null) return;
 
-            var xd = _joint.angularXDrive;
-            xd.positionSpring = _originalXSpring * multiplier;
-            xd.positionDamper = _originalXDamper * multiplier;
-            _joint.angularXDrive = xd;
+            var xDrive = _joint.angularXDrive;
+            xDrive.positionSpring = _originalXSpring * multiplier;
+            xDrive.positionDamper = _originalXDamper * multiplier; 
+            _joint.angularXDrive = xDrive;
 
-            var yzd = _joint.angularYZDrive;
-            yzd.positionSpring = _originalYZSpring * multiplier;
-            yzd.positionDamper = _originalYZDamper * multiplier;
-            _joint.angularYZDrive = yzd;
+            var yzDrive = _joint.angularYZDrive;
+            yzDrive.positionSpring = _originalYZSpring * multiplier;
+            yzDrive.positionDamper = _originalYZDamper * multiplier;
+            _joint.angularYZDrive = yzDrive;
         }
 
-        public void SetCombatMode(bool active)
+        /// <summary>
+        /// Makes the bone limp (normal ragdoll).
+        /// </summary>
+        public void SetLimp()
         {
-            _isCombatActive = active;
+            if (_joint == null) return;
+
+            var xDrive = _joint.angularXDrive;
+            xDrive.positionSpring = 0.5f; // Very low to allow physics interaction
+            xDrive.positionDamper = 0f;
+            _joint.angularXDrive = xDrive;
+
+            var yzDrive = _joint.angularYZDrive;
+            yzDrive.positionSpring = 0.5f;
+            yzDrive.positionDamper = 0f;
+            _joint.angularYZDrive = yzDrive;
         }
 
-        public void SetOneShotMode(bool active)
-        {
-            _isOneShotMode = active;
-        }
-
-        private bool _forceNaturalPose = false;
-
-        public void SetNaturalPose(bool enabled)
-        {
-            _forceNaturalPose = enabled;
-        }
 
         private void FixedUpdate()
         {
+            // Root bone (pelvis) rotation is driven by CharacterMotor/Movement,
+            // setting targetRotation here would fight against it.
             if (_isRootBone || targetBone == null) return;
 
-            // Recalculate joint space so that axis/secondaryAxis changes in Editor take instant effect
-            RecalculateJointSpace();
+            Quaternion targetRot = targetBone.localRotation;
+            Quaternion resultRotation = _jointToLocalSpace
+                                        * Quaternion.Inverse(targetRot)
+                                        * _startingLocalRotation
+                                        * _localToJointSpace;
 
-            Quaternion targetRot;
-            if (_forceNaturalPose && _restCaptured)
-            {
-                targetRot = _restRotation;
-            }
-            else
-            {
-                targetRot = targetBone.localRotation;
-            }
-
-            _joint.targetRotation = _jointToLocalSpace
-                                    * Quaternion.Inverse(targetRot)
-                                    * _startingLocalRotation
-                                    * _localToJointSpace;
-
-            // 2. Gravity compensation
-            if (gravityCompensation > 0.01f)
-            {
-                _rb.AddForce(-Physics.gravity * (_rb.mass * gravityCompensation), ForceMode.Force);
-            }
+            _joint.targetRotation = resultRotation;
         }
     }
 }

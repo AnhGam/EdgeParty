@@ -77,12 +77,14 @@ namespace EdgeParty.Gameplay.Character
             bool isRunning = keyboard.leftShiftKey.isPressed;
             Vector3 worldMoveDir = GetCameraRelativeDirection(input);
 
+            bool isAttackPressed = (mouse != null && mouse.leftButton.wasPressedThisFrame) || keyboard.jKey.wasPressedThisFrame;
+
             if (isOffline)
             {
                 _controller.OnInputReceived_Server(worldMoveDir, isRunning);
                 if (keyboard.spaceKey.wasPressedThisFrame) _controller.OnJumpTriggered_Server(worldMoveDir);
                 if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) _controller.OnDashTriggered_Server();
-                if (mouse != null && mouse.leftButton.wasPressedThisFrame) _controller.OnAttackTriggered_Server();
+                if (isAttackPressed) _controller.OnAttackTriggered_Server();
             }
             else
             {
@@ -93,7 +95,7 @@ namespace EdgeParty.Gameplay.Character
                 if (keyboard.spaceKey.wasPressedThisFrame) TriggerJumpServerRpc(worldMoveDir);
                 else if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) TriggerDashServerRpc();
                 
-                if (mouse != null && mouse.leftButton.wasPressedThisFrame) TriggerAttackServerRpc();
+                if (isAttackPressed) TriggerAttackServerRpc();
             }
         }
 
