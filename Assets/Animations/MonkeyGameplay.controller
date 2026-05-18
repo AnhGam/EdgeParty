@@ -194,9 +194,9 @@ AnimatorStateMachine:
   m_EntryTransitions: []
   m_StateMachineTransitions: {}
   m_StateMachineBehaviours: []
-  m_AnyStatePosition: {x: 40, y: 0, z: 0}
+  m_AnyStatePosition: {x: 50, y: 20, z: 0}
   m_EntryPosition: {x: 50, y: 120, z: 0}
-  m_ExitPosition: {x: 990, y: 120, z: 0}
+  m_ExitPosition: {x: 800, y: 120, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
   m_DefaultState: {fileID: -322336773626378497}
 --- !u!1102 &-322336773626378497
@@ -248,7 +248,7 @@ AnimatorController:
     m_Controller: {fileID: 9100000}
   - m_Name: AttackSpeed
     m_Type: 1
-    m_DefaultFloat: 1.2
+    m_DefaultFloat: 1
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 9100000}
@@ -444,16 +444,16 @@ AnimatorState:
   m_WriteDefaultValues: 1
   m_Mirror: 0
   m_SpeedParameterActive: 1
-  m_MirrorParameterActive: 1
+  m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
   m_Motion: {fileID: -1352661633043279864, guid: 0b0e30f6b54bf444cbf4bfffcc60dd50,
     type: 3}
   m_Tag: 
   m_SpeedParameter: AttackSpeed
-  m_MirrorParameter: Mirror
+  m_MirrorParameter: 
   m_CycleOffsetParameter: 
-  m_TimeParameter: DashSpeed
+  m_TimeParameter: 
 --- !u!1102 &8504481506747746155
 AnimatorState:
   serializedVersion: 6
