@@ -26,11 +26,6 @@ namespace EdgeParty.Gameplay.Character
         public NetworkVariable<float> armMultiplier = new NetworkVariable<float>(1f);
         public NetworkVariable<float> torsoMultiplier = new NetworkVariable<float>(1f);
         public NetworkVariable<float> headMultiplier = new NetworkVariable<float>(1f);
-        public NetworkVariable<float> tailMultiplier = new NetworkVariable<float>(1f);
-
-        [Header("Settings")]
-        public float combatBoostMultiplier = 8f;
-
         private RagdollBoneFollower[] _followers;
 
         private void OnValidate() => SyncLegacyReferences();
@@ -99,7 +94,6 @@ namespace EdgeParty.Gameplay.Character
             armMultiplier.OnValueChanged += OnMultiplierChanged;
             torsoMultiplier.OnValueChanged += OnMultiplierChanged;
             headMultiplier.OnValueChanged += OnMultiplierChanged;
-            tailMultiplier.OnValueChanged += OnMultiplierChanged;
             ApplyBoneMultipliers();
 
             // Wire death/respawn into animator
@@ -116,7 +110,6 @@ namespace EdgeParty.Gameplay.Character
             armMultiplier.OnValueChanged -= OnMultiplierChanged;
             torsoMultiplier.OnValueChanged -= OnMultiplierChanged;
             headMultiplier.OnValueChanged -= OnMultiplierChanged;
-            tailMultiplier.OnValueChanged -= OnMultiplierChanged;
         }
 
         private void OnMultiplierChanged(float prev, float next) => ApplyBoneMultipliers();
@@ -165,7 +158,7 @@ namespace EdgeParty.Gameplay.Character
         public void OnJumpTriggered_Server(Vector3 moveDir)
         {
             if (stats != null && stats.IsDead.Value) return;
-            if (motor != null && animController != null && motor.IsGrounded)
+            if (motor != null && animController != null)
             {
                 motor.ApplyJump(moveDir);
                 animController.TriggerJump();
@@ -201,23 +194,14 @@ namespace EdgeParty.Gameplay.Character
         {
             if (_followers == null) return;
             
-            // Treat Dash/Jump (OneShot) as an attack state for bone logic
-            bool attacking = animController != null && (animController.IsAttacking || animController.IsPlayingOneShot);
-
             foreach (var f in _followers)
             {
-                f.SetCombatMode(attacking);
-                f.SetOneShotMode(animController != null && animController.IsPlayingOneShot);
-
-                bool isArm = f.category == BoneCategory.Arm;
-
                 float mult = f.category switch
                 {
                     BoneCategory.Leg => legMultiplier.Value,
-                    BoneCategory.Arm => armMultiplier.Value * (attacking ? combatBoostMultiplier : 1f),
+                    BoneCategory.Arm => armMultiplier.Value,
                     BoneCategory.Torso => torsoMultiplier.Value,
                     BoneCategory.Head => headMultiplier.Value,
-                    BoneCategory.Tail => tailMultiplier.Value,
                     _ => 1f
                 };
                 f.SetSpringMultiplier(mult);
