@@ -61,3 +61,5 @@ sysinfo.txt
 /[Aa]ssets/Plugins/Editor/JetBrains*
 /[Aa]ssets/Plugins/bin/
 /[Aa]ssets/Plugins/obj/
+
+.AntigravityTests/

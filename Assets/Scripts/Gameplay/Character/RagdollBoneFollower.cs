@@ -21,12 +21,14 @@ namespace EdgeParty.Gameplay.Character
         private float _originalYZDamper;
 
         private bool _isRootBone;
+        private ConfigurableJointMotion _originalAngularXMotion;
 
         private void Awake()
         {
             _joint = GetComponent<ConfigurableJoint>();
             _isRootBone = (_joint.connectedBody == null);
             _startingLocalRotation = transform.localRotation;
+            _originalAngularXMotion = _joint.angularXMotion;
 
             // Cache the hand-tuned spring and damper values from the Joint Inspector
             _originalXSpring = _joint.angularXDrive.positionSpring;
@@ -87,6 +89,13 @@ namespace EdgeParty.Gameplay.Character
         }
 
 
+        private CharacterAnimationController _animController;
+
+        private void Start()
+        {
+            _animController = transform.root.GetComponentInChildren<CharacterAnimationController>();
+        }
+
         private void FixedUpdate()
         {
             // Root bone (pelvis) rotation is driven by CharacterMotor/Movement,
@@ -94,6 +103,36 @@ namespace EdgeParty.Gameplay.Character
             if (_isRootBone || targetBone == null) return;
 
             Quaternion targetRot = targetBone.localRotation;
+
+            if (category == BoneCategory.Leg && _animController != null)
+            {
+                bool isDashing = false;
+                if (_animController.IsPlayingOneShot && _animController.ghostAnimator != null)
+                {
+                    var info = _animController.ghostAnimator.GetCurrentAnimatorStateInfo(0);
+                    if (info.IsName(_animController.dashState))
+                    {
+                        isDashing = true;
+                    }
+                }
+
+                if (isDashing)
+                {
+                    if (_joint.angularXMotion != ConfigurableJointMotion.Locked)
+                    {
+                        _joint.angularXMotion = ConfigurableJointMotion.Locked;
+                    }
+                    targetRot = Quaternion.identity;
+                }
+                else
+                {
+                    if (_joint.angularXMotion != _originalAngularXMotion)
+                    {
+                        _joint.angularXMotion = _originalAngularXMotion;
+                    }
+                }
+            }
+
             Quaternion resultRotation = _jointToLocalSpace
                                         * Quaternion.Inverse(targetRot)
                                         * _startingLocalRotation

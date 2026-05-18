@@ -204,6 +204,20 @@ namespace EdgeParty.Gameplay.Character
                     BoneCategory.Head => headMultiplier.Value,
                     _ => 1f
                 };
+
+                // Stiffen leg joints during dash attack to keep character upright
+                if (f.category == BoneCategory.Leg && animController != null && animController.IsPlayingOneShot)
+                {
+                    if (animController.ghostAnimator != null)
+                    {
+                        var info = animController.ghostAnimator.GetCurrentAnimatorStateInfo(0);
+                        if (info.IsName(animController.dashState))
+                        {
+                            mult *= 3.0f;
+                        }
+                    }
+                }
+
                 f.SetSpringMultiplier(mult);
             }
         }

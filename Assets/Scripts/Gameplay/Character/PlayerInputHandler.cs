@@ -83,7 +83,6 @@ namespace EdgeParty.Gameplay.Character
             {
                 _controller.OnInputReceived_Server(worldMoveDir, isRunning);
                 if (keyboard.spaceKey.wasPressedThisFrame) _controller.OnJumpTriggered_Server(worldMoveDir);
-                if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) _controller.OnDashTriggered_Server();
                 if (isAttackPressed) _controller.OnAttackTriggered_Server();
             }
             else
@@ -93,7 +92,6 @@ namespace EdgeParty.Gameplay.Character
 
                 // Individual triggers to ensure no frames are missed
                 if (keyboard.spaceKey.wasPressedThisFrame) TriggerJumpServerRpc(worldMoveDir);
-                else if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) TriggerDashServerRpc();
                 
                 if (isAttackPressed) TriggerAttackServerRpc();
             }
