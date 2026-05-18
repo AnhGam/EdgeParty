@@ -46,10 +46,15 @@ namespace EdgeParty.Gameplay.Character
         public string atk1State = "RightATK";
         public string airAtkState = "AirATK";
 
+        [Header("Test Animation Override")]
+        [Tooltip("Kéo thả bất kỳ Animation Clip nào vào đây (ví dụ trong thư mục Pspsps Animations) để test nhanh đòn đấm mà không cần mở Animator Controller!")]
+        public AnimationClip testAttackClip;
+
         [Header("Attack Settings")]
-        [Tooltip("Tổng thời gian đòn đánh (Tự động tính = Swing + Hold + Recovery)")]
+        [Tooltip("Tổng thời gian đòn đánh")]
         public float totalAttackDuration = 1.5f;
 
+        /* --- PROCEDURAL TUNING COMMENTED OUT ---
         [Header("Attack Tuning (Procedural)")]
         [Range(-180f, 180f)] public float targetPunchZ = -90f;
         [Range(-180f, 180f)] public float targetPunchX = -130f;
@@ -62,6 +67,7 @@ namespace EdgeParty.Gameplay.Character
 
         [Range(0f, 1f)]
         public float hookStartThreshold = 0.6f; // Chỉ bắt đầu quật X khi vung Z đã đạt 60%
+        */
 
         [Header("Combo Settings")]
         [Tooltip("Window (0‒1 normalizedTime) within which the next punch input queues")]
@@ -96,6 +102,7 @@ namespace EdgeParty.Gameplay.Character
         public PlayerState CurrentState { get; private set; } = PlayerState.Idle;
         public bool IsPlayingOneShot { get; private set; }
         public bool IsAttacking => _upperBodyActive;
+        public bool AttackMirror => _attackMirror;
         public bool CanAttack() => _attackCooldownTimer <= 0f && !_isDead;
         public bool CanDash() => _dashTimer <= 0f && !_isDead;
 
@@ -122,7 +129,8 @@ namespace EdgeParty.Gameplay.Character
         private float _attackCooldownTimer;
         private bool _dashMirror;
         private bool _attackMirror;
-        private float _oneShotSafetyTimer;
+        private Quaternion _baseLowerArmRot; // Lưu tư thế cẳng tay để khóa cứng khi đấm
+        private AnimatorOverrideController _overrideController;
 
         // ─────────────────────────────────────────────────────────────────
         private void Awake()
@@ -132,8 +140,10 @@ namespace EdgeParty.Gameplay.Character
             // PROACTIVE CORRECTION (Verified via MCP Scan):
             // The project's Animator uses Layer 0 and state name 'RightATK'.
             // We force những giá trị này để đè lên các giá trị sai trong Inspector (nếu có).
-            if (atk1State == "ATK1") atk1State = "RightATK";
+            atk1State = "RightATK";
+            airAtkState = "AirATK";
             if (upperBodyLayerIndex == 1) upperBodyLayerIndex = 0;
+            Debug.Log($"[EdgeParty Attack Debug] Awake completed! forced atk1State={atk1State}, airAtkState={airAtkState}, upperBodyLayerIndex={upperBodyLayerIndex}");
         }
 
         private void FindReferences()
@@ -185,7 +195,6 @@ namespace EdgeParty.Gameplay.Character
             PlayBaseState(dashState, restart: true);
             CurrentState = PlayerState.Dash;
             IsPlayingOneShot = true;
-            _oneShotSafetyTimer = 2.0f; // 2 second safety fallback
         }
 
         /// <summary>
@@ -214,19 +223,7 @@ namespace EdgeParty.Gameplay.Character
             _attackCooldownTimer = Mathf.Max(0f, _attackCooldownTimer - dt);
             _dashTimer = Mathf.Max(0f, _dashTimer - dt);
 
-            if (IsPlayingOneShot)
-            {
-                float oldTimer = _oneShotSafetyTimer;
-                _oneShotSafetyTimer -= dt;
 
-                // Khi kết thúc đòn đấm
-                if (oldTimer > 0 && _oneShotSafetyTimer <= 0)
-                {
-                    IsPlayingOneShot = false;
-                    // Trì hoãn việc giải phóng cơ thể 0.2s để triệt tiêu phản lực
-                    Invoke(nameof(FinalizeAttackCleanup), 0.2f);
-                }
-            }
 
             DetermineBaseState();
             UpdateBaseAnimator();
@@ -244,33 +241,34 @@ namespace EdgeParty.Gameplay.Character
 
         private void StartAttack()
         {
-            /* --- THAY THẾ BẰNG PROCEDURAL ANIMATION ---
             bool inAir = _motor != null && !_motor.IsGrounded;
+
+            // Luôn luôn đấm tay phải (animation gốc) để test 1 tay đơn giản nhất theo yêu cầu
+            _attackMirror = false;
             _currentAtkState = inAir ? airAtkState : atk1State;
 
-            _attackMirror = !_attackMirror;
-            if (ghostAnimator != null)
-            {
-                foreach (var param in ghostAnimator.parameters)
-                {
-                    if (param.name == mirrorParam) 
-                        ghostAnimator.SetBool(mirrorParam, _attackMirror);
-                }
-            }
+            ApplyTestAttackClip();
 
             PlayBaseState(_currentAtkState, restart: true);
-            */
 
             CurrentState = PlayerState.Attack;
-
             IsPlayingOneShot = true;
 
-            // Tự động tính tổng thời gian dựa trên các phase để đồng bộ hóa việc khóa khớp
-            totalAttackDuration = swingTime + holdTime + recoveryTime;
-            _oneShotSafetyTimer = totalAttackDuration;
+            Debug.Log($"[EdgeParty Attack Debug] StartAttack called! _currentAtkState={_currentAtkState}, _attackMirror={_attackMirror}");
 
             _upperBodyActive = true;
             _hitboxOpen = false;
+
+            /* --- PROCEDURAL JOINTS & SPRINGS (COMMENTED OUT) ---
+            // CHỤP TƯ THẾ CẲNG TAY HIỆN TẠI ĐỂ KHÓA CỨNG
+            if (ghostAnimator != null)
+            {
+                Transform lowerGhost = ghostAnimator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
+                if (lowerGhost != null) _baseLowerArmRot = lowerGhost.localRotation;
+            }
+
+            // Tự động tính tổng thời gian dựa trên các phase để đồng bộ hóa việc khóa khớp
+            totalAttackDuration = swingTime + holdTime + recoveryTime;
 
             if (ghostAnimator != null)
             {
@@ -286,6 +284,13 @@ namespace EdgeParty.Gameplay.Character
                         j.angularYMotion = ConfigurableJointMotion.Free;
                         j.angularZMotion = ConfigurableJointMotion.Free;
                     }
+                    else if (n == "lowerarm_l")
+                    {
+                        // KHÓA CỨNG KHỚP KHUỶU TAY để triệt tiêu lực vẩy
+                        j.angularXMotion = ConfigurableJointMotion.Locked;
+                        j.angularYMotion = ConfigurableJointMotion.Locked;
+                        j.angularZMotion = ConfigurableJointMotion.Locked;
+                    }
                     else if (n.Contains("pelvis"))
                     {
                         // Giới hạn Pelvis X để không bị ngửa ra sau (-5 đến 5 độ)
@@ -300,9 +305,6 @@ namespace EdgeParty.Gameplay.Character
                     }
                 }
             }
-
-            /*
-            SetAnimatorFloat("AttackSpeed", attackAnimSpeed);
             */
         }
 
@@ -313,32 +315,36 @@ namespace EdgeParty.Gameplay.Character
         {
             if (!_upperBodyActive || ghostAnimator == null) return;
 
-            /*
-            float duration = 0.5f;
-            float elapsed = duration - _oneShotSafetyTimer;
-            float normalizedTime = Mathf.Clamp01(elapsed / duration);
-            ManageHitbox(normalizedTime);
-            */
+            var info = ghostAnimator.GetCurrentAnimatorStateInfo(baseLayerIndex);
+            if (info.IsName(atk1State) || info.IsName(airAtkState))
+            {
+                ManageHitbox(info.normalizedTime);
+            }
         }
 
         private void StopAttack()
         {
             CloseHitbox();
-            // _upperBodyActive sẽ được set false trong FinalizeAttackCleanup
             _attackCooldownTimer = attackCooldown;
+
+            // Đảm bảo huỷ các lịch trình dọn dẹp cũ và xếp lịch dọn dẹp mới để giải phóng _upperBodyActive = false
+            CancelInvoke(nameof(FinalizeAttackCleanup));
+            Invoke(nameof(FinalizeAttackCleanup), 0.2f);
+            Debug.Log("[EdgeParty Attack Debug] StopAttack called! Scheduled FinalizeAttackCleanup in 0.2s.");
         }
 
         private void FinalizeAttackCleanup()
         {
             _upperBodyActive = false;
 
+            /* --- PROCEDURAL CLEANUP (COMMENTED OUT) ---
             // KHÔI PHỤC GIỚI HẠN VÀ SPRING CHO CÁNH TAY
             var ragdollRoot = transform.root;
             var allJoints = ragdollRoot.GetComponentsInChildren<ConfigurableJoint>();
             foreach (var j in allJoints)
             {
                 string n = j.name.ToLower();
-                if (n == "upperarm_l")
+                if (n == "upperarm_l" || n == "lowerarm_l")
                 {
                     j.angularXMotion = ConfigurableJointMotion.Limited;
                     j.angularYMotion = ConfigurableJointMotion.Limited;
@@ -360,6 +366,7 @@ namespace EdgeParty.Gameplay.Character
             {
                 foreach (var f in _cachedFollowers) f.SetSpringMultiplier(1f);
             }
+            */
         }
 
         private void ManageHitbox(float normalizedTime)
@@ -422,15 +429,16 @@ namespace EdgeParty.Gameplay.Character
                     {
                         oneShotDone = (info.normalizedTime >= 0.95f);
                     }
-                    else if (_oneShotSafetyTimer <= 0f)
+
+                    if (CurrentState == PlayerState.Attack)
                     {
-                        // Fallback: If we waited 0.2s and still didn't enter the state, something is wrong, release lock.
-                        oneShotDone = true;
+                        Debug.Log($"[EdgeParty Attack Debug] DetermineBaseState: IsPlayingOneShot=true, CurrentState={CurrentState}, inActionState={inActionState}, stateName={info.fullPathHash}, normalizedTime={info.normalizedTime}, oneShotDone={oneShotDone}");
                     }
                 }
 
                 if (landedFromJump || oneShotDone)
                 {
+                    Debug.Log($"[EdgeParty Attack Debug] ONE-SHOT FINISHED! landedFromJump={landedFromJump}, oneShotDone={oneShotDone}. Resetting IsPlayingOneShot=false.");
                     IsPlayingOneShot = false;
                     if (_upperBodyActive) StopAttack();
                 }
@@ -459,8 +467,8 @@ namespace EdgeParty.Gameplay.Character
 
         private void UpdateBaseAnimator()
         {
-            // Nếu là đòn Dash hoặc Jump, ta giữ nguyên animation của chúng
-            bool isSpecialAction = IsPlayingOneShot && (CurrentState == PlayerState.Dash || CurrentState == PlayerState.InAir);
+            // Nếu là đòn Dash, Jump hoặc Attack, ta giữ nguyên animation của chúng
+            bool isSpecialAction = IsPlayingOneShot && (CurrentState == PlayerState.Dash || CurrentState == PlayerState.InAir || CurrentState == PlayerState.Attack);
             if (isSpecialAction)
             {
                 if (_cachedFollowers != null)
@@ -476,7 +484,7 @@ namespace EdgeParty.Gameplay.Character
                 PlayerState.Run => GetDirectionalState(runState, runLState, runRState),
                 PlayerState.InAir => inAirState,
                 PlayerState.Idle => idleState,
-                PlayerState.Attack => idleState, // Khi đấm procedural, giữ Animator ở Idle
+                PlayerState.Attack => _currentAtkState, 
                 _ => idleState
             };
 
@@ -561,68 +569,59 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
-        // ─── Procedural Attack Animation ─────────────────────────────────
-        private void LateUpdate()
+        // LateUpdate and SwapGhostArmBones removed to handle mirroring cleanly on physical ragdoll bone followers without polluting ghost transforms.
+
+        /// <summary>
+        /// Áp dụng AnimationClip tùy biến được kéo thả từ Inspector vào để ghi đè đòn đánh mặc định lúc runtime.
+        /// </summary>
+        private void ApplyTestAttackClip()
         {
-            if (!_upperBodyActive || ghostAnimator == null) return;
+            if (ghostAnimator == null) return;
 
-            Transform leftUpperArm = ghostAnimator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
-            if (leftUpperArm != null)
+            if (testAttackClip == null)
             {
-                // TỔNG THỜI GIAN: Được tính động từ các phase
-                float elapsed = totalAttackDuration - _oneShotSafetyTimer;
-
-                float progress = 0f;
-
-                if (elapsed <= swingTime)
+                // Nếu testAttackClip trống và ta đang có override controller, ta restore về mặc định
+                if (_overrideController != null)
                 {
-                    // GIAI ĐOẠN 1: VUNG ĐẤM
-                    progress = Mathf.Clamp01(elapsed / swingTime);
-                }
-                else if (elapsed <= swingTime + holdTime)
-                {
-                    // GIAI ĐOẠN 2: GIỮ THẾ (STAY AT MAX)
-                    progress = 1.0f;
-                }
-                else
-                {
-                    // GIAI ĐOẠN 3: THU TAY VỀ (RECOVERY)
-                    float recoveryElapsed = elapsed - (swingTime + holdTime);
-                    float recoveryT = Mathf.Clamp01(recoveryElapsed / recoveryTime);
-                    // Thu về từ 1.0 về 0.0
-                    progress = 1.0f - Mathf.SmoothStep(0f, 1f, recoveryT);
-
-                    // Trong lúc thu tay, ta cũng giảm dần lực Spring về bình thường
-                    if (_cachedFollowers != null)
+                    var overrides = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AnimationClip, AnimationClip>>();
+                    _overrideController.GetOverrides(overrides);
+                    for (int i = 0; i < overrides.Count; i++)
                     {
-                        foreach (var f in _cachedFollowers)
+                        if (overrides[i].Key.name.Contains("ATK1") && overrides[i].Value != null)
                         {
-                            if (f.name.ToLower() == "upperarm_l")
-                                f.SetSpringMultiplier(Mathf.Lerp(10f, 1f, recoveryT));
+                            overrides[i] = new System.Collections.Generic.KeyValuePair<AnimationClip, AnimationClip>(overrides[i].Key, null);
+                            _overrideController.ApplyOverrides(overrides);
+                            Debug.Log("[EdgeParty Attack Test] Restored default attack clip.");
+                            break;
                         }
                     }
                 }
+                return;
+            }
 
-                float t = Mathf.SmoothStep(0f, 1f, progress);
+            // Tạo mới AnimatorOverrideController nếu chưa có
+            if (_overrideController == null)
+            {
+                _overrideController = new AnimatorOverrideController(ghostAnimator.runtimeAnimatorController);
+                ghostAnimator.runtimeAnimatorController = _overrideController;
+            }
 
-                float zRotVal = Mathf.Lerp(0f, targetPunchZ, t);
+            var overridesList = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AnimationClip, AnimationClip>>();
+            _overrideController.GetOverrides(overridesList);
 
-                // Trục X (Quật ngang) chỉ bắt đầu chạy khi tiến trình vượt qua hookStartThreshold
-                float xProgress = Mathf.Clamp01((progress - hookStartThreshold) / (1f - hookStartThreshold));
-                float xT = Mathf.SmoothStep(0f, 1f, xProgress);
-                float xRotVal = Mathf.Lerp(0f, targetPunchX, xT);
-
-                float yRotVal = Mathf.Lerp(0f, targetPunchY, t);
-
-                Quaternion yRot = Quaternion.AngleAxis(yRotVal, Vector3.up);
-                Quaternion xRot = Quaternion.AngleAxis(xRotVal, Vector3.right);
-                Quaternion zRot = Quaternion.AngleAxis(zRotVal, Vector3.forward);
-
-                // CƠ CHẾ CỘNG DỒN (ADDITIVE): 
-                // Ta lấy rotation HIỆN TẠI của Idle (đã có breathing/motion) 
-                // rồi nhân thêm (offset) góc đấm vào.
-                // Khi progress về 0, nó sẽ tự động là Idle thuần túy.
-                leftUpperArm.localRotation *= Quaternion.Slerp(Quaternion.identity, yRot * xRot * zRot, t);
+            for (int i = 0; i < overridesList.Count; i++)
+            {
+                var originalClip = overridesList[i].Key;
+                if (originalClip.name.Contains("ATK1"))
+                {
+                    if (overridesList[i].Value != testAttackClip)
+                    {
+                        overridesList[i] = new System.Collections.Generic.KeyValuePair<AnimationClip, AnimationClip>(originalClip, testAttackClip);
+                        _overrideController.ApplyOverrides(overridesList);
+                        Debug.Log($"[EdgeParty Attack Test] Successfully overrode default attack clip with: {testAttackClip.name}");
+                    }
+                    break;
+                }
             }
         }
 

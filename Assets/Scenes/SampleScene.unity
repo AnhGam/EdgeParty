@@ -536,9 +536,9 @@ MonoBehaviour:
   sensitivity: 0.2
   minPitch: -30
   maxPitch: 70
---- !u!54 &336377962 stripped
+--- !u!54 &405396452 stripped
 Rigidbody:
-  m_CorrespondingSourceObject: {fileID: 834940518401243486, guid: 498537a621ebd73449afa864950e433a,
+  m_CorrespondingSourceObject: {fileID: 8343303319317069384, guid: 498537a621ebd73449afa864950e433a,
     type: 3}
   m_PrefabInstance: {fileID: 538618366}
   m_PrefabAsset: {fileID: 0}
@@ -780,6 +780,11 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 834940518401243486, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_Mass
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 871832132080847155, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_CollisionDetection
@@ -798,6 +803,11 @@ PrefabInstance:
     - target: {fileID: 1052453825492951332, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: category
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1052453825492951332, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1052453825492951332, guid: 498537a621ebd73449afa864950e433a,
@@ -967,6 +977,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2235506582889290885, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
+      propertyPath: m_Constraints
+      value: 32
+      objectReference: {fileID: 0}
+    - target: {fileID: 2235506582889290885, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
       propertyPath: m_CollisionDetection
       value: 0
       objectReference: {fileID: 0}
@@ -978,22 +993,32 @@ PrefabInstance:
     - target: {fileID: 2327214894416047924, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Size.x
-      value: 0.08
+      value: 0.1375748
       objectReference: {fileID: 0}
     - target: {fileID: 2327214894416047924, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Size.y
-      value: 0.25
+      value: 0.2410849
       objectReference: {fileID: 0}
     - target: {fileID: 2327214894416047924, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Size.z
-      value: 0.5
+      value: 0.4494017
+      objectReference: {fileID: 0}
+    - target: {fileID: 2327214894416047924, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_Center.x
+      value: -0.04780333
       objectReference: {fileID: 0}
     - target: {fileID: 2327214894416047924, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Center.y
-      value: 0.02
+      value: 0.002141289
+      objectReference: {fileID: 0}
+    - target: {fileID: 2327214894416047924, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_Center.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2327214894416047924, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1008,22 +1033,27 @@ PrefabInstance:
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Axis.y
-      value: -1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Axis.z
-      value: 0
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_ConnectedBody
       value: 
-      objectReference: {fileID: 1328703368}
+      objectReference: {fileID: 405396452}
+    - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_AngularXMotion
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYMotion
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1032,18 +1062,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
-      propertyPath: m_SecondaryAxis.y
+      propertyPath: m_SecondaryAxis.x
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_SecondaryAxis.y
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_SecondaryAxis.z
-      value: -1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYLimit.limit
-      value: 0
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1053,12 +1088,12 @@ PrefabInstance:
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: -90
+      value: -140
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_HighAngularXLimit.limit
-      value: -40
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1073,22 +1108,22 @@ PrefabInstance:
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionDamper
-      value: 15
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionSpring
-      value: 300
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionDamper
-      value: 15
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2589896938692251860, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionSpring
-      value: 300
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 2595720828652313025, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1114,6 +1149,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Axis.z
       value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2658642749387218450, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_ConnectedBody
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 2658642749387218450, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1587,6 +1627,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4051844227949023155, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
+      propertyPath: testAttackClip
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4051844227949023155, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
       propertyPath: attackAnimSpeed
       value: 1.2
       objectReference: {fileID: 0}
@@ -1618,7 +1663,7 @@ PrefabInstance:
     - target: {fileID: 4107152706601343227, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: 0
+      value: -20
       objectReference: {fileID: 0}
     - target: {fileID: 4107152706601343227, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1678,7 +1723,7 @@ PrefabInstance:
     - target: {fileID: 4367955899081236401, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4367955899081236401, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1708,18 +1753,18 @@ PrefabInstance:
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Axis.y
-      value: -1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Axis.z
-      value: 0
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_ConnectedBody
       value: 
-      objectReference: {fileID: 336377962}
+      objectReference: {fileID: 405396452}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXMotion
@@ -1728,7 +1773,7 @@ PrefabInstance:
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYMotion
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1738,12 +1783,12 @@ PrefabInstance:
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_SecondaryAxis.x
-      value: -1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_SecondaryAxis.y
-      value: 0
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1753,22 +1798,22 @@ PrefabInstance:
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYLimit.limit
-      value: 0
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularZLimit.limit
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: -177
+      value: -140
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_HighAngularXLimit.limit
-      value: -4.6319733
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1778,22 +1823,22 @@ PrefabInstance:
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionDamper
-      value: 0
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionSpring
-      value: 500
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionDamper
-      value: 0
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4441349779249346947, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionSpring
-      value: 500
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4493847418728092300, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1808,7 +1853,7 @@ PrefabInstance:
     - target: {fileID: 4493847418728092300, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_SecondaryAxis.z
-      value: -1
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4493847418728092300, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1823,7 +1868,7 @@ PrefabInstance:
     - target: {fileID: 4493847418728092300, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: -50
+      value: -90
       objectReference: {fileID: 0}
     - target: {fileID: 4493847418728092300, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1843,22 +1888,22 @@ PrefabInstance:
     - target: {fileID: 4493847418728092300, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionDamper
-      value: 15
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4493847418728092300, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionSpring
-      value: 300
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4493847418728092300, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionDamper
-      value: 15
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4493847418728092300, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionSpring
-      value: 300
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4516235000028341313, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -1977,6 +2022,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4745062209014900271, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
+      propertyPath: m_ConnectedBody
+      value: 
+      objectReference: {fileID: 405396452}
+    - target: {fileID: 4745062209014900271, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
       propertyPath: m_AngularXDrive.positionDamper
       value: 50
       objectReference: {fileID: 0}
@@ -2003,6 +2053,11 @@ PrefabInstance:
     - target: {fileID: 4864884857532321434, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: category
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4864884857532321434, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4864884857532321434, guid: 498537a621ebd73449afa864950e433a,
@@ -2093,12 +2148,12 @@ PrefabInstance:
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYMotion
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularZMotion
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2108,17 +2163,17 @@ PrefabInstance:
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYLimit.limit
-      value: 0
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularZLimit.limit
-      value: 0
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: -50
+      value: -90
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2138,27 +2193,27 @@ PrefabInstance:
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionDamper
-      value: 500
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionSpring
-      value: 1000
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionDamper
-      value: 500
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5636528823467447583, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionSpring
-      value: 1000
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 5926413060528181899, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: 0
+      value: -20
       objectReference: {fileID: 0}
     - target: {fileID: 5926413060528181899, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2187,28 +2242,38 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6235031058134365268, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
+      propertyPath: m_Size.x
+      value: 0.344595
+      objectReference: {fileID: 0}
+    - target: {fileID: 6235031058134365268, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
       propertyPath: m_Size.y
-      value: 0.2
+      value: 0.2410849
       objectReference: {fileID: 0}
     - target: {fileID: 6235031058134365268, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Size.z
-      value: 0.55
+      value: 0.4494017
       objectReference: {fileID: 0}
     - target: {fileID: 6235031058134365268, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6235031058134365268, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Center.x
-      value: -0.04
+      value: -0.1722975
       objectReference: {fileID: 0}
     - target: {fileID: 6235031058134365268, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Center.y
-      value: 0.02
+      value: 0.002141289
+      objectReference: {fileID: 0}
+    - target: {fileID: 6235031058134365268, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_Center.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6235031058134365268, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2342,6 +2407,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7203621461466939765, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
+      propertyPath: m_ConnectedBody
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7203621461466939765, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
       propertyPath: m_AngularXDrive.positionDamper
       value: 50
       objectReference: {fileID: 0}
@@ -2443,7 +2513,7 @@ PrefabInstance:
     - target: {fileID: 8343303319317069384, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Mass
-      value: 0.6
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8372962720043052592, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2498,7 +2568,7 @@ PrefabInstance:
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXMotion
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2508,7 +2578,7 @@ PrefabInstance:
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularZMotion
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2518,7 +2588,7 @@ PrefabInstance:
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYLimit.limit
-      value: 5
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2528,22 +2598,32 @@ PrefabInstance:
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_LowAngularXLimit.limit
-      value: 0
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_HighAngularXLimit.limit
-      value: 0
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularXDrive.positionDamper
-      value: 30
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_AngularXDrive.positionSpring
+      value: 210
       objectReference: {fileID: 0}
     - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_AngularYZDrive.positionDamper
-      value: 21
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 8659052402150690646, guid: 498537a621ebd73449afa864950e433a,
+        type: 3}
+      propertyPath: m_AngularYZDrive.positionSpring
+      value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 8672152232857662483, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2568,7 +2648,7 @@ PrefabInstance:
     - target: {fileID: 8829637272880963520, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8829637272880963520, guid: 498537a621ebd73449afa864950e433a,
         type: 3}
@@ -2607,6 +2687,25 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1900173683602669744, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 8218724218725840831, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 1351273392558278970, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 3344957055557847780, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 7175787094298176157, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 33349606245213307, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 4314257649490970988, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 4380478352864352393, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 17130044160299629, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 4516235000028341313, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 2658642749387218450, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 3603158184374633834, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 7423566587772328070, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 3454488421301387418, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 2595720828652313025, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 8654057408874591036, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 3645092680317371920, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 4574177428278473687, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 7203621461466939765, guid: 498537a621ebd73449afa864950e433a, type: 3}
+    - {fileID: 3432428203059706592, guid: 498537a621ebd73449afa864950e433a, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -2824,12 +2923,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!54 &1328703368 stripped
-Rigidbody:
-  m_CorrespondingSourceObject: {fileID: 3454488421301387418, guid: 498537a621ebd73449afa864950e433a,
-    type: 3}
-  m_PrefabInstance: {fileID: 538618366}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1336172343
 GameObject:
   m_ObjectHideFlags: 0

@@ -45,23 +45,11 @@ namespace EdgeParty.Gameplay.Character
             // If this bone is the one with the CharacterMotor/PlayerController, it shouldn't follow itself
             _isRootBone = (GetComponent<PlayerController>() != null || GetComponent<CharacterMotor>() != null);
 
-            if (_isRootBone || targetBone == null) return;
+            if (_isRootBone) return;
 
             _startingLocalRotation = transform.localRotation;
 
-            // Setup joint space conversions
-            Vector3 forward = Vector3.Cross(_joint.axis, _joint.secondaryAxis).normalized;
-            Vector3 up = _joint.secondaryAxis;
-
-            // Safety check for collinear axes (No log, just fallback for stability)
-            if (forward.sqrMagnitude < 0.001f)
-            {
-                forward = Vector3.forward;
-                up = Vector3.up;
-            }
-
-            _localToJointSpace = Quaternion.LookRotation(forward, up);
-            _jointToLocalSpace = Quaternion.Inverse(_localToJointSpace);
+            RecalculateJointSpace();
 
             // Store original spring values
             _originalXSpring = _joint.angularXDrive.positionSpring;
@@ -71,6 +59,33 @@ namespace EdgeParty.Gameplay.Character
 
             // Đợi một chút để trọng lực làm rũ tay xuống rồi mới lưu tư thế "tự nhiên"
             Invoke(nameof(CaptureRestRotation), 0.5f);
+        }
+
+        private void Start()
+        {
+            if (_isRootBone) return;
+
+            if (targetBone == null)
+            {
+                Debug.LogError($"[RagdollBoneFollower] targetBone is NULL on '{gameObject.name}'!", this);
+            }
+        }
+
+        private void RecalculateJointSpace()
+        {
+            if (_joint == null) return;
+            Vector3 forward = Vector3.Cross(_joint.axis, _joint.secondaryAxis).normalized;
+            Vector3 up = _joint.secondaryAxis;
+
+            // Safety check for collinear axes
+            if (forward.sqrMagnitude < 0.001f)
+            {
+                forward = Vector3.forward;
+                up = Vector3.up;
+            }
+
+            _localToJointSpace = Quaternion.LookRotation(forward, up);
+            _jointToLocalSpace = Quaternion.Inverse(_localToJointSpace);
         }
 
         public void CaptureCurrentPoseAsRest()
@@ -137,8 +152,9 @@ namespace EdgeParty.Gameplay.Character
         {
             if (_isRootBone || targetBone == null) return;
 
-            // Nếu đang ép về tư thế tự nhiên (trạng thái None), ta dùng restRotation đã lưu.
-            // Ngược lại, ta lấy rotation từ targetBone (Ghost).
+            // Recalculate joint space so that axis/secondaryAxis changes in Editor take instant effect
+            RecalculateJointSpace();
+
             Quaternion targetRot;
             if (_forceNaturalPose && _restCaptured)
             {
@@ -159,9 +175,6 @@ namespace EdgeParty.Gameplay.Character
             {
                 _rb.AddForce(-Physics.gravity * (_rb.mass * gravityCompensation), ForceMode.Force);
             }
-
-            // 3. Velocity sync
-            // DEPRECATED: Position snapping removed to allow physical movement independent of ghost position.
         }
     }
 }
