@@ -27,6 +27,8 @@ namespace EdgeParty.Gameplay.Camera
             _pitch = angles.x;
         }
 
+        private void Update()
+        {
             if (Keyboard.current == null) return;
 
             // ROOT FIX: If Alt is held, force cursor to be visible and unlocked
