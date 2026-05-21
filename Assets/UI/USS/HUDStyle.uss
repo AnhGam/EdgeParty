@@ -187,3 +187,53 @@
     border-width: 1px;
     border-color: rgba(255, 235, 59, 0.3);
 }
+
+/* Top Center Score Board Styling */
+.score-board {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    translate: -50% 0;
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--color-bg-dark);
+    border-radius: var(--border-radius-medium);
+    padding: 6px 16px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.team-score-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 8px;
+    margin: 0 10px;
+}
+
+.red-card {
+    background-color: rgba(244, 67, 54, 0.2);
+    border-width: 1px;
+    border-color: rgba(244, 67, 54, 0.4);
+}
+
+.blue-card {
+    background-color: rgba(33, 150, 243, 0.2);
+    border-width: 1px;
+    border-color: rgba(33, 150, 243, 0.4);
+}
+
+.team-label {
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: bold;
+    -unity-font-style: bold;
+    margin-right: 10px;
+}
+
+.score-value {
+    color: #FFFFFF;
+    font-size: 20px;
+    font-weight: bold;
+    -unity-font-style: bold;
+}

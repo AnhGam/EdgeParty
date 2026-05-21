@@ -1,6 +1,18 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:Style src="../USS/HUDStyle.uss" />
     <ui:VisualElement class="hud-container">
+        <!-- Top Center Score Board -->
+        <ui:VisualElement name="ScoreBoard" class="score-board">
+            <ui:VisualElement name="TeamRed" class="team-score-card red-card">
+                <ui:Label text="RED TEAM" class="team-label" />
+                <ui:Label name="RedScore" text="0" class="score-value" />
+            </ui:VisualElement>
+            <ui:VisualElement name="TeamBlue" class="team-score-card blue-card">
+                <ui:Label text="BLUE TEAM" class="team-label" />
+                <ui:Label name="BlueScore" text="0" class="score-value" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
         <!-- Top Right Buttons -->
         <ui:VisualElement name="TopRightBar" class="top-right-bar">
             <ui:Button name="SoundButton" class="soft-button">

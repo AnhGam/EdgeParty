@@ -134,6 +134,11 @@ namespace EdgeParty.Gameplay.Character
 
                 // Nếu Team thay đổi thì spawn lại
                 TeamID.OnValueChanged += OnTeamChanged;
+
+                if (NetworkManager != null && NetworkManager.SceneManager != null)
+                {
+                    NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
+                }
             }
 
             // Đăng ký event multiplier
@@ -164,6 +169,23 @@ namespace EdgeParty.Gameplay.Character
             headMultiplier.OnValueChanged -= OnMultiplierChanged;
             tailMultiplier.OnValueChanged -= OnMultiplierChanged;
             TeamID.OnValueChanged -= OnTeamChanged;
+
+            if (IsServer && NetworkManager != null && NetworkManager.SceneManager != null)
+            {
+                NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
+            }
+        }
+
+        private void OnSceneEvent(SceneEvent sceneEvent)
+        {
+            if (sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted || sceneEvent.SceneEventType == SceneEventType.LoadComplete)
+            {
+                if (sceneEvent.SceneName == "DemoScene_Forest")
+                {
+                    Debug.Log($"[PlayerController] Scene {sceneEvent.SceneName} loaded. Spawning Player {OwnerClientId} to team {TeamID.Value}");
+                    SpawnByTeam();
+                }
+            }
         }
 
         void SpawnByTeam()
@@ -171,7 +193,24 @@ namespace EdgeParty.Gameplay.Character
             if (SpawnManager.Instance == null) return;
 
             Vector3 pos = SpawnManager.Instance.GetSpawnPosition(TeamID.Value);
-            transform.position = pos;
+            Teleport(pos);
+        }
+
+        public void Teleport(Vector3 position)
+        {
+            Vector3 offset = position - transform.position;
+            Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
+            foreach (var rb in rigidbodies)
+            {
+                rb.position += offset;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            transform.position = position;
+            if (ghostRoot != null)
+            {
+                ghostRoot.position = position;
+            }
         }
 
         void OnTeamChanged(int oldValue, int newValue)
