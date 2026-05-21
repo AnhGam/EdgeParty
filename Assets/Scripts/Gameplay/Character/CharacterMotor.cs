@@ -21,6 +21,15 @@ namespace EdgeParty.Gameplay.Character
         public float dashImpulse = 100f;
         [Range(0f, 1f)] public float airControlFactor = 0.15f;
 
+        [Header("Ground Detection")]
+        public LayerMask groundLayer = ~0;
+        public float groundCheckDistance = 0.5f;
+        public float groundCheckRadius = 0.2f;
+        public float slopeLimit = 45f;
+
+        public bool IsGrounded { get; private set; }
+        public Vector3 GroundNormal { get; private set; } = Vector3.up;
+        public float movementForceMultiplier { get; set; } = 1f;
         private Vector3 _moveDir;
         private bool _isRunning;
         private bool _isOneShotActive;
@@ -90,7 +99,18 @@ namespace EdgeParty.Gameplay.Character
             float force = _isRunning ? runForce : walkForce;
             if (_isOneShotActive) force *= airControlFactor;
 
-            pelvisRigidbody.AddForce(_moveDir * force, ForceMode.Acceleration);
+            Vector3 finalMoveDir = _moveDir;
+            
+            // Project movement onto slope if grounded
+            if (IsGrounded)
+            {
+                finalMoveDir = Vector3.ProjectOnPlane(_moveDir, GroundNormal).normalized;
+                
+                // Extra downward force to keep the character glued to the slope
+                pelvisRigidbody.AddForce(-GroundNormal * 10f, ForceMode.Acceleration);
+            }
+
+            pelvisRigidbody.AddForce(finalMoveDir * (force * movementForceMultiplier), ForceMode.Acceleration);
         }
 
         private void ApplyRotation()
