@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace EdgeParty.Gameplay.Character
 {
-    public enum PlayerState { None, Idle, Walk, Run, Attack, Dash, InAir }
+    public enum PlayerState { None, Idle, Walk, Run, Attack, Dash, InAir, Grab }
 
     /// <summary>
     /// Drives the Ghost animator locomotion states and attack hitboxes.
@@ -26,6 +26,7 @@ namespace EdgeParty.Gameplay.Character
         public string jumpState = "Jump";
         public string dashState = "Dash";
         public string inAirState = "None";
+        public string grabState = "Grab";
 
         [Header("Attack State Names")]
         public string atk1State = "RightATK";
@@ -51,6 +52,7 @@ namespace EdgeParty.Gameplay.Character
         // ─── Public state ─────────────────────────────────────────────────
         public PlayerState CurrentState { get; private set; } = PlayerState.Idle;
         public bool IsPlayingOneShot { get; private set; }
+        public bool IsGrabbing => CurrentState == PlayerState.Grab;
         public bool IsAttacking => _upperBodyActive;
         public bool AttackMirror => _attackMirror;
         public bool CanAttack() => _attackCooldownTimer <= 0f && !_isDead;
@@ -273,11 +275,29 @@ namespace EdgeParty.Gameplay.Character
             if (leftFistHitbox != null) leftFistHitbox.Deactivate();
         }
 
+        public void TriggerGrab()
+        {
+            if (CurrentState == PlayerState.Grab)
+            {
+                CurrentState = PlayerState.Idle;
+                IsPlayingOneShot = false;
+                PlayBaseState(idleState, true);
+            }
+            else
+            {
+                PlayBaseState(grabState, true);
+                CurrentState = PlayerState.Grab;
+                IsPlayingOneShot = true;
+            }
+        }
+
         // ─── Base Locomotion State Machine ────────────────────────────────
         private void DetermineBaseState()
         {
             if (IsPlayingOneShot)
             {
+                if (CurrentState == PlayerState.Grab) return; // Keep grab active
+
                 bool landedFromJump = CurrentState == PlayerState.InAir
                                       && _motor != null && _motor.pelvisRigidbody != null && Mathf.Abs(_motor.pelvisRigidbody.linearVelocity.y) < 0.1f;
 
@@ -325,7 +345,7 @@ namespace EdgeParty.Gameplay.Character
 
         private void UpdateBaseAnimator()
         {
-            bool isSpecialAction = IsPlayingOneShot && (CurrentState == PlayerState.Dash || CurrentState == PlayerState.InAir || CurrentState == PlayerState.Attack);
+            bool isSpecialAction = IsPlayingOneShot && (CurrentState == PlayerState.Dash || CurrentState == PlayerState.InAir || CurrentState == PlayerState.Attack || CurrentState == PlayerState.Grab);
             if (isSpecialAction) return;
 
             string target = CurrentState switch
@@ -335,6 +355,7 @@ namespace EdgeParty.Gameplay.Character
                 PlayerState.InAir => inAirState,
                 PlayerState.Idle => idleState,
                 PlayerState.Attack => _currentAtkState,
+                PlayerState.Grab => grabState,
                 _ => idleState
             };
 
