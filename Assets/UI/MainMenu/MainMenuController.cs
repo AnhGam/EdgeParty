@@ -83,26 +83,26 @@ namespace EdgeParty.UI
         {
             if (btn == null) return;
             btn.RegisterCallback<PointerEnterEvent>(_ =>
-                AudioManager.Instance?.PlaySFX(SoundHover));
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundHover));
         }
 
         private void OpenSettings()
         {
-            AudioManager.Instance?.PlaySFX(SoundClick);
+            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
             CloseAllPanels();
             if (_settingsPanel != null) _settingsPanel.style.display = DisplayStyle.Flex;
         }
 
         private void OpenCredits()
         {
-            AudioManager.Instance?.PlaySFX(SoundClick);
+            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
             CloseAllPanels();
             if (_creditsPanel != null) _creditsPanel.style.display = DisplayStyle.Flex;
         }
 
         private void OpenJoinGame()
         {
-            AudioManager.Instance?.PlaySFX(SoundClick);
+            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
             CloseAllPanels();
             if (_joinPanel != null) _joinPanel.style.display = DisplayStyle.Flex;
         }
@@ -110,7 +110,7 @@ namespace EdgeParty.UI
         /// <summary>Nút Return – phát tiếng rồi ẩn panel.</summary>
         private void CloseWithSound()
         {
-            AudioManager.Instance?.PlaySFX(SoundClick);
+            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
             CloseAllPanels();
         }
 

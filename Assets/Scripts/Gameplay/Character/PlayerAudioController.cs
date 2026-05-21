@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
 
@@ -60,15 +60,16 @@ namespace EdgeParty.Gameplay.Character
             {
                 _playerController = GetComponent<PlayerController>();
 
-                if (_playerController != null && _playerController.ghostAnimator != null)
+                if (_playerController != null && _playerController.ghostAnimator != null && _playerController.animController != null)
                 {
                     _animator = _playerController.ghostAnimator;
 
-                    // Đọc state names từ PlayerController để đảm bảo khớp 100%
-                    _walkHash = Animator.StringToHash(_playerController.walkState);
-                    _runHash = Animator.StringToHash(_playerController.runState);
-                    _jumpHash = Animator.StringToHash(_playerController.jumpState);
-                    _dashHash = Animator.StringToHash(_playerController.dashState);
+                    // Đọc state names từ CharacterAnimationController
+                    var animCtrl = _playerController.animController;
+                    _walkHash = Animator.StringToHash(animCtrl.walkState);
+                    _runHash = Animator.StringToHash(animCtrl.runState);
+                    _jumpHash = Animator.StringToHash(animCtrl.jumpState);
+                    _dashHash = Animator.StringToHash(animCtrl.dashState);
 
                     AssignMixerGroup();
                     _ready = true;
