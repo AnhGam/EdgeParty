@@ -11,6 +11,9 @@ public class HUDController : MonoBehaviour
     private VisualElement root;
     private VisualElement dynamicBar;
     
+    private Label redScoreLabel;
+    private Label blueScoreLabel;
+    
     private Button soundButton;
     private Button settingsButton;
     private Button exitButton;
@@ -24,6 +27,10 @@ public class HUDController : MonoBehaviour
 
         root = uiDocument.rootVisualElement;
         if (root == null) return;
+        
+        // Score labels
+        redScoreLabel = root.Q<Label>("RedScore");
+        blueScoreLabel = root.Q<Label>("BlueScore");
         
         // Buttons
         soundButton = root.Q<Button>("SoundButton");
@@ -44,6 +51,14 @@ public class HUDController : MonoBehaviour
 
     void Update()
     {
+        // Update score from ForestGameManager
+        if (ForestGameManager.Instance != null)
+        {
+            if (redScoreLabel != null)
+                redScoreLabel.text = ForestGameManager.Instance.Team1Score.Value.ToString();
+            if (blueScoreLabel != null)
+                blueScoreLabel.text = ForestGameManager.Instance.Team2Score.Value.ToString();
+        }
 
         // Enforce cursor state every frame while Alt is held
         if (Keyboard.current.leftAltKey.isPressed)

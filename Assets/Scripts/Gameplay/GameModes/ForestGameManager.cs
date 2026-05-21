@@ -12,7 +12,7 @@ public class ForestGameManager : NetworkBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.K))
+        if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.kKey.wasPressedThisFrame)
         {
             // Ví dụ: Nhấn K thì cộng 10 điểm cho Team 1
             AddScoreServerRpc(1, 10);
