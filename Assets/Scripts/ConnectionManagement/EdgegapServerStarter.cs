@@ -48,7 +48,12 @@ namespace EdgeParty.ConnectionManagement
                 
                 if (networkManager.StartServer())
                 {
+                    Debug.Log("[EdgegapServerStarter] Server started successfully.");
                     NetworkManager.Singleton.SceneManager.LoadScene("DemoScene_Forest", LoadSceneMode.Single);
+                }
+                else
+                {
+                    Debug.LogError("[EdgegapServerStarter] Failed to start server.");
                 }
             }
         }

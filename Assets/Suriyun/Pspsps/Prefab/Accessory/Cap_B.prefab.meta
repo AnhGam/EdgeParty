@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 23c6c046351f39d4a880ea42bf588a36
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Pspsps/Prefab/Accessory/Cap_B.prefab
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:8e97956bbc084a48fc34e5734906ed1ffa2b6e69e9fe87c5dcf12ae7850e41e3
+size 345

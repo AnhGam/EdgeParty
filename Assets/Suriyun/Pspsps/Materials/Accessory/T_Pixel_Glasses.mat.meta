@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: 9c2b7f57d3c3a2c4892e1bd32188a92c
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 2100000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Pspsps/Materials/Accessory/T_Pixel_Glasses.mat
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:eb0d4beeaad476d2a6f126a85f7e2ba2ee36038a39ee14f83d97413786562e67
+size 389

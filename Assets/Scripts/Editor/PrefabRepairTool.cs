@@ -6,7 +6,7 @@ namespace EdgeParty.Editor
 {
     public static class PrefabRepairTool
     {
-        [MenuItem("EdgeParty/🔥 FIX Repair Network Prefab")]
+        [MenuItem("EdgeParty/🔥 FIX: Repair Network Prefab")]
         public static void Repair()
         {
             string path = "Assets/Scripts/Gameplay/Character/Network_Player.prefab";

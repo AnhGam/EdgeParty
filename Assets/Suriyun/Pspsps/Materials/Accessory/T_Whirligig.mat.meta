@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: fccc87fbba567e8418d81e8f03706a6b
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 2100000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Pspsps/Materials/Accessory/T_Whirligig.mat
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:42b20b621659b577abcaaecf26a3e1c6703f3bf1ce5495b266cfefc804e290b3
+size 385

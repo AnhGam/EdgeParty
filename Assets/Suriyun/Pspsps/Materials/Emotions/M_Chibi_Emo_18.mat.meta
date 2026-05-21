@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: 38da8ef6243401e4ea4ca9b078523047
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 0
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Pspsps/Materials/Emotions/M_Chibi_Emo_18.mat
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:8a9701618995dfd00219ea74b8835c767c5065fd78ff0e3c90b7069f7a19e9e4
+size 381

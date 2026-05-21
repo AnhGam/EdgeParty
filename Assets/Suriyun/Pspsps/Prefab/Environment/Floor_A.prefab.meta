@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: ce48d1e4e25fb62408bbeaa41bbe9970
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Pspsps/Prefab/Environment/Floor_A.prefab
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:ffbfe298463b811c71a142ec56b891bcb8be9f2035f21e26997c8d251ce8ac55
+size 349

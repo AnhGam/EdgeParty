@@ -1,16 +1,3 @@
-fileFormatVersion: 2
-guid: 8dd566a99c4e7d74ba1ca826f54d1b9c
-timeCreated: 1470462113
-licenseType: Store
-NativeFormatImporter:
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Animations/Pspsps Animations/Character Animations/Pspsps
-    Animations Check.controller
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:2138611bef98f5018b09cfbe31291c0dbdc3cbca428c36aece9d8014a1c60f28
+size 424

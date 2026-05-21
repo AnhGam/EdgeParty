@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: e01982846fe474948a7562281443ec75
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Pspsps/Prefab/Accessory/Whirligig_A.prefab
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:8f857f22ebe55ab04caf4ff19f81989273d1e82d0a655b7ea8a1ee743553d29c
+size 351

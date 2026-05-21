@@ -27,8 +27,6 @@ namespace EdgeParty.Gameplay.Camera
             _pitch = angles.x;
         }
 
-        private void Update()
-        {
             if (Keyboard.current == null) return;
 
             // ROOT FIX: If Alt is held, force cursor to be visible and unlocked
@@ -52,11 +50,17 @@ namespace EdgeParty.Gameplay.Camera
 
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
             {
+                Vector2 mousePos = Mouse.current.position.ReadValue();
+                // Check if clicking inside the top-left corner HUD area (approx 320x320)
+                // In Unity, mouse position y is 0 at the bottom, but GUI is 0 at the top.
+                bool inHUDArea = mousePos.x < 320 && (Screen.height - mousePos.y) < 320;
+
+                // Safety check: EventSystem might be null if not added to the scene
                 var eventSystem = UnityEngine.EventSystems.EventSystem.current;
                 bool overUI = eventSystem != null && eventSystem.IsPointerOverGameObject();
 
-                // Only lock if NOT clicking on UI
-                if (Cursor.lockState == CursorLockMode.None && !overUI)
+                // Only lock if NOT clicking on the HUD or any other UI
+                if (Cursor.lockState == CursorLockMode.None && !overUI && !inHUDArea)
                 {
                     Cursor.lockState = CursorLockMode.Locked;
                     Cursor.visible = false;
