@@ -1,2 +1,21 @@
 fileFormatVersion: 2
 guid: bf979a9b7d26fbc44ba82249601db4c7
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - motor: {instanceID: 0}
+  - animController: {instanceID: 0}
+  - inputHandler: {instanceID: 0}
+  - pelvisRigidbody: {instanceID: 0}
+  - ghostRoot: {instanceID: 0}
+  - ghostPelvis: {instanceID: 0}
+  - ghostAnimator: {instanceID: 0}
+  - headAnchor: {instanceID: 0}
+  - nameplatePrefab: {fileID: 8755962466630786030, guid: e84594e55944e8f4387122c7bad0f7d3,
+      type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

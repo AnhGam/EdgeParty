@@ -28,6 +28,15 @@ namespace EdgeParty.Gameplay.Character
         public NetworkVariable<float> headMultiplier = new NetworkVariable<float>(1f);
         public NetworkVariable<float> tailMultiplier = new NetworkVariable<float>(1f);
 
+        // TeamID can be used for team-based logic, such as friendly fire or team-specific buffs
+        public NetworkVariable<int> TeamID = new NetworkVariable<int>(0,NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Server);
+        
+        [Header("Nameplate")]
+        [SerializeField] private Transform headAnchor;
+        [SerializeField] private NameplateUI nameplatePrefab;
+
+        private NameplateUI nameplateInstance;
+
         [Header("Settings")]
         public float combatBoostMultiplier = 5f;
         public float tugOfWarBoost = 2.5f;
@@ -92,15 +101,49 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
+
         public override void OnNetworkSpawn()
         {
-            if (IsOwner) AssignCameraTarget();
+            Debug.Log("PLAYER SPAWNED");
 
+            // Camera cho người chơi local
+            if (IsOwner)
+            {
+                AssignCameraTarget();
+            }
+
+            // Tạo Nameplate cho tất cả player
+            if (headAnchor != null && nameplatePrefab != null)
+            {
+                nameplateInstance = Instantiate(nameplatePrefab, headAnchor);
+                nameplateInstance.transform.localPosition = Vector3.zero;
+                nameplateInstance.SetPlayerName($"Player {OwnerClientId}");
+                nameplateInstance.SetMicLevel(0);
+            }
+
+            // Logic server
+            if (IsServer)
+            {
+                // Team 1 = Red, Team 2 = Blue
+                TeamID.Value = Random.Range(1, 3);
+
+                Debug.Log("SPAWN TEAM: " + TeamID.Value);
+
+                // Spawn theo team
+                SpawnByTeam();
+
+                // Nếu Team thay đổi thì spawn lại
+                TeamID.OnValueChanged += OnTeamChanged;
+            }
+
+            // Đăng ký event multiplier
             legMultiplier.OnValueChanged += OnMultiplierChanged;
             armMultiplier.OnValueChanged += OnMultiplierChanged;
             torsoMultiplier.OnValueChanged += OnMultiplierChanged;
             headMultiplier.OnValueChanged += OnMultiplierChanged;
             tailMultiplier.OnValueChanged += OnMultiplierChanged;
+
+            // Áp dụng giá trị ban đầu
             ApplyBoneMultipliers();
 
             // Wire death/respawn into animator
@@ -111,6 +154,8 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
+
+
         public override void OnNetworkDespawn()
         {
             legMultiplier.OnValueChanged -= OnMultiplierChanged;
@@ -118,6 +163,20 @@ namespace EdgeParty.Gameplay.Character
             torsoMultiplier.OnValueChanged -= OnMultiplierChanged;
             headMultiplier.OnValueChanged -= OnMultiplierChanged;
             tailMultiplier.OnValueChanged -= OnMultiplierChanged;
+            TeamID.OnValueChanged -= OnTeamChanged;
+        }
+
+        void SpawnByTeam()
+        {
+            if (SpawnManager.Instance == null) return;
+
+            Vector3 pos = SpawnManager.Instance.GetSpawnPosition(TeamID.Value);
+            transform.position = pos;
+        }
+
+        void OnTeamChanged(int oldValue, int newValue)
+        {
+            SpawnByTeam();
         }
 
         private void OnMultiplierChanged(float prev, float next) => ApplyBoneMultipliers();
@@ -239,7 +298,7 @@ namespace EdgeParty.Gameplay.Character
         private void ApplyBoneMultipliers()
         {
             if (_followers == null) return;
-            
+
             float armBoost = 1f;
             float torsoBoost = 1f;
 
@@ -282,6 +341,27 @@ namespace EdgeParty.Gameplay.Character
                 }
 
                 f.SetSpringMultiplier(mult);
+            }
+        }
+        /// <summary>
+        /// Cập nhật mức độ mic (0 - 100)
+        /// </summary>
+        public void SetMicLevel(float value)
+        {
+            if (nameplateInstance != null)
+            {
+                nameplateInstance.SetMicLevel(value);
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật tên hiển thị
+        /// </summary>
+        public void SetDisplayName(string playerName)
+        {
+            if (nameplateInstance != null)
+            {
+                nameplateInstance.SetPlayerName(playerName);
             }
         }
     }
