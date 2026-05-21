@@ -18,13 +18,40 @@ namespace EdgeParty.Gameplay.Camera
 
         private float _yaw;
         private float _pitch;
+        private Transform _prevTarget;
 
         private void Start()
         {
-            // Initialize yaw and pitch based on current rotation
-            Vector3 angles = transform.eulerAngles;
-            _yaw = angles.y;
-            _pitch = angles.x;
+            if (target != null)
+            {
+                InitializeRotationFromPosition();
+                _prevTarget = target;
+            }
+            else
+            {
+                // Initialize yaw and pitch based on current rotation
+                Vector3 angles = transform.eulerAngles;
+                _yaw = angles.y;
+                _pitch = angles.x;
+                if (_pitch > 180f) _pitch -= 360f;
+                _pitch = Mathf.Clamp(_pitch, minPitch, maxPitch);
+            }
+        }
+
+        private void InitializeRotationFromPosition()
+        {
+            if (target == null) return;
+            Vector3 targetPos = target.position + lookAtOffset;
+            Vector3 dir = transform.position - targetPos;
+            if (dir.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(-dir.normalized, Vector3.up);
+                Vector3 angles = targetRot.eulerAngles;
+                _yaw = angles.y;
+                _pitch = angles.x;
+                if (_pitch > 180f) _pitch -= 360f;
+                _pitch = Mathf.Clamp(_pitch, minPitch, maxPitch);
+            }
         }
 
         private void Update()
@@ -72,7 +99,17 @@ namespace EdgeParty.Gameplay.Camera
 
         private void LateUpdate()
         {
-            if (target == null) return;
+            if (target == null)
+            {
+                _prevTarget = null;
+                return;
+            }
+
+            if (target != _prevTarget)
+            {
+                _prevTarget = target;
+                InitializeRotationFromPosition();
+            }
 
             // Only rotate if the cursor is locked
             if (Cursor.lockState == CursorLockMode.Locked)
