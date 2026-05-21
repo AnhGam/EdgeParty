@@ -14,7 +14,6 @@ namespace EdgeParty.Gameplay.Character
         public CharacterMotor motor;
         public CharacterAnimationController animController;
         public PlayerInputHandler inputHandler;
-
         [Header("Legacy References (Hidden - Used by Editor Tools)")]
         [HideInInspector] public Rigidbody pelvisRigidbody;
         [HideInInspector] public Transform ghostRoot;
@@ -27,6 +26,15 @@ namespace EdgeParty.Gameplay.Character
         public NetworkVariable<float> torsoMultiplier = new NetworkVariable<float>(1f);
         public NetworkVariable<float> headMultiplier = new NetworkVariable<float>(1f);
         public NetworkVariable<float> tailMultiplier = new NetworkVariable<float>(1f);
+
+        // TeamID can be used for team-based logic, such as friendly fire or team-specific buffs
+        public NetworkVariable<int> TeamID = new NetworkVariable<int>(0,NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Server);
+        
+        [Header("Nameplate")]
+        [SerializeField] private Transform headAnchor;
+        [SerializeField] private NameplateUI nameplatePrefab;
+
+        private NameplateUI nameplateInstance;
 
         [Header("Settings")]
         public float combatBoostMultiplier = 5f;
@@ -100,23 +108,53 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
+
         public override void OnNetworkSpawn()
         {
+            Debug.Log("PLAYER SPAWNED");
+
+            // Camera cho người chơi local
             if (IsOwner)
             {
                 AssignCameraTarget();
             }
 
-            // Đăng ký sự kiện thay đổi giá trị cho tất cả các xương
+            // Tạo Nameplate cho tất cả player
+            if (headAnchor != null && nameplatePrefab != null)
+            {
+                nameplateInstance = Instantiate(nameplatePrefab, headAnchor);
+                nameplateInstance.transform.localPosition = Vector3.zero;
+                nameplateInstance.SetPlayerName($"Player {OwnerClientId}");
+                nameplateInstance.SetMicLevel(0);
+            }
+
+            // Logic server
+            if (IsServer)
+            {
+                // Team 1 = Red, Team 2 = Blue
+                TeamID.Value = Random.Range(1, 3);
+
+                Debug.Log("SPAWN TEAM: " + TeamID.Value);
+
+                // Spawn theo team
+                SpawnByTeam();
+
+                // Nếu Team thay đổi thì spawn lại
+                TeamID.OnValueChanged += OnTeamChanged;
+            }
+
+            // Đăng ký event multiplier
             legMultiplier.OnValueChanged += OnMultiplierChanged;
             armMultiplier.OnValueChanged += OnMultiplierChanged;
             torsoMultiplier.OnValueChanged += OnMultiplierChanged;
             headMultiplier.OnValueChanged += OnMultiplierChanged;
             tailMultiplier.OnValueChanged += OnMultiplierChanged;
 
-            // Cập nhật lần đầu khi spawn
+            // Áp dụng giá trị ban đầu
             ApplyBoneMultipliers();
         }
+
+
 
         public override void OnNetworkDespawn()
         {
@@ -125,6 +163,20 @@ namespace EdgeParty.Gameplay.Character
             torsoMultiplier.OnValueChanged -= OnMultiplierChanged;
             headMultiplier.OnValueChanged -= OnMultiplierChanged;
             tailMultiplier.OnValueChanged -= OnMultiplierChanged;
+            TeamID.OnValueChanged -= OnTeamChanged;
+        }
+
+        void SpawnByTeam()
+        {
+            if (SpawnManager.Instance == null) return;
+
+            Vector3 pos = SpawnManager.Instance.GetSpawnPosition(TeamID.Value);
+            transform.position = pos;
+        }
+
+        void OnTeamChanged(int oldValue, int newValue)
+        {
+            SpawnByTeam();
         }
 
         private void OnMultiplierChanged(float previousValue, float newValue)
@@ -209,7 +261,7 @@ namespace EdgeParty.Gameplay.Character
         private void ApplyBoneMultipliers()
         {
             if (_followers == null) return;
-            
+
             float armBoost = 1f;
             if (animController != null && animController.IsAttacking)
             {
@@ -226,6 +278,27 @@ namespace EdgeParty.Gameplay.Character
                     case BoneCategory.Head: f.SetSpringMultiplier(headMultiplier.Value); break;
                     case BoneCategory.Tail: f.SetSpringMultiplier(tailMultiplier.Value); break;
                 }
+            }
+        }
+        /// <summary>
+        /// Cập nhật mức độ mic (0 - 100)
+        /// </summary>
+        public void SetMicLevel(float value)
+        {
+            if (nameplateInstance != null)
+            {
+                nameplateInstance.SetMicLevel(value);
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật tên hiển thị
+        /// </summary>
+        public void SetDisplayName(string playerName)
+        {
+            if (nameplateInstance != null)
+            {
+                nameplateInstance.SetPlayerName(playerName);
             }
         }
     }
