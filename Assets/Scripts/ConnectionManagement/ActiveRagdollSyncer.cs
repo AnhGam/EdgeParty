@@ -107,11 +107,14 @@ namespace EdgeParty.ConnectionManagement
 
         public override void OnNetworkSpawn()
         {
+            // NẾU LÀ CLIENT (Không phải Server): BIẾN TOÀN TẬP THÀNH BÙ NHÌN KINEMATIC
+            // Vì Server-Authoritative, Player không được tự mô phỏng Physics cục bộ
             bool isOffline = NetworkManager.Singleton != null && !NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer;
             bool isPureClient = IsClient && !IsServer && !isOffline;
 
             if (isPureClient)
             {
+                // Diệt gọn cấu trúc Physics để cấm đụng độ nội bộ
                 var scripts = GetComponentsInChildren<EdgeParty.Gameplay.Character.RagdollBoneFollower>();
                 foreach (var script in scripts) Destroy(script);
 
@@ -136,6 +139,7 @@ namespace EdgeParty.ConnectionManagement
         {
             if (!IsSpawned || NetworkManager.Singleton == null) return;
 
+            // CHỈ CÓ SERVER mới được quyền đo tọa độ xương phát cho trần gian
             if (IsServer)
             {
                 if (Time.time - _lastSendTime >= (1f / syncRate))

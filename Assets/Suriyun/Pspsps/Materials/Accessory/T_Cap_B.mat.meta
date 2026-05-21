@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: 2b60505cc292103469929ae295fd63da
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 2100000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Pspsps/Materials/Accessory/T_Cap_B.mat
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:ed569c881a79b61d31de2ee34bbcc8f07159c51e6d0ee01d8a6a043b5bbb6762
+size 381

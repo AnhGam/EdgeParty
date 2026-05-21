@@ -293,6 +293,7 @@ namespace EdgeParty.Gameplay.Character
             armMultiplier.Value = factor;
             torsoMultiplier.Value = factor;
             headMultiplier.Value = factor;
+            tailMultiplier.Value = factor;
         }
 
         private void ApplyBoneMultipliers()

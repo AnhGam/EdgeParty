@@ -10,6 +10,8 @@ namespace EdgeParty.ConnectionManagement
     /// </summary>
     public class ClientConnectionUI : MonoBehaviour
     {
+        private string _serverIp = "127.0.0.1";
+        private string _serverPort = "7777";
         private string _statusMsg = "";
 
         private void Start()
@@ -79,25 +81,33 @@ namespace EdgeParty.ConnectionManagement
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("IP:", GUILayout.Width(50));
-                string dummyIp = "127.0.0.1";
-                GUILayout.TextField(dummyIp);
+                _serverIp = GUILayout.TextField(_serverIp);
                 GUILayout.EndHorizontal();
 
+                // Lưu ý: Người chơi PHẢI nhập External Port lấy từ Edgegap
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Port:", GUILayout.Width(50));
-                string dummyPort = "7777";
-                GUILayout.TextField(dummyPort);
+                _serverPort = GUILayout.TextField(_serverPort);
                 GUILayout.EndHorizontal();
 
-                if (GUILayout.Button("CONNECT TO LOCALHOST (TEST)"))
+                if (GUILayout.Button("CONNECT TO SERVER (CLIENT)"))
                 {
-                    utp.SetConnectionData("127.0.0.1", 7777);
-                    _statusMsg = "Connecting to localhost...";
-                    
-                    if (!networkManager.StartClient())
+                    if (ushort.TryParse(_serverPort, out ushort port))
                     {
-                        _statusMsg = "Failed to start client!";
-                        Debug.LogError("[ClientConnectionUI] StartClient() returned false.");
+                        utp.SetConnectionData(_serverIp, port);
+                        _statusMsg = "Connecting...";
+                        Debug.Log($"[ClientConnectionUI] Attempting connection to {_serverIp}:{port}...");
+                        
+                        if (!networkManager.StartClient())
+                        {
+                            _statusMsg = "Failed to start client!";
+                            Debug.LogError("[ClientConnectionUI] StartClient() returned false.");
+                        }
+                    }
+                    else
+                    {
+                        _statusMsg = "Invalid Port!";
+                        Debug.LogError("[ClientConnectionUI] Invalid Port number!");
                     }
                 }
 
@@ -119,14 +129,21 @@ namespace EdgeParty.ConnectionManagement
                     // BIỆN PHÁP AN TOÀN: Nếu đang chạy dở cái gì đó, ép Shutdown trước khi mở Port mới
                     if (networkManager.IsListening) networkManager.Shutdown();
 
-                    utp.SetConnectionData("127.0.0.1", 7777);
-                    if (networkManager.StartHost())
+                    if (ushort.TryParse(_serverPort, out ushort port))
                     {
-                        _statusMsg = "Hosting on localhost...";
+                        utp.SetConnectionData("127.0.0.1", port);
+                        if (networkManager.StartHost())
+                        {
+                            _statusMsg = "Hosting on localhost...";
+                        }
+                        else
+                        {
+                            _statusMsg = "Failed to start host!";
+                        }
                     }
                     else
                     {
-                        _statusMsg = "Failed to start host!";
+                        _statusMsg = "Invalid Port!";
                     }
                 }
 
