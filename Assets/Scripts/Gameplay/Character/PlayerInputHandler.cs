@@ -26,8 +26,15 @@ namespace EdgeParty.Gameplay.Character
                 _controller = transform.root.GetComponentInChildren<PlayerController>();
             }
 
-            if (_camTransform == null && global::UnityEngine.Camera.main != null)
+            var activeThirdPersonCam = Object.FindFirstObjectByType<ThirdPersonCamera>();
+            if (activeThirdPersonCam != null)
+            {
+                _camTransform = activeThirdPersonCam.transform;
+            }
+            else if (_camTransform == null && global::UnityEngine.Camera.main != null)
+            {
                 _camTransform = global::UnityEngine.Camera.main.transform;
+            }
         }
 
         private void Update()
@@ -65,9 +72,16 @@ namespace EdgeParty.Gameplay.Character
             var mouse = Mouse.current;
             if (keyboard == null) return;
 
-            // Self-healing for camera if it was missing during Awake
-            if (_camTransform == null && global::UnityEngine.Camera.main != null)
+            // Self-healing for camera: prioritize the active ThirdPersonCamera
+            var activeThirdPersonCam = Object.FindFirstObjectByType<ThirdPersonCamera>();
+            if (activeThirdPersonCam != null)
+            {
+                _camTransform = activeThirdPersonCam.transform;
+            }
+            else if (_camTransform == null && global::UnityEngine.Camera.main != null)
+            {
                 _camTransform = global::UnityEngine.Camera.main.transform;
+            }
 
             // Ensure we have a controller
             if (_controller == null)
