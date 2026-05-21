@@ -20,7 +20,7 @@ public class ForestGameManager : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void AddScoreServerRpc(int teamID, int points)
     {
         if (teamID == 1) Team1Score.Value += points;

@@ -135,6 +135,7 @@ namespace EdgeParty.ConnectionManagement
                         if (networkManager.StartHost())
                         {
                             _statusMsg = "Hosting on localhost...";
+                            networkManager.SceneManager.LoadScene("DemoScene_Forest", UnityEngine.SceneManagement.LoadSceneMode.Single);
                         }
                         else
                         {

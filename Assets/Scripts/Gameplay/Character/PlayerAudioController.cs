@@ -139,8 +139,9 @@ namespace EdgeParty.Gameplay.Character
             _oneShotSource.PlayOneShot(clip);
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
+            base.OnDestroy();
             if (_loopSource != null) _loopSource.Stop();
         }
     }
