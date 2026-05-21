@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Netcode;
+using EdgeParty.Gameplay.Camera;
 
 namespace EdgeParty.Gameplay.Character
 {
@@ -47,6 +48,13 @@ namespace EdgeParty.Gameplay.Character
             bool isLocalController = isOffline || IsOwner;
             if (isLocalController)
             {
+                // Self-healing for third person camera target
+                var thirdPersonCam = Object.FindFirstObjectByType<ThirdPersonCamera>();
+                if (thirdPersonCam != null && thirdPersonCam.target == null)
+                {
+                    _controller.AssignCameraTarget();
+                }
+
                 ReadAndSendInput(isOffline);
             }
         }
