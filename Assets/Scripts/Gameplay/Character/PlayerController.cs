@@ -220,7 +220,7 @@ namespace EdgeParty.Gameplay.Character
 
         private void OnMultiplierChanged(float prev, float next) => ApplyBoneMultipliers();
 
-        private void AssignCameraTarget()
+        public void AssignCameraTarget()
         {
             var cam = Object.FindFirstObjectByType<ThirdPersonCamera>();
             if (cam != null && motor != null)
