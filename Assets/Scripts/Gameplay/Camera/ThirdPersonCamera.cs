@@ -29,8 +29,22 @@ namespace EdgeParty.Gameplay.Camera
 
         private void Update()
         {
-            // Toggle cursor lock with Escape and Left Click
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (Keyboard.current == null) return;
+
+            // ROOT FIX: If Alt is held, force cursor to be visible and unlocked
+            // This prevents any other logic from locking the cursor while we want to use the HUD
+            if (Keyboard.current.leftAltKey.isPressed)
+            {
+                if (Cursor.lockState != CursorLockMode.None)
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+                return; // Skip locking logic below
+            }
+
+            // Toggle cursor lock with Escape
+            if (Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
@@ -38,17 +52,11 @@ namespace EdgeParty.Gameplay.Camera
 
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
             {
-                Vector2 mousePos = Mouse.current.position.ReadValue();
-                // Check if clicking inside the top-left corner HUD area (approx 320x320)
-                // In Unity, mouse position y is 0 at the bottom, but GUI is 0 at the top.
-                bool inHUDArea = mousePos.x < 320 && (Screen.height - mousePos.y) < 320;
-
-                // Safety check: EventSystem might be null if not added to the scene
                 var eventSystem = UnityEngine.EventSystems.EventSystem.current;
                 bool overUI = eventSystem != null && eventSystem.IsPointerOverGameObject();
 
-                // Only lock if NOT clicking on the HUD or any other UI
-                if (Cursor.lockState == CursorLockMode.None && !overUI && !inHUDArea)
+                // Only lock if NOT clicking on UI
+                if (Cursor.lockState == CursorLockMode.None && !overUI)
                 {
                     Cursor.lockState = CursorLockMode.Locked;
                     Cursor.visible = false;
