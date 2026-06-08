@@ -1,0 +1,133 @@
+/* GummySidebar.uss - Styling for the unified sidebar */
+
+.sidebar {
+    width: 300px;
+    height: 100%;
+    background-color: #fff9e5;
+    border-right-width: 4px;
+    border-right-color: #ffe16d;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Profile Card */
+.profile-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: #eee8d5;
+    border-radius: 20px;
+    padding: 12px 18px;
+    margin-bottom: 24px;
+}
+
+.avatar-container {
+    width: 64px;
+    height: 64px;
+    position: relative;
+    border-radius: 9999px;
+    border-width: 2px;
+    border-color: #ffffff;
+    overflow: hidden;
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_2.png');
+}
+
+.status-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background-color: #4caf50;
+    border-radius: 9999px;
+    border-width: 2px;
+    border-color: #ffffff;
+}
+
+.profile-text {
+    margin-left: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-title {
+    font-size: 20px;
+    color: #1e1c10;
+    -unity-font-style: bold;
+}
+
+.profile-sub {
+    font-size: 15px;
+    color: #4d4732;
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+}
+
+.nav-tab {
+    background-color: transparent;
+    border-width: 0;
+    color: rgba(144, 77, 0, 0.7);
+    -unity-font-style: bold;
+    font-size: 22px;
+    padding: 18px 20px;
+    margin-bottom: 8px;
+    border-radius: 16px;
+    align-items: flex-start;
+    -unity-text-align: middle-left;
+    transition-property: background-color, translate, color;
+    transition-duration: 0.1s;
+}
+
+.nav-tab:hover {
+    background-color: rgba(255, 215, 0, 0.1);
+    color: #904d00;
+    translate: 4px 0;
+}
+
+.active-tab {
+    background-color: #ffd700;
+    color: #4e3500 !important;
+    border-bottom-width: 4px;
+    border-bottom-color: #b8860b;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(112, 93, 0, 0.15);
+}
+
+.active-tab:hover {
+    background-color: #ffd700;
+    translate: 0 0;
+}
+
+.active-tab:active {
+    border-bottom-width: 0;
+    translate: 0 4px;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+}
+
+.invite-btn {
+    margin-bottom: 12px;
+    font-size: 18px;
+}
+
+.logout-btn {
+    font-size: 18px;
+    color: #ba1a1a;
+}

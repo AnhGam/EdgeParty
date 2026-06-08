@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="Header" src="project://database/Assets/UI/StitchUI/UXML/GummyHeader.uxml" />
+    
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/TactileBase.uss" />
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/MainUI.uss" />
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/Matchmaking.uss" />
+
+    <!-- Full-screen out-of-game main layout container (stretched full width, no sidebar) -->
+    <ui:VisualElement name="matchmaking-layout" class="matchmaking-layout-container bg-lobby-theme">
+        
+        <!-- Stretched Header Top Bar -->
+        <ui:Instance template="Header" name="header-instance" class="header-stretched" />
+
+        <!-- Matchmaking Status Banner (Under Header) -->
+        <ui:VisualElement name="status-banner" class="status-banner tactile-panel">
+            <ui:VisualElement class="status-text-col">
+                <ui:Label text="Matchmaking..." class="font-headline banner-title" />
+                <ui:Label text="Estimated time: 0:45" class="font-body banner-sub" />
+            </ui:VisualElement>
+            <ui:Button name="btn-matchmaking-cancel" text="Cancel" class="bouncy-btn btn-error-3d banner-cancel-btn" />
+        </ui:VisualElement>
+
+        <!-- Canvas Body (Platforms, Chat & Friends drawer) -->
+        <ui:VisualElement name="matchmaking-body" class="matchmaking-body">
+            
+            <!-- Platforms Area Left-Center -->
+            <ui:VisualElement name="platforms-area" class="platforms-area">
+                <ui:VisualElement class="platforms-grid">
+                    
+                    <!-- Player 1 (Occupied - You) -->
+                    <ui:VisualElement class="platform-column">
+                        <ui:VisualElement name="podium-player-1" class="player-podium occupied-podium">
+                            <ui:VisualElement name="player-avatar-1" class="podium-avatar-img" />
+                            <ui:VisualElement class="podium-tag font-headline">
+                                <ui:Label text="You" class="podium-tag-text" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <!-- Player 2 (Empty) -->
+                    <ui:VisualElement class="platform-column">
+                        <ui:Button name="btn-invite-slot-2" class="player-podium empty-podium bouncy-btn">
+                            <ui:Label text="+" class="empty-podium-plus" />
+                            <ui:VisualElement class="podium-tag font-body">
+                                <ui:Label text="Empty" class="podium-tag-text" />
+                            </ui:VisualElement>
+                        </ui:Button>
+                    </ui:VisualElement>
+
+                    <!-- Player 3 (Empty) -->
+                    <ui:VisualElement class="platform-column">
+                        <ui:Button name="btn-invite-slot-3" class="player-podium empty-podium bouncy-btn">
+                            <ui:Label text="+" class="empty-podium-plus" />
+                            <ui:VisualElement class="podium-tag font-body">
+                                <ui:Label text="Empty" class="podium-tag-text" />
+                            </ui:VisualElement>
+                        </ui:Button>
+                    </ui:VisualElement>
+
+                    <!-- Player 4 (Empty) -->
+                    <ui:VisualElement class="platform-column">
+                        <ui:Button name="btn-invite-slot-4" class="player-podium empty-podium bouncy-btn">
+                            <ui:Label text="+" class="empty-podium-plus" />
+                            <ui:VisualElement class="podium-tag font-body">
+                                <ui:Label text="Empty" class="podium-tag-text" />
+                            </ui:VisualElement>
+                        </ui:Button>
+                    </ui:VisualElement>
+
+                </ui:VisualElement>
+
+
+
+                <!-- Bottom Center Play Action (Added from home!) -->
+                <ui:VisualElement name="matchmaking-footer" class="matchmaking-footer">
+                    <ui:Button name="btn-matchmaking-play" text="PLAY" class="bouncy-btn btn-primary-3d matchmaking-play-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Right-Drawer Friends Invite Drawer (Slides in on platform click) -->
+            <ui:VisualElement name="friends-drawer" class="friends-drawer">
+                <ui:VisualElement class="drawer-header row-between">
+                    <ui:VisualElement class="drawer-title-col">
+                        <ui:Label text="Friends" class="font-headline drawer-title" />
+                        <ui:Label text="5 Online" class="font-body drawer-sub" />
+                    </ui:VisualElement>
+                    <ui:Button name="btn-drawer-add-invite" text="+ Invite" class="bouncy-btn btn-surface-3d drawer-invite-btn" />
+                </ui:VisualElement>
+                
+                <ui:ScrollView class="drawer-friends-scroll">
+                    <!-- Friend Item 1 -->
+                    <ui:VisualElement class="friend-row-item row-between">
+                        <ui:VisualElement class="friend-info-block">
+                            <ui:VisualElement class="friend-avatar-circle">
+                                <ui:VisualElement class="online-indicator" />
+                            </ui:VisualElement>
+                            <ui:Label text="CoolGuy99" class="font-headline friend-name" />
+                        </ui:VisualElement>
+                        <ui:Button name="btn-friend-invite-1" text="+" class="bouncy-btn btn-primary-3d friend-add-btn" />
+                    </ui:VisualElement>
+
+                    <!-- Friend Item 2 -->
+                    <ui:VisualElement class="friend-row-item row-between">
+                        <ui:VisualElement class="friend-info-block">
+                            <ui:VisualElement class="friend-avatar-circle offline-avatar" />
+                            <ui:Label text="SleepyBear" class="font-body friend-name offline-name" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:ScrollView>
+            </ui:VisualElement>
+            
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
