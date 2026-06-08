@@ -83,30 +83,29 @@
                 <ui:VisualElement class="drawer-header row-between">
                     <ui:VisualElement class="drawer-title-col">
                         <ui:Label text="Friends" class="font-headline drawer-title" />
-                        <ui:Label text="5 Online" class="font-body drawer-sub" />
+                        <ui:Label name="friends-online-text-drawer" text="5 Online" class="font-body drawer-sub" />
                     </ui:VisualElement>
-                    <ui:Button name="btn-drawer-add-invite" text="+ Invite" class="bouncy-btn btn-surface-3d drawer-invite-btn" />
+                </ui:VisualElement>
+
+                <!-- Navigation Tabs inside Drawer -->
+                <ui:VisualElement name="friends-drawer-tabs" style="flex-direction: row; margin-top: 12px; margin-bottom: 8px;">
+                    <ui:Button name="tab-friends-list" text="Friends" class="bouncy-btn tab-btn active-tab" style="flex-grow: 1; font-size: 14px; padding: 8px 12px; border-radius: 10px;" />
+                    <ui:Button name="tab-friends-requests" text="Requests" class="bouncy-btn tab-btn" style="flex-grow: 1; font-size: 14px; padding: 8px 12px; margin-left: 4px; margin-right: 4px; border-radius: 10px;" />
+                    <ui:Button name="tab-friends-add" text="Add Friend" class="bouncy-btn tab-btn" style="flex-grow: 1; font-size: 14px; padding: 8px 12px; border-radius: 10px;" />
+                </ui:VisualElement>
+
+                <!-- Add Friend Area -->
+                <ui:VisualElement name="add-friend-container" style="display: none; padding: 12px; background-color: rgba(255, 255, 255, 0.4); border-radius: 12px; margin-top: 8px; margin-bottom: 8px;">
+                    <ui:Label text="Enter Username:" class="font-body" style="font-size: 14px; margin-bottom: 6px; color: #544600;" />
+                    <ui:VisualElement style="flex-direction: row; align-items: center;">
+                        <ui:TextField name="add-friend-input" style="flex-grow: 1; height: 36px; font-size: 14px;" />
+                        <ui:Button name="btn-add-friend-submit" text="Add" class="bouncy-btn btn-primary-3d" style="height: 36px; margin-left: 8px; font-size: 14px; padding: 0 16px;" />
+                    </ui:VisualElement>
+                    <ui:Label name="add-friend-status" text="" class="font-body" style="font-size: 12px; margin-top: 6px; color: #ba1a1a; display: none;" />
                 </ui:VisualElement>
                 
-                <ui:ScrollView class="drawer-friends-scroll">
-                    <!-- Friend Item 1 -->
-                    <ui:VisualElement class="friend-row-item row-between">
-                        <ui:VisualElement class="friend-info-block">
-                            <ui:VisualElement class="friend-avatar-circle">
-                                <ui:VisualElement class="online-indicator" />
-                            </ui:VisualElement>
-                            <ui:Label text="CoolGuy99" class="font-headline friend-name" />
-                        </ui:VisualElement>
-                        <ui:Button name="btn-friend-invite-1" text="+" class="bouncy-btn btn-primary-3d friend-add-btn" />
-                    </ui:VisualElement>
-
-                    <!-- Friend Item 2 -->
-                    <ui:VisualElement class="friend-row-item row-between">
-                        <ui:VisualElement class="friend-info-block">
-                            <ui:VisualElement class="friend-avatar-circle offline-avatar" />
-                            <ui:Label text="SleepyBear" class="font-body friend-name offline-name" />
-                        </ui:VisualElement>
-                    </ui:VisualElement>
+                <ui:ScrollView name="drawer-friends-scroll" class="drawer-friends-scroll" style="margin-top: 8px;">
+                    <!-- Friend items and request items will be dynamically generated and loaded here -->
                 </ui:ScrollView>
             </ui:VisualElement>
             

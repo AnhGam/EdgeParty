@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using EdgeParty.Auth;
+using EdgeParty.Social;
 
 namespace EdgeParty.UI
 {
@@ -27,6 +28,7 @@ namespace EdgeParty.UI
         private int _currentCoins = 1240;
         private int _onlineFriendsCount = 5;
         private string _username = "PlayerOne";
+        private string _currentFriendsDrawerTab = "friends";
 
         // UGS Auth integration states
         private string _pendingEmail = "";
@@ -44,10 +46,20 @@ namespace EdgeParty.UI
             AuthService.Instance.OnSignUpSuccess += HandleSignUpSuccess;
             AuthService.Instance.OnSignUpFailed += HandleSignUpFailed;
 
+            // Register Social Events
+            if (FriendLobbyService.Instance != null)
+            {
+                FriendLobbyService.Instance.OnFriendsUpdated += PopulateFriendsDrawer;
+                FriendLobbyService.Instance.OnFriendRequestsUpdated += PopulateFriendsDrawer;
+                FriendLobbyService.Instance.OnLobbyMembersUpdated += UpdateLobbyPodiums;
+                FriendLobbyService.Instance.OnLobbyJoined += HandleLobbyJoined;
+                FriendLobbyService.Instance.OnLobbyLeft += HandleLobbyLeft;
+            }
+
             // Start by showing the Login Menu by default
             ShowLogin();
 
-            // Try Auto Sign-In (check cached UGS session token)
+            // Try Auto Sign-In (check UGS session token)
             bool autoSignedIn = await AuthService.Instance.TryAutoSignInAsync();
             if (autoSignedIn)
             {
@@ -64,6 +76,15 @@ namespace EdgeParty.UI
                 AuthService.Instance.OnSignInFailed -= HandleSignInFailed;
                 AuthService.Instance.OnSignUpSuccess -= HandleSignUpSuccess;
                 AuthService.Instance.OnSignUpFailed -= HandleSignUpFailed;
+            }
+
+            if (FriendLobbyService.Instance != null)
+            {
+                FriendLobbyService.Instance.OnFriendsUpdated -= PopulateFriendsDrawer;
+                FriendLobbyService.Instance.OnFriendRequestsUpdated -= PopulateFriendsDrawer;
+                FriendLobbyService.Instance.OnLobbyMembersUpdated -= UpdateLobbyPodiums;
+                FriendLobbyService.Instance.OnLobbyJoined -= HandleLobbyJoined;
+                FriendLobbyService.Instance.OnLobbyLeft -= HandleLobbyLeft;
             }
         }
 
@@ -138,6 +159,9 @@ namespace EdgeParty.UI
             BindSharedHeaderEvents("tab-home");
             BindHomeEvents();
             ApplyDataBindings();
+
+            // Auto initialize Social once signed in
+            _ = FriendLobbyService.Instance.InitializeSocialAsync();
         }
 
         public void ShowShop()
@@ -432,15 +456,15 @@ namespace EdgeParty.UI
 
             if (btnBuyCap != null)
             {
-                RegisterHoverAndClick(btnBuyCap, () => BuyItem("Banana Split Cap", 850));
+                RegisterHoverAndClick(btnBuyCap, () => BuyItem("banana-cap", "Banana Split Cap", 850));
             }
             if (btnBuy1 != null)
             {
-                RegisterHoverAndClick(btnBuy1, () => BuyItem("Retro Shaders", 320));
+                RegisterHoverAndClick(btnBuy1, () => BuyItem("retro-shaders", "Retro Shaders", 320));
             }
             if (btnBuy2 != null)
             {
-                RegisterHoverAndClick(btnBuy2, () => BuyItem("Fuzzy Bucket", 450));
+                RegisterHoverAndClick(btnBuy2, () => BuyItem("fuzzy-bucket", "Fuzzy Bucket", 450));
             }
 
             // Shop Filters
@@ -494,7 +518,14 @@ namespace EdgeParty.UI
                             if (target.name == "friends-drawer" || 
                                 target.name == "btn-invite-slot-2" || 
                                 target.name == "btn-invite-slot-3" || 
-                                target.name == "btn-invite-slot-4")
+                                target.name == "btn-invite-slot-4" ||
+                                target.name == "tab-friends-list" ||
+                                target.name == "tab-friends-requests" ||
+                                target.name == "tab-friends-add" ||
+                                target.name == "add-friend-container" ||
+                                target.name == "btn-add-friend-submit" ||
+                                target.name == "add-friend-input" ||
+                                target.name == "drawer-friends-scroll")
                             {
                                 insideDrawer = true;
                                 break;
@@ -512,6 +543,78 @@ namespace EdgeParty.UI
                     }
                 });
             }
+
+            // Friends Drawer Tabs Setup
+            _currentFriendsDrawerTab = "friends";
+            var tabFriends = _root.Q<Button>("tab-friends-list");
+            var tabRequests = _root.Q<Button>("tab-friends-requests");
+            var tabAdd = _root.Q<Button>("tab-friends-add");
+
+            if (tabFriends != null)
+            {
+                RegisterHoverAndClick(tabFriends, () => {
+                    _currentFriendsDrawerTab = "friends";
+                    UpdateFriendsDrawerTabsUI();
+                    PopulateFriendsDrawer();
+                });
+            }
+
+            if (tabRequests != null)
+            {
+                RegisterHoverAndClick(tabRequests, () => {
+                    _currentFriendsDrawerTab = "requests";
+                    UpdateFriendsDrawerTabsUI();
+                    PopulateFriendsDrawer();
+                });
+            }
+
+            if (tabAdd != null)
+            {
+                RegisterHoverAndClick(tabAdd, () => {
+                    _currentFriendsDrawerTab = "add";
+                    UpdateFriendsDrawerTabsUI();
+                    PopulateFriendsDrawer();
+                });
+            }
+
+            // Add Friend Submit Button Setup
+            var btnAddSubmit = _root.Q<Button>("btn-add-friend-submit");
+            if (btnAddSubmit != null)
+            {
+                RegisterHoverAndClick(btnAddSubmit, async () => {
+                    var inputField = _root.Q<TextField>("add-friend-input");
+                    var statusLabel = _root.Q<Label>("add-friend-status");
+                    if (inputField != null && !string.IsNullOrEmpty(inputField.value))
+                    {
+                        if (statusLabel != null)
+                        {
+                            statusLabel.text = "Sending request...";
+                            statusLabel.style.color = new StyleColor(new Color(0.3f, 0.2f, 0f));
+                            statusLabel.style.display = DisplayStyle.Flex;
+                        }
+                        
+                        bool ok = await FriendLobbyService.Instance.SendFriendRequestAsync(inputField.value);
+                        if (statusLabel != null)
+                        {
+                            if (ok)
+                            {
+                                statusLabel.text = "Request sent successfully!";
+                                statusLabel.style.color = new StyleColor(new Color(0.1f, 0.5f, 0.1f));
+                                inputField.value = "";
+                            }
+                            else
+                            {
+                                statusLabel.text = "Failed to send request.";
+                                statusLabel.style.color = new StyleColor(new Color(0.7f, 0.1f, 0.1f));
+                            }
+                        }
+                    }
+                });
+            }
+
+            UpdateFriendsDrawerTabsUI();
+            PopulateFriendsDrawer();
+            UpdateLobbyPodiums(FriendLobbyService.Instance.LobbyMembers);
         }
 
         // Shared sidebar navigation bindings
@@ -631,11 +734,13 @@ namespace EdgeParty.UI
             var friendsOnlineText = _root.Q<Label>("friends-online-text");
             if (friendsOnlineText != null) friendsOnlineText.text = $"{_onlineFriendsCount} Online";
 
-            // If header avatar has drawer/tooltip
+            // Profile Title on Sidebar showing current username
+            var profileTitle = _root.Q<Label>("profile-title");
+            if (profileTitle != null) profileTitle.text = _username;
+
             Debug.Log($"Dynamic data applied successfully. Coins: {_currentCoins}, User: {_username}");
         }
 
-        // Demonstrative API endpoints for server integration binding
         public void SetCoins(int coinAmount)
         {
             _currentCoins = coinAmount;
@@ -672,7 +777,7 @@ namespace EdgeParty.UI
             }
         }
 
-        private void BuyItem(string itemName, int price)
+        private void BuyItem(string itemId, string itemName, int price)
         {
             if (_currentCoins >= price)
             {
@@ -799,6 +904,253 @@ namespace EdgeParty.UI
             element.style.borderRightColor = new StyleColor(color);
             element.style.borderBottomColor = new StyleColor(color);
             element.style.borderLeftColor = new StyleColor(color);
+        }
+
+
+
+        private void UpdateFriendsDrawerTabsUI()
+        {
+            var tabFriends = _root.Q<Button>("tab-friends-list");
+            var tabRequests = _root.Q<Button>("tab-friends-requests");
+            var tabAdd = _root.Q<Button>("tab-friends-add");
+            var addContainer = _root.Q<VisualElement>("add-friend-container");
+
+            if (tabFriends != null) SetupDrawerTabState(tabFriends, _currentFriendsDrawerTab == "friends");
+            if (tabRequests != null) SetupDrawerTabState(tabRequests, _currentFriendsDrawerTab == "requests");
+            if (tabAdd != null) SetupDrawerTabState(tabAdd, _currentFriendsDrawerTab == "add");
+
+            if (addContainer != null)
+            {
+                addContainer.style.display = (_currentFriendsDrawerTab == "add") ? DisplayStyle.Flex : DisplayStyle.None;
+                var statusLabel = addContainer.Q<Label>("add-friend-status");
+                if (statusLabel != null) statusLabel.style.display = DisplayStyle.None;
+            }
+        }
+
+        private void SetupDrawerTabState(Button tabButton, bool isActive)
+        {
+            if (isActive)
+            {
+                tabButton.AddToClassList("active-tab");
+            }
+            else
+            {
+                tabButton.RemoveFromClassList("active-tab");
+            }
+        }
+
+        private void PopulateFriendsDrawer()
+        {
+            var scroll = _root.Q<ScrollView>("drawer-friends-scroll");
+            if (scroll == null) return;
+
+            scroll.Clear();
+
+            // Dynamic drawer subtitle status
+            var drawerSub = _root.Q<Label>("friends-online-text-drawer");
+            int onlineCount = FriendLobbyService.Instance.Friends.FindAll(f => f.IsOnline).Count;
+            if (drawerSub != null)
+            {
+                drawerSub.text = $"{onlineCount} Online";
+            }
+
+            if (_currentFriendsDrawerTab == "friends")
+            {
+                var friends = FriendLobbyService.Instance.Friends;
+                foreach (var friend in friends)
+                {
+                    VisualElement row = new VisualElement();
+                    row.AddToClassList("friend-row-item");
+                    row.AddToClassList("row-between");
+                    row.style.flexDirection = FlexDirection.Row;
+                    row.style.alignItems = Align.Center;
+                    row.style.justifyContent = Justify.SpaceBetween;
+
+                    VisualElement info = new VisualElement();
+                    info.AddToClassList("friend-info-block");
+                    info.style.flexDirection = FlexDirection.Row;
+                    info.style.alignItems = Align.Center;
+
+                    VisualElement avatar = new VisualElement();
+                    avatar.AddToClassList("friend-avatar-circle");
+                    if (!friend.IsOnline)
+                    {
+                        avatar.AddToClassList("offline-avatar");
+                    }
+                    else
+                    {
+                        VisualElement dot = new VisualElement();
+                        dot.AddToClassList("online-indicator");
+                        avatar.Add(dot);
+                    }
+                    info.Add(avatar);
+
+                    Label name = new Label(friend.Username);
+                    name.AddToClassList("font-headline");
+                    name.AddToClassList("friend-name");
+                    if (!friend.IsOnline)
+                    {
+                        name.AddToClassList("offline-name");
+                    }
+                    info.Add(name);
+                    row.Add(info);
+
+                    if (friend.IsOnline)
+                    {
+                        Button inviteBtn = new Button();
+                        inviteBtn.text = "+";
+                        inviteBtn.AddToClassList("bouncy-btn");
+                        inviteBtn.AddToClassList("btn-primary-3d");
+                        inviteBtn.AddToClassList("friend-add-btn");
+                        inviteBtn.style.width = 32;
+                        inviteBtn.style.height = 32;
+                        
+                        inviteBtn.clicked += () =>
+                        {
+                            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                            // Invite friend
+                            FriendLobbyService.Instance.SimulateFriendAcceptingInvite(friend.Username);
+                        };
+                        row.Add(inviteBtn);
+                    }
+                    scroll.Add(row);
+                }
+            }
+            else if (_currentFriendsDrawerTab == "requests")
+            {
+                var requests = FriendLobbyService.Instance.IncomingRequests;
+                if (requests.Count == 0)
+                {
+                    Label emptyLabel = new Label("No pending requests");
+                    emptyLabel.AddToClassList("font-body");
+                    emptyLabel.style.fontSize = 14;
+                    emptyLabel.style.color = new StyleColor(new Color(0.5f, 0.5f, 0.5f));
+                    emptyLabel.style.marginTop = 16;
+                    emptyLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+                    scroll.Add(emptyLabel);
+                }
+                else
+                {
+                    foreach (var req in requests)
+                    {
+                        VisualElement row = new VisualElement();
+                        row.AddToClassList("friend-row-item");
+                        row.AddToClassList("row-between");
+                        row.style.flexDirection = FlexDirection.Row;
+                        row.style.alignItems = Align.Center;
+                        row.style.justifyContent = Justify.SpaceBetween;
+
+                        VisualElement info = new VisualElement();
+                        info.AddToClassList("friend-info-block");
+                        info.style.flexDirection = FlexDirection.Row;
+                        info.style.alignItems = Align.Center;
+
+                        VisualElement avatar = new VisualElement();
+                        avatar.AddToClassList("friend-avatar-circle");
+                        avatar.AddToClassList("offline-avatar"); // requests are offline look by default
+                        info.Add(avatar);
+
+                        Label name = new Label(req.Username);
+                        name.AddToClassList("font-headline");
+                        name.AddToClassList("friend-name");
+                        info.Add(name);
+                        row.Add(info);
+
+                        VisualElement actions = new VisualElement();
+                        actions.style.flexDirection = FlexDirection.Row;
+
+                        Button acceptBtn = new Button();
+                        acceptBtn.text = "✓";
+                        acceptBtn.AddToClassList("bouncy-btn");
+                        acceptBtn.AddToClassList("btn-primary-3d");
+                        acceptBtn.style.width = 32;
+                        acceptBtn.style.height = 32;
+                        acceptBtn.clicked += async () =>
+                        {
+                            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                            await FriendLobbyService.Instance.AcceptFriendRequestAsync(req.Id);
+                        };
+                        actions.Add(acceptBtn);
+
+                        Button declineBtn = new Button();
+                        declineBtn.text = "✗";
+                        declineBtn.AddToClassList("bouncy-btn");
+                        declineBtn.AddToClassList("btn-surface-3d");
+                        declineBtn.style.width = 32;
+                        declineBtn.style.height = 32;
+                        declineBtn.style.marginLeft = 4;
+                        declineBtn.clicked += async () =>
+                        {
+                            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                            await FriendLobbyService.Instance.DeclineFriendRequestAsync(req.Id);
+                        };
+                        actions.Add(declineBtn);
+
+                        row.Add(actions);
+                        scroll.Add(row);
+                    }
+                }
+            }
+        }
+
+        private void UpdateLobbyPodiums(List<string> members)
+        {
+            for (int i = 2; i <= 4; i++)
+            {
+                var slotBtn = _root.Q<Button>($"btn-invite-slot-{i}");
+                if (slotBtn == null) continue;
+
+                int memberIndex = i - 1; // You is index 0
+                if (memberIndex < members.Count)
+                {
+                    string memberName = members[memberIndex];
+                    
+                    // Occupied State
+                    slotBtn.RemoveFromClassList("empty-podium");
+                    slotBtn.AddToClassList("occupied-podium");
+                    
+                    var plusLabel = slotBtn.Q<Label>(className: "empty-podium-plus");
+                    if (plusLabel != null) plusLabel.style.display = DisplayStyle.None;
+                    
+                    var tagText = slotBtn.Q<Label>(className: "podium-tag-text");
+                    if (tagText != null) tagText.text = memberName;
+                    
+                    // Add visual avatar container inside the button if not already present
+                    var avatarImg = slotBtn.Q<VisualElement>(className: "podium-avatar-img");
+                    if (avatarImg == null)
+                    {
+                        avatarImg = new VisualElement();
+                        avatarImg.AddToClassList("podium-avatar-img");
+                        slotBtn.Insert(0, avatarImg);
+                    }
+                    avatarImg.style.display = DisplayStyle.Flex;
+                }
+                else
+                {
+                    // Empty State
+                    slotBtn.AddToClassList("empty-podium");
+                    slotBtn.RemoveFromClassList("occupied-podium");
+                    
+                    var plusLabel = slotBtn.Q<Label>(className: "empty-podium-plus");
+                    if (plusLabel != null) plusLabel.style.display = DisplayStyle.Flex;
+                    
+                    var tagText = slotBtn.Q<Label>(className: "podium-tag-text");
+                    if (tagText != null) tagText.text = "Empty";
+                    
+                    var avatarImg = slotBtn.Q<VisualElement>(className: "podium-avatar-img");
+                    if (avatarImg != null) avatarImg.style.display = DisplayStyle.None;
+                }
+            }
+        }
+
+        private void HandleLobbyJoined(string lobbyCode)
+        {
+            Debug.Log($"Lobby joined/created successfully: {lobbyCode}");
+        }
+
+        private void HandleLobbyLeft()
+        {
+            Debug.Log("Lobby left.");
         }
     }
 }
