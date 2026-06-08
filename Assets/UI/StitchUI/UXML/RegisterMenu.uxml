@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/TactileBase.uss" />
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/Auth.uss" />
+
+    <ui:VisualElement name="auth-background" class="auth-bg">
+        <!-- Center Card Split Panel Layout -->
+        <ui:VisualElement name="split-card" class="split-card-container tactile-shadow">
+            
+            <!-- Left Side: Registration Form -->
+            <ui:VisualElement name="form-panel" class="form-panel">
+                <ui:VisualElement name="form-brand-row" class="form-brand-row" style = "margin-top:50px;" >
+                    <ui:Image name="mini-logo" class="mini-logo" />
+                    <ui:Label text="Party Rumble" class="mini-brand-title font-headline" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="form-content" class="form-content" style="justify-content: flex-end;">
+                    <ui:Label text="Create Account" class="font-headline main-card-heading" />
+                    <ui:Label text="Get ready to join the fun. Fill out the details below to start rumbling." class="font-body card-subtitle" style="margin-top: 25px;"/>
+
+                    <!-- Error Banner -->
+                    <ui:Label name="error-banner" class="error-banner" text="An error occurred. Please try again." style="margin-top: 20px;" />
+
+                    <!-- Form Inputs -->
+                    <ui:VisualElement class="form-inputs-box" style="flex-grow: 0; margin-top: 80px; margin-bottom: 0;">
+                        <ui:VisualElement class="input-group" style="margin-bottom: 30px;">
+                            <ui:Label text="Username" class="input-label" />
+                            <ui:TextField name="register-username" placeholder-text="PartyAnimal99" class="tactile-input" />
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="input-group" style="margin-bottom: 30px;">
+                            <ui:Label text="Email" class="input-label" />
+                            <ui:TextField name="register-email" placeholder-text="hello@partyrumble.com" class="tactile-input" />
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="input-group" style="margin-bottom: 30px;">
+                            <ui:Label text="Password" class="input-label" />
+                            <ui:TextField name="register-password" placeholder-text="••••••••" password="true" class="tactile-input" />
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="input-group" style="margin-bottom: 0;">
+                            <ui:Label text="Confirm Password" class="input-label" />
+                            <ui:TextField name="register-confirm-password" placeholder-text="••••••••" password="true" class="tactile-input" />
+                        </ui:VisualElement>
+
+                        <!-- Submit Button -->
+                        <ui:Button name="btn-register-submit" text="Join the Fun" class="bouncy-btn btn-primary-3d register-submit-btn" style="margin-top: 80px;" />
+                    </ui:VisualElement>
+
+                    <!-- Back to Login Prompts -->
+                    <ui:VisualElement class="bottom-prompt center-content" style="margin-top: 60px;">
+                        <ui:Label text="Already have an account? " class="card-subtitle" />
+                        <ui:Button name="btn-back-to-login-link" text="Back to Login" class="hyperlink-btn font-bold-underline" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- Right Side: Decorative Image Panel -->
+            <ui:VisualElement name="image-panel" class="image-panel">
+                <ui:Image name="split-art-image" class="split-art-image" />
+            </ui:VisualElement>
+            
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

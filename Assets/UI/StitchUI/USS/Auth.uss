@@ -1,0 +1,504 @@
+/* Auth.uss - Styles for Login, Register, and Forgot Password/OTP screens */
+
+.auth-bg {
+    width: 100%;
+    height: 100%;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/CleanBackgroundWithNoThings.png');
+    -unity-background-scale-mode: scale-and-crop;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 35px;
+}
+
+.auth-container {
+    width: 680px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Brand Header */
+.brand-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.logo-img {
+    width: 200px;
+    height: 200px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/Logo.png');
+    -unity-background-scale-mode: scale-and-crop;
+    border-radius: 40px;
+    border-width: 2px;
+    border-color: #e8e2cf;
+    margin-bottom: 12px;
+}
+
+.brand-title-main {
+    font-size: 48px;
+    -unity-font-style: bold;
+    color: #705d00;
+    -unity-text-align: middle-center;
+    letter-spacing: -1px;
+}
+
+/* Card layout */
+.login-card {
+    width: 100%;
+    height: 820px;
+    display: flex;
+    flex-direction: column;
+    padding: 64px;
+    justify-content: space-between;
+    background-color: #fff9e7;
+}
+
+.card-header {
+    margin-bottom: 24px;
+    -unity-text-align: middle-center;
+}
+
+.card-title {
+    font-size: 40px;
+    -unity-font-style: bold;
+    color: #1e1c10;
+    margin-bottom: 4px;
+}
+
+.card-subtitle {
+    font-size: 18px;
+    color: #4d4732;
+    white-space: normal;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 24px;
+}
+
+.input-label {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: #1e1c10;
+    margin-left: 12px;
+    margin-bottom: 6px;
+}
+
+.row-between {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hyperlink-btn {
+    background-color: transparent;
+    border-width: 0;
+    color: #904d00;
+    font-size: 18px;
+    -unity-font-style: bold;
+    padding: 0;
+}
+
+.hyperlink-btn:hover {
+    color: #705d00;
+}
+
+.font-bold-underline {
+    -unity-font-style: bold;
+}
+
+.login-btn {
+    margin-top: 16px;
+    font-size: 24px;
+    padding: 20px;
+}
+
+/* Divider Row */
+.divider-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.divider-line {
+    flex-grow: 1;
+    height: 2px;
+    background-color: #eee8d5;
+}
+
+.divider-text {
+    margin: 0 12px;
+    font-size: 12px;
+    color: #7e775f;
+    -unity-font-style: bold;
+}
+
+.social-btn {
+    padding: 14px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.social-btn-text {
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: #1e1c10;
+}
+
+.google-logo {
+    width: 28px;
+    height: 28px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/GoogleLogo.png');
+    -unity-background-scale-mode: scale-and-crop;
+    margin-left: 12px;
+}
+
+.google-icon-text {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: #ffffff;
+    background-color: #DB4437;
+    border-radius: 9999px;
+    width: 24px;
+    height: 24px;
+    -unity-text-align: middle-center;
+    margin-left: 10px;
+}
+
+.bottom-prompt {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-top: 8px;
+}
+
+/* =========================================================================
+   Split Card Panel (Register & Forgot Password)
+   ========================================================================= */
+
+.split-card-container {
+    aspect-ratio: 1.3;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    align-self: center;
+    background-color: #ffffff;
+    border-radius: 32px;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    border-width: 2px;
+    border-color: #eee8d5;
+}
+
+.form-panel {
+    width: 50%;
+    height: 100%;
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-brand-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.mini-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 9999px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/Logo.png');
+    -unity-background-scale-mode: scale-and-crop;
+    border-width: 2px;
+    border-color: #ffd700;
+}
+
+.mini-brand-title {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: #ffd700;
+    margin-left: 12px;
+}
+
+.form-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-top: 8px;
+    padding-bottom: 16px;
+}
+
+.main-card-heading {
+    font-size: 42px;
+    -unity-font-style: bold;
+    color: #1e1c10;
+    margin-bottom: 8px;
+}
+
+.form-inputs-box {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    justify-content: space-between;
+}
+
+.register-submit-btn {
+    font-size: 24px;
+    padding: 20px;
+    margin-top: auto;
+}
+
+.center-content {
+    justify-content: center;
+}
+
+/* Right decorative image panel */
+.image-panel {
+    width: 50%;
+    height: 100%;
+    background-color: #f9f4e0;
+    position: relative;
+    padding: 32px;
+}
+
+.split-art-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 24px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_1.png');
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.otp-art-image {
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_3.png');
+}
+
+/* Announcement Overlay */
+.announcement-card {
+    position: absolute;
+    bottom: 48px;
+    left: 48px;
+    right: 48px;
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-width: 1px;
+    border-color: #e8e2cf;
+}
+
+.announcement-badge {
+    width: 44px;
+    height: 44px;
+    background-color: #ffd0b4;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+}
+
+.announcement-badge-star {
+    font-size: 20px;
+    color: #7a5741;
+}
+
+.announcement-texts {
+    flex-shrink: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.announcement-title {
+    font-size: 14px;
+    color: #1e1c10;
+    -unity-font-style: bold;
+}
+
+.announcement-desc {
+    font-size: 11px;
+    color: #4d4732;
+    margin-top: 2px;
+}
+
+/* =========================================================================
+   Forgot Password & OTP Screens (Centered Correction)
+   ========================================================================= */
+
+.otp-form-panel {
+    justify-content: center;
+}
+
+.centered-brand {
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.otp-inner-card {
+    display: flex;
+    flex-direction: column;
+    padding: 32px 40px;
+    align-items: center;
+    width: 100%;
+    flex-grow: 1;
+    justify-content: space-between;
+}
+
+.mail-illustration-wrapper {
+    width: 96px;
+    height: 96px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mail-illustration-img {
+    width: 80px;
+    height: 80px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/Logo.png'); /* fallback image */
+    -unity-background-scale-mode: scale-and-crop;
+    border-radius: 20px;
+    border-width: 2px;
+    border-color: #eee8d5;
+    background-color: #f4eeda;
+}
+
+.centered-text {
+    -unity-text-align: middle-center;
+}
+
+.max-width-desc {
+    max-width: 500px;
+    margin-top: 4px;
+}
+
+.otp-inputs-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.otp-box-input {
+    width: 76px;
+    height: 96px;
+    background-color: #f4eeda;
+    border-radius: 20px;
+    margin: 0 6px;
+    font-size: 40px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    border-width: 2px;
+    border-color: transparent;
+    padding: 0;
+}
+
+.otp-box-input > .unity-text-field__input {
+    background-color: transparent;
+    border-width: 0;
+    padding: 0;
+    margin: 0;
+    -unity-text-align: middle-center;
+    color: #1e1c10;
+}
+
+.active-otp-box {
+    border-color: #ffd700;
+    background-color: #fff9e7;
+}
+
+.otp-actions-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.otp-verify-btn {
+    padding: 20px;
+    font-size: 22px;
+    margin-bottom: 8px;
+}
+
+.otp-resend-btn {
+    padding: 16px;
+    font-size: 18px;
+}
+
+.border-top-divider {
+    border-top-width: 1px;
+    border-top-color: #dfdac7;
+    width: 100%;
+    margin-top: 12px;
+}
+
+/* Grouping helpers for forgot/OTP inner cards */
+.otp-top-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.otp-bottom-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 16px;
+}
+
+/* =========================================================================
+   UGS Integration Styles (Error Banner, Loading & Validation States)
+   ========================================================================= */
+
+.error-banner {
+    display: none; /* Hidden by default */
+    background-color: #fde8e8;
+    border-width: 1px;
+    border-color: #f8b4b4;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    color: #9b1c1c;
+    font-size: 14px;
+    -unity-font-style: bold;
+    white-space: normal;
+    align-items: center;
+    justify-content: center;
+    -unity-text-align: middle-center;
+}
+
+.btn-loading {
+    opacity: 0.6;
+}
+
+.input-error {
+    border-color: #e53e3e;
+    background-color: #fff5f5;
+}
+

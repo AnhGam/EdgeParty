@@ -2718,6 +2718,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4367955899081236401}
+    - targetCorrespondingSourceObject: {fileID: 7172485977189189419, guid: 472b7551a02d49949b751cfa17f30f57,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1873917841786966637}
     - targetCorrespondingSourceObject: {fileID: 822538591225049030, guid: 472b7551a02d49949b751cfa17f30f57,
         type: 3}
       insertIndex: -1
@@ -2730,6 +2734,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 3603013812254817066}
+    - targetCorrespondingSourceObject: {fileID: 6444853533324177816, guid: 472b7551a02d49949b751cfa17f30f57,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3873281943464474187}
     - targetCorrespondingSourceObject: {fileID: 2279967866059510024, guid: 472b7551a02d49949b751cfa17f30f57,
         type: 3}
       insertIndex: -1
@@ -3129,6 +3137,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 4
   targetBone: {fileID: 2595738063785553947}
+--- !u!1 &1549581357832563539 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7172485977189189419, guid: 472b7551a02d49949b751cfa17f30f57,
+    type: 3}
+  m_PrefabInstance: {fileID: 8505313936679660664}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1873917841786966637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1549581357832563539}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0018331c6ae024e4a9176d4b6567ca5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.GrabHandler
+  grabRadius: 0.3
+  grabOffset: {x: 0, y: 0, z: 0.2}
+  grabLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  breakForce: 2000
 --- !u!54 &2235506582889290885 stripped
 Rigidbody:
   m_CorrespondingSourceObject: {fileID: 7570248138902057213, guid: 472b7551a02d49949b751cfa17f30f57,
@@ -3175,6 +3207,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.RagdollBoneFollower
   category: 2
   targetBone: {fileID: 7596024044511189806}
+--- !u!1 &3420565084115377632 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6444853533324177816, guid: 472b7551a02d49949b751cfa17f30f57,
+    type: 3}
+  m_PrefabInstance: {fileID: 8505313936679660664}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3873281943464474187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3420565084115377632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0018331c6ae024e4a9176d4b6567ca5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Character.GrabHandler
+  grabRadius: 0.3
+  grabOffset: {x: 0, y: 0, z: 0.2}
+  grabLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  breakForce: 2000
 --- !u!1 &3680593310747595377 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4980112486900596233, guid: 472b7551a02d49949b751cfa17f30f57,

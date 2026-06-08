@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/TactileBase.uss" />
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/GummySidebar.uss" />
+
+    <ui:VisualElement name="sidebar-container" class="sidebar">
+        <!-- Top Profile Card -->
+        <ui:VisualElement name="profile-card" class="profile-card tactile-shadow">
+            <ui:VisualElement name="avatar-container" class="avatar-container">
+                <ui:Image name="avatar-image" class="avatar-image" />
+                <ui:VisualElement name="status-dot" class="status-dot" />
+            </ui:VisualElement>
+            <ui:VisualElement name="profile-text" class="profile-text">
+                <ui:Label name="profile-title" text="Friends" class="font-headline profile-title" />
+                <ui:Label name="friends-online-text" text="5 Online" class="font-body profile-sub" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Navigation Tabs -->
+        <ui:VisualElement name="nav-tabs" class="nav-tabs">
+            <ui:Button name="tab-home" text="🏠  Home" class="nav-tab active-tab bouncy-btn" />
+            <ui:Button name="tab-locker" text="👕  Locker" class="nav-tab bouncy-btn" />
+            <ui:Button name="tab-shop" text="🛍️  Shop" class="nav-tab bouncy-btn" />
+            <ui:Button name="tab-settings" text="⚙️  Settings" class="nav-tab bouncy-btn" />
+        </ui:VisualElement>
+
+        <!-- Footer Actions -->
+        <ui:VisualElement name="sidebar-footer" class="sidebar-footer">
+            <ui:Button name="btn-invite" text="Invite Friends" class="bouncy-btn btn-primary-3d invite-btn" />
+            <ui:Button name="btn-logout" text="🚪  Logout" class="bouncy-btn btn-surface-3d logout-btn" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
