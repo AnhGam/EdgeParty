@@ -170,3 +170,14 @@
     font-size: 24px;
     color: var(--color-tertiary);
 }
+
+/* Reusable Avatar Presets */
+.avatar-preset-1 {
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_1.png');
+}
+.avatar-preset-2 {
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_2.png');
+}
+.avatar-preset-3 {
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_3.png');
+}

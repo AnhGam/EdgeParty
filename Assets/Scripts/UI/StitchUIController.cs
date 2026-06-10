@@ -49,8 +49,8 @@ namespace EdgeParty.UI
             // Register Social Events
             if (FriendLobbyService.Instance != null)
             {
-                FriendLobbyService.Instance.OnFriendsUpdated += PopulateFriendsDrawer;
-                FriendLobbyService.Instance.OnFriendRequestsUpdated += PopulateFriendsDrawer;
+                FriendLobbyService.Instance.OnFriendsUpdated += HandleSocialUpdated;
+                FriendLobbyService.Instance.OnFriendRequestsUpdated += HandleSocialUpdated;
                 FriendLobbyService.Instance.OnLobbyMembersUpdated += UpdateLobbyPodiums;
                 FriendLobbyService.Instance.OnLobbyJoined += HandleLobbyJoined;
                 FriendLobbyService.Instance.OnLobbyLeft += HandleLobbyLeft;
@@ -80,8 +80,8 @@ namespace EdgeParty.UI
 
             if (FriendLobbyService.Instance != null)
             {
-                FriendLobbyService.Instance.OnFriendsUpdated -= PopulateFriendsDrawer;
-                FriendLobbyService.Instance.OnFriendRequestsUpdated -= PopulateFriendsDrawer;
+                FriendLobbyService.Instance.OnFriendsUpdated -= HandleSocialUpdated;
+                FriendLobbyService.Instance.OnFriendRequestsUpdated -= HandleSocialUpdated;
                 FriendLobbyService.Instance.OnLobbyMembersUpdated -= UpdateLobbyPodiums;
                 FriendLobbyService.Instance.OnLobbyJoined -= HandleLobbyJoined;
                 FriendLobbyService.Instance.OnLobbyLeft -= HandleLobbyLeft;
@@ -436,6 +436,7 @@ namespace EdgeParty.UI
         {
             var btnPlay = _root.Q<Button>("btn-home-play");
             var btnCreateRoom = _root.Q<Button>("btn-home-create-room");
+            var btnTestHost = _root.Q<Button>("btn-home-test-host");
 
             if (btnPlay != null)
             {
@@ -445,6 +446,49 @@ namespace EdgeParty.UI
             if (btnCreateRoom != null)
             {
                 RegisterHoverAndClick(btnCreateRoom, ShowMatchmaking);
+            }
+
+            if (btnTestHost != null)
+            {
+                RegisterHoverAndClick(btnTestHost, () => {
+                    Debug.Log("[StitchUIController] Starting Local Host Test Mode...");
+                    var networkManager = Unity.Netcode.NetworkManager.Singleton;
+#if UNITY_EDITOR
+                    if (networkManager == null)
+                    {
+                        Debug.Log("[StitchUIController] NetworkManager.Singleton is null. Attempting to auto-load Assets/NetworkManager.prefab in Editor...");
+                        var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/NetworkManager.prefab");
+                        if (prefab != null)
+                        {
+                            var go = Instantiate(prefab);
+                            go.name = "NetworkManager (Auto-Injected)";
+                            networkManager = Unity.Netcode.NetworkManager.Singleton;
+                        }
+                    }
+#endif
+                    if (networkManager != null)
+                    {
+                        if (networkManager.IsListening) networkManager.Shutdown();
+                        var utp = (Unity.Netcode.Transports.UTP.UnityTransport)networkManager.NetworkConfig.NetworkTransport;
+                        if (utp != null)
+                        {
+                            utp.SetConnectionData("127.0.0.1", 7777);
+                        }
+                        if (networkManager.StartHost())
+                        {
+                            Debug.Log("[StitchUIController] Host started successfully. Loading Forest scene...");
+                            networkManager.SceneManager.LoadScene("DemoScene_Forest", UnityEngine.SceneManagement.LoadSceneMode.Single);
+                        }
+                        else
+                        {
+                            Debug.LogError("[StitchUIController] Failed to start host!");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError("[StitchUIController] NetworkManager.Singleton is null!");
+                    }
+                });
             }
         }
 
@@ -489,8 +533,34 @@ namespace EdgeParty.UI
             if (btnPlay != null)
             {
                 RegisterHoverAndClick(btnPlay, () => {
-                    Debug.Log("Starting match gameplay session!");
+                    Debug.Log("[StitchUIController] Starting matchmaking via Edgegap...");
+                    if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
+                    {
+                        EdgeParty.ConnectionManagement.MatchmakingManager.Instance.StartMatchmakingFlow();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[StitchUIController] MatchmakingManager.Instance is null!");
+                    }
                 });
+            }
+
+            // Round matchmaking drawer add friend text field
+            var matchmakingAddInput = _root.Q<TextField>("add-friend-input");
+            if (matchmakingAddInput != null)
+            {
+                matchmakingAddInput.style.borderTopLeftRadius = 18;
+                matchmakingAddInput.style.borderTopRightRadius = 18;
+                matchmakingAddInput.style.borderBottomLeftRadius = 18;
+                matchmakingAddInput.style.borderBottomRightRadius = 18;
+                var inputEl = matchmakingAddInput.Q(className: "unity-text-field__input");
+                if (inputEl != null)
+                {
+                    inputEl.style.borderTopLeftRadius = 18;
+                    inputEl.style.borderTopRightRadius = 18;
+                    inputEl.style.borderBottomLeftRadius = 18;
+                    inputEl.style.borderBottomRightRadius = 18;
+                }
             }
 
             // Platforms Drawer Toggle Logic (Click empty platform to slide cabinet right-drawer in/out)
@@ -624,7 +694,8 @@ namespace EdgeParty.UI
             var btnLocker = _root.Q<Button>("tab-locker");
             var btnShop = _root.Q<Button>("tab-shop");
             var btnSettings = _root.Q<Button>("tab-settings");
-            var btnInvite = _root.Q<Button>("btn-invite");
+            var btnAddFriend = _root.Q<Button>("btn-add-friend");
+            var btnFriendRequests = _root.Q<Button>("btn-friend-requests");
             var btnLogout = _root.Q<Button>("btn-logout");
 
             // Setup active visual state
@@ -633,9 +704,13 @@ namespace EdgeParty.UI
             if (btnShop != null) SetupSidebarTabState(btnShop, activeTabName == "tab-shop", ShowShop);
             if (btnSettings != null) SetupSidebarTabState(btnSettings, activeTabName == "tab-settings", null);
 
-            if (btnInvite != null)
+            if (btnAddFriend != null)
             {
-                RegisterHoverAndClick(btnInvite, () => Debug.Log("Opening Invite Friends Modal"));
+                RegisterHoverAndClick(btnAddFriend, ShowAddFriendPopup);
+            }
+            if (btnFriendRequests != null)
+            {
+                RegisterHoverAndClick(btnFriendRequests, ShowFriendRequestsPopup);
             }
             if (btnLogout != null)
             {
@@ -727,6 +802,11 @@ namespace EdgeParty.UI
 
         private void ApplyDataBindings()
         {
+            if (FriendLobbyService.Instance != null)
+            {
+                _onlineFriendsCount = FriendLobbyService.Instance.Friends.FindAll(f => f.IsOnline).Count;
+            }
+
             // Binds dynamic stats to standard UI elements
             var coinsLabel = _root.Q<Label>("coin-value");
             if (coinsLabel != null) coinsLabel.text = _currentCoins.ToString("N0");
@@ -737,6 +817,23 @@ namespace EdgeParty.UI
             // Profile Title on Sidebar showing current username
             var profileTitle = _root.Q<Label>("profile-title");
             if (profileTitle != null) profileTitle.text = _username;
+
+            // Update friend requests badge if present on sidebar
+            var badge = _root.Q<VisualElement>("request-badge");
+            var badgeCount = _root.Q<Label>("request-badge-count");
+            if (badge != null && badgeCount != null)
+            {
+                int count = FriendLobbyService.Instance != null ? FriendLobbyService.Instance.IncomingRequests.Count : 0;
+                if (count > 0)
+                {
+                    badgeCount.text = count.ToString();
+                    badge.style.display = DisplayStyle.Flex;
+                }
+                else
+                {
+                    badge.style.display = DisplayStyle.None;
+                }
+            }
 
             Debug.Log($"Dynamic data applied successfully. Coins: {_currentCoins}, User: {_username}");
         }
@@ -948,7 +1045,7 @@ namespace EdgeParty.UI
 
             // Dynamic drawer subtitle status
             var drawerSub = _root.Q<Label>("friends-online-text-drawer");
-            int onlineCount = FriendLobbyService.Instance.Friends.FindAll(f => f.IsOnline).Count;
+            int onlineCount = FriendLobbyService.Instance != null ? FriendLobbyService.Instance.Friends.FindAll(f => f.IsOnline).Count : 0;
             if (drawerSub != null)
             {
                 drawerSub.text = $"{onlineCount} Online";
@@ -956,7 +1053,7 @@ namespace EdgeParty.UI
 
             if (_currentFriendsDrawerTab == "friends")
             {
-                var friends = FriendLobbyService.Instance.Friends;
+                var friends = FriendLobbyService.Instance != null ? FriendLobbyService.Instance.Friends : new List<FriendLobbyService.FriendInfo>();
                 foreach (var friend in friends)
                 {
                     VisualElement row = new VisualElement();
@@ -983,6 +1080,11 @@ namespace EdgeParty.UI
                         dot.AddToClassList("online-indicator");
                         avatar.Add(dot);
                     }
+
+                    // Assign unique preset based on friend username hash
+                    int avatarIdx = Mathf.Abs(friend.Username.GetHashCode() % 3) + 1;
+                    avatar.AddToClassList($"avatar-preset-{avatarIdx}");
+
                     info.Add(avatar);
 
                     Label name = new Label(friend.Username);
@@ -1018,7 +1120,7 @@ namespace EdgeParty.UI
             }
             else if (_currentFriendsDrawerTab == "requests")
             {
-                var requests = FriendLobbyService.Instance.IncomingRequests;
+                var requests = FriendLobbyService.Instance != null ? FriendLobbyService.Instance.IncomingRequests : new List<FriendLobbyService.FriendRequest>();
                 if (requests.Count == 0)
                 {
                     Label emptyLabel = new Label("No pending requests");
@@ -1048,6 +1150,11 @@ namespace EdgeParty.UI
                         VisualElement avatar = new VisualElement();
                         avatar.AddToClassList("friend-avatar-circle");
                         avatar.AddToClassList("offline-avatar"); // requests are offline look by default
+
+                        // Assign unique preset based on request username hash
+                        int avatarIdx = Mathf.Abs(req.Username.GetHashCode() % 3) + 1;
+                        avatar.AddToClassList($"avatar-preset-{avatarIdx}");
+
                         info.Add(avatar);
 
                         Label name = new Label(req.Username);
@@ -1124,6 +1231,15 @@ namespace EdgeParty.UI
                         slotBtn.Insert(0, avatarImg);
                     }
                     avatarImg.style.display = DisplayStyle.Flex;
+
+                    // Clear previous presets
+                    avatarImg.RemoveFromClassList("avatar-preset-1");
+                    avatarImg.RemoveFromClassList("avatar-preset-2");
+                    avatarImg.RemoveFromClassList("avatar-preset-3");
+
+                    // Assign unique preset based on player name hash
+                    int avatarIdx = Mathf.Abs(memberName.GetHashCode() % 3) + 1;
+                    avatarImg.AddToClassList($"avatar-preset-{avatarIdx}");
                 }
                 else
                 {
@@ -1141,6 +1257,308 @@ namespace EdgeParty.UI
                     if (avatarImg != null) avatarImg.style.display = DisplayStyle.None;
                 }
             }
+        }
+
+        private void HandleSocialUpdated()
+        {
+            PopulateFriendsDrawer();
+            ApplyDataBindings();
+        }
+
+        private VisualElement CreateModalOverlay(string title, System.Action onClose)
+        {
+            // Create full screen overlay background
+            VisualElement overlay = new VisualElement();
+            overlay.name = "modal-overlay";
+            overlay.style.position = Position.Absolute;
+            overlay.style.top = 0;
+            overlay.style.left = 0;
+            overlay.style.width = Length.Percent(100);
+            overlay.style.height = Length.Percent(100);
+            overlay.style.backgroundColor = new StyleColor(new Color(0, 0, 0, 0.6f));
+            overlay.style.alignItems = Align.Center;
+            overlay.style.justifyContent = Justify.Center;
+
+            // Prevent clicks from going through to elements behind the overlay
+            overlay.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
+
+            // Modal Card Container
+            VisualElement card = new VisualElement();
+            card.AddToClassList("tactile-panel");
+            card.style.width = 560; // 1.4x wider
+            card.style.maxHeight = Length.Percent(80);
+            card.style.backgroundColor = new StyleColor(new Color(1f, 0.98f, 0.9f)); // Warm yellow-white
+            card.style.borderTopWidth = 4;
+            card.style.borderBottomWidth = 4;
+            card.style.borderLeftWidth = 4;
+            card.style.borderRightWidth = 4;
+            card.style.borderTopLeftRadius = 32;
+            card.style.borderTopRightRadius = 32;
+            card.style.borderBottomLeftRadius = 32;
+            card.style.borderBottomRightRadius = 32;
+            card.style.paddingTop = 32;
+            card.style.paddingRight = 32;
+            card.style.paddingBottom = 32;
+            card.style.paddingLeft = 32;
+            
+            // Header Row
+            VisualElement header = new VisualElement();
+            header.style.flexDirection = FlexDirection.Row;
+            header.style.justifyContent = Justify.SpaceBetween;
+            header.style.alignItems = Align.Center;
+            header.style.marginBottom = 24;
+
+            Label titleLabel = new Label(title);
+            titleLabel.AddToClassList("font-headline");
+            titleLabel.style.fontSize = 32;
+            titleLabel.style.color = new StyleColor(new Color(0.2f, 0.15f, 0.05f));
+            header.Add(titleLabel);
+
+            Button closeBtn = new Button();
+            closeBtn.text = "✖";
+            // Clean style for borderless, chubby Close X button
+            closeBtn.style.backgroundColor = new StyleColor(Color.clear);
+            closeBtn.style.borderTopWidth = 0;
+            closeBtn.style.borderBottomWidth = 0;
+            closeBtn.style.borderLeftWidth = 0;
+            closeBtn.style.borderRightWidth = 0;
+            closeBtn.style.width = 44;
+            closeBtn.style.height = 44;
+            closeBtn.style.fontSize = 28;
+            closeBtn.style.color = new StyleColor(new Color(0.43f, 0.35f, 0.23f)); // Warm dark brown
+            closeBtn.style.unityFontStyleAndWeight = FontStyle.Bold;
+            closeBtn.style.paddingTop = 0;
+            closeBtn.style.paddingBottom = 0;
+            closeBtn.style.paddingLeft = 0;
+            closeBtn.style.paddingRight = 0;
+            
+            closeBtn.clicked += () => {
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                _root.Remove(overlay);
+                onClose?.Invoke();
+            };
+            header.Add(closeBtn);
+            card.Add(header);
+
+            overlay.Add(card);
+            _root.Add(overlay);
+
+            return card; // Return card to add content
+        }
+
+        private void ShowAddFriendPopup()
+        {
+            var card = CreateModalOverlay("Add Friend", null);
+
+            Label infoText = new Label("Enter a friend's exact username to send a request.");
+            infoText.AddToClassList("font-body");
+            infoText.style.fontSize = 18;
+            infoText.style.color = new StyleColor(new Color(0.3f, 0.25f, 0.15f));
+            infoText.style.whiteSpace = WhiteSpace.Normal;
+            infoText.style.marginBottom = 24;
+            card.Add(infoText);
+
+            TextField inputField = new TextField();
+            inputField.name = "popup-add-friend-input";
+            inputField.style.height = 56;
+            inputField.style.fontSize = 22;
+            inputField.style.marginBottom = 20;
+            
+            // Round parent and inner input element
+            inputField.style.borderTopLeftRadius = 24;
+            inputField.style.borderTopRightRadius = 24;
+            inputField.style.borderBottomLeftRadius = 24;
+            inputField.style.borderBottomRightRadius = 24;
+            
+            // Add a style class for custom border styling
+            inputField.AddToClassList("tactile-input");
+            card.Add(inputField);
+
+            var inputEl = inputField.Q(className: "unity-text-field__input");
+            if (inputEl != null)
+            {
+                inputEl.style.borderTopLeftRadius = 24;
+                inputEl.style.borderTopRightRadius = 24;
+                inputEl.style.borderBottomLeftRadius = 24;
+                inputEl.style.borderBottomRightRadius = 24;
+            }
+
+            Label statusLabel = new Label("");
+            statusLabel.AddToClassList("font-body");
+            statusLabel.style.fontSize = 18;
+            statusLabel.style.color = new StyleColor(new Color(0.6f, 0.1f, 0.1f));
+            statusLabel.style.display = DisplayStyle.None;
+            statusLabel.style.marginBottom = 20;
+            card.Add(statusLabel);
+
+            Button submitBtn = new Button();
+            submitBtn.text = "Send Request";
+            submitBtn.AddToClassList("bouncy-btn");
+            submitBtn.AddToClassList("btn-primary-3d");
+            submitBtn.style.height = 64;
+            submitBtn.style.fontSize = 22;
+            submitBtn.style.paddingTop = 0;
+            submitBtn.style.paddingBottom = 0;
+            submitBtn.style.borderTopLeftRadius = 24;
+            submitBtn.style.borderTopRightRadius = 24;
+            submitBtn.style.borderBottomLeftRadius = 24;
+            submitBtn.style.borderBottomRightRadius = 24;
+
+            submitBtn.clicked += async () => {
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                string username = inputField.value;
+                if (string.IsNullOrEmpty(username))
+                {
+                    statusLabel.text = "Username cannot be empty!";
+                    statusLabel.style.color = new StyleColor(new Color(0.7f, 0.1f, 0.1f));
+                    statusLabel.style.display = DisplayStyle.Flex;
+                    return;
+                }
+
+                statusLabel.text = "Sending request...";
+                statusLabel.style.color = new StyleColor(new Color(0.3f, 0.2f, 0f));
+                statusLabel.style.display = DisplayStyle.Flex;
+                submitBtn.SetEnabled(false);
+
+                bool success = await FriendLobbyService.Instance.SendFriendRequestAsync(username);
+                submitBtn.SetEnabled(true);
+
+                if (success)
+                {
+                    statusLabel.text = "Friend request sent successfully!";
+                    statusLabel.style.color = new StyleColor(new Color(0.1f, 0.5f, 0.1f));
+                    inputField.value = "";
+                    ApplyDataBindings(); // Refresh badges/etc.
+                }
+                else
+                {
+                    statusLabel.text = "Failed to send request.";
+                    statusLabel.style.color = new StyleColor(new Color(0.7f, 0.1f, 0.1f));
+                }
+            };
+
+            card.Add(submitBtn);
+        }
+
+        private void ShowFriendRequestsPopup()
+        {
+            var card = CreateModalOverlay("Friend Requests", null);
+
+            ScrollView scroll = new ScrollView();
+            scroll.style.flexGrow = 1;
+            scroll.style.height = 240;
+            scroll.style.marginBottom = 16;
+            card.Add(scroll);
+
+            System.Action populateList = null;
+            populateList = () => {
+                scroll.Clear();
+                var requests = FriendLobbyService.Instance != null ? FriendLobbyService.Instance.IncomingRequests : new List<FriendLobbyService.FriendRequest>();
+                if (requests.Count == 0)
+                {
+                    Label emptyLabel = new Label("No pending requests");
+                    emptyLabel.AddToClassList("font-body");
+                    emptyLabel.style.fontSize = 14;
+                    emptyLabel.style.color = new StyleColor(new Color(0.5f, 0.5f, 0.5f));
+                    emptyLabel.style.marginTop = 24;
+                    emptyLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+                    scroll.Add(emptyLabel);
+                    ApplyDataBindings(); // update badge immediately when count reaches 0
+                    return;
+                }
+
+                foreach (var req in requests)
+                {
+                    VisualElement row = new VisualElement();
+                    row.style.flexDirection = FlexDirection.Row;
+                    row.style.alignItems = Align.Center;
+                    row.style.justifyContent = Justify.SpaceBetween;
+                    row.style.paddingTop = 8;
+                    row.style.paddingBottom = 8;
+                    row.style.borderBottomWidth = 1;
+                    row.style.borderBottomColor = new StyleColor(new Color(0.9f, 0.85f, 0.7f));
+
+                    VisualElement info = new VisualElement();
+                    info.style.flexDirection = FlexDirection.Row;
+                    info.style.alignItems = Align.Center;
+
+                    VisualElement avatar = new VisualElement();
+                    avatar.AddToClassList("friend-avatar-circle");
+                    avatar.AddToClassList("offline-avatar");
+                    avatar.style.width = 36;
+                    avatar.style.height = 36;
+                    avatar.style.borderTopLeftRadius = 18;
+                    avatar.style.borderTopRightRadius = 18;
+                    avatar.style.borderBottomLeftRadius = 18;
+                    avatar.style.borderBottomRightRadius = 18;
+                    avatar.style.marginRight = 10;
+                    
+                    int avatarIdx = Mathf.Abs(req.Username.GetHashCode() % 3) + 1;
+                    avatar.AddToClassList($"avatar-preset-{avatarIdx}");
+
+                    info.Add(avatar);
+
+                    Label name = new Label(req.Username);
+                    name.AddToClassList("font-headline");
+                    name.style.fontSize = 16;
+                    name.style.color = new StyleColor(new Color(0.2f, 0.15f, 0.05f));
+                    info.Add(name);
+                    row.Add(info);
+
+                    VisualElement actions = new VisualElement();
+                    actions.style.flexDirection = FlexDirection.Row;
+
+                    Button acceptBtn = new Button();
+                    acceptBtn.text = "✓";
+                    acceptBtn.AddToClassList("bouncy-btn");
+                    acceptBtn.AddToClassList("btn-primary-3d");
+                    acceptBtn.style.width = 36;
+                    acceptBtn.style.height = 36;
+                    acceptBtn.style.fontSize = 14;
+                    acceptBtn.style.paddingTop = 0;
+                    acceptBtn.style.paddingBottom = 0;
+                    acceptBtn.style.paddingLeft = 0;
+                    acceptBtn.style.paddingRight = 0;
+                    acceptBtn.clicked += async () => {
+                        EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                        bool ok = await FriendLobbyService.Instance.AcceptFriendRequestAsync(req.Id);
+                        if (ok)
+                        {
+                            populateList();
+                            ApplyDataBindings();
+                        }
+                    };
+                    actions.Add(acceptBtn);
+
+                    Button declineBtn = new Button();
+                    declineBtn.text = "✗";
+                    declineBtn.AddToClassList("bouncy-btn");
+                    declineBtn.AddToClassList("btn-surface-3d");
+                    declineBtn.style.width = 36;
+                    declineBtn.style.height = 36;
+                    declineBtn.style.fontSize = 14;
+                    declineBtn.style.marginLeft = 6;
+                    declineBtn.style.paddingTop = 0;
+                    declineBtn.style.paddingBottom = 0;
+                    declineBtn.style.paddingLeft = 0;
+                    declineBtn.style.paddingRight = 0;
+                    declineBtn.clicked += async () => {
+                        EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                        bool ok = await FriendLobbyService.Instance.DeclineFriendRequestAsync(req.Id);
+                        if (ok)
+                        {
+                            populateList();
+                            ApplyDataBindings();
+                        }
+                    };
+                    actions.Add(declineBtn);
+
+                    row.Add(actions);
+                    scroll.Add(row);
+                }
+            };
+
+            populateList();
         }
 
         private void HandleLobbyJoined(string lobbyCode)
