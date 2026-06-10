@@ -141,6 +141,12 @@ namespace EdgeParty.Social
                     return;
                 }
 
+                // Clear mock data immediately while initializing real services
+                Friends.Clear();
+                IncomingRequests.Clear();
+                OnFriendsUpdated?.Invoke();
+                OnFriendRequestsUpdated?.Invoke();
+
                 // Try initializing Friends service
                 await FriendsService.Instance.InitializeAsync();
                 _useMockMode = false;
