@@ -1,16 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:Style src="../USS/HUDStyle.uss" />
+    <ui:Template src="../Settings/SettingsMenu.uxml" name="SettingsMenu" />
     <ui:VisualElement class="hud-container">
         <!-- Top Center Score Board -->
         <ui:VisualElement name="ScoreBoard" class="score-board">
-            <ui:VisualElement name="TeamRed" class="team-score-card red-card">
-                <ui:Label text="RED TEAM" class="team-label" />
-                <ui:Label name="RedScore" text="0" class="score-value" />
-            </ui:VisualElement>
-            <ui:VisualElement name="TeamBlue" class="team-score-card blue-card">
-                <ui:Label text="BLUE TEAM" class="team-label" />
-                <ui:Label name="BlueScore" text="0" class="score-value" />
-            </ui:VisualElement>
+            <ui:Label name="RedScore" text="00" class="score-text red-score" />
+            <ui:Label text="|" class="score-separator" />
+            <ui:Label name="BlueScore" text="00" class="score-text blue-score" />
         </ui:VisualElement>
 
         <!-- Top Right Buttons -->
@@ -56,5 +52,15 @@
                 <ui:Label text="BOOST" class="instruction-label" />
             </ui:VisualElement>
         </ui:VisualElement>
+
+        <!-- Death / Spectating Overlay (hidden by default) -->
+        <ui:VisualElement name="DeathOverlay" class="death-overlay">
+            <ui:Label name="SpectatingLabel" text="SPECTATING" class="spectating-label" />
+            <ui:Label name="CountdownLabel" text="Respawning in 10s" class="countdown-label" />
+        </ui:VisualElement>
+
+        <!-- Detailed Settings Panel (hidden by default) -->
+        <ui:Instance template="SettingsMenu" name="SettingsPanel" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: none;" />
+
     </ui:VisualElement>
 </ui:UXML>

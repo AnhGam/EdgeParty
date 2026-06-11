@@ -151,11 +151,18 @@ namespace EdgeParty.Gameplay.Character
             // Áp dụng giá trị ban đầu
             ApplyBoneMultipliers();
 
-            // Wire death/respawn into animator
+            // Wire death/respawn into animator and camera
             if (stats != null)
             {
-                stats.OnDied += () => animController?.OnDeath();
+                stats.OnDied     += () => animController?.OnDeath();
                 stats.OnRespawned += () => animController?.OnRespawn();
+
+                // Spectator camera: only relevant for the local owner
+                if (IsOwner)
+                {
+                    stats.OnDied     += OnLocalPlayerDied;
+                    stats.OnRespawned += OnLocalPlayerRespawned;
+                }
             }
         }
 
@@ -216,6 +223,18 @@ namespace EdgeParty.Gameplay.Character
         void OnTeamChanged(int oldValue, int newValue)
         {
             SpawnByTeam();
+        }
+
+        /// <summary>Called by DeathScreenUI when countdown ends. Requests respawn on server.</summary>
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        public void RequestRespawnRpc()
+        {
+            if (stats == null) return;
+            Vector3 pos = SpawnManager.Instance != null
+                ? SpawnManager.Instance.GetSpawnPosition(TeamID.Value)
+                : transform.position + Vector3.up * 2f;
+            stats.Respawn(pos);
+            Teleport(pos);
         }
 
         private void OnMultiplierChanged(float prev, float next) => ApplyBoneMultipliers();
@@ -403,6 +422,42 @@ namespace EdgeParty.Gameplay.Character
             {
                 nameplateInstance.SetPlayerName(playerName);
             }
+        }
+
+        // ─── Spectator Camera (local owner only) ─────────────────────────
+
+        private void OnLocalPlayerDied()
+        {
+            // Try to find a living teammate and watch them
+            Transform spectateTarget = FindLivingTeammate();
+            var cam = Object.FindFirstObjectByType<ThirdPersonCamera>();
+            if (cam != null)
+            {
+                cam.target = spectateTarget != null ? spectateTarget : transform;
+            }
+        }
+
+        private void OnLocalPlayerRespawned()
+        {
+            // Return camera to self
+            AssignCameraTarget();
+        }
+
+        private Transform FindLivingTeammate()
+        {
+            int myTeam = TeamID.Value;
+            var allPlayers = Object.FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+            foreach (var pc in allPlayers)
+            {
+                if (pc == this) continue;
+                if (pc.TeamID.Value != myTeam) continue;
+                if (pc.stats == null || pc.stats.IsDead.Value) continue;
+                // Return pelvis or transform
+                if (pc.motor != null && pc.motor.pelvisRigidbody != null)
+                    return pc.motor.pelvisRigidbody.transform;
+                return pc.transform;
+            }
+            return null;
         }
     }
 }
