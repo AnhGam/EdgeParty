@@ -35,6 +35,10 @@ namespace EdgeParty.Gameplay.Character
         [Tooltip("Multiplier applied to CharacterMotor walkForce / runForce")]
         public float speedMultiplier = 1f;
 
+        [Header("Fall Death")]
+        [Tooltip("Y position below which the player is considered to have fallen off the map")]
+        public float fallDeathY = -20f;
+
         [Header("Knockback")]
         [Tooltip("Base upward+backward impulse when taking a hit")]
         public float knockbackForce = 18f;
@@ -102,6 +106,16 @@ namespace EdgeParty.Gameplay.Character
             if (IsDead.Value) return;
 
             float dt = Time.deltaTime;
+
+            // Fall-off-map detection
+            if (_motor != null && _motor.pelvisRigidbody != null)
+            {
+                if (_motor.pelvisRigidbody.position.y < fallDeathY)
+                {
+                    FallOffMap();
+                    return;
+                }
+            }
 
             // Apply speed multiplier to motor
             if (_motor != null)
@@ -199,6 +213,20 @@ namespace EdgeParty.Gameplay.Character
         private void Die()
         {
             IsDead.Value = true;
+        }
+
+        /// <summary>Instantly kills the player and marks them as fallen off the map.</summary>
+        public void FallOffMap()
+        {
+            if (!IsServer || IsDead.Value) return;
+            IsDead.Value = true;
+            // Teleport pelvis back to a safe height so it doesn't keep falling
+            if (_motor != null && _motor.pelvisRigidbody != null)
+            {
+                var rb = _motor.pelvisRigidbody;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
         }
 
         // ─── Client RPCs ──────────────────────────────────────────────────

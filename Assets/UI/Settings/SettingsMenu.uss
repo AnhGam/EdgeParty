@@ -1,5 +1,6 @@
-/* Cấu hình màu từ Tailwind config */
 :root {
+    width: 100%;
+    height: 100%;
     --bg-color: #f8f9fa;
     --primary: #006d41;
     --primary-container: #60d394;
@@ -88,7 +89,6 @@
     font-size: 48px;
     -unity-font-style: bold-and-italic;
     color: var(--primary);
-    text-shadow: 0 4px 0 white;
     rotate: -1deg;
     text-transform: uppercase;
 }
