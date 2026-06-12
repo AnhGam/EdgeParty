@@ -9,14 +9,14 @@
         "com.unity.test-framework": "1.1.31"
       }
     },
-    "com.edgegap.unity-matchmaking-sdk": {
+    "com.edgegap.unity-sdk": {
       "version": "https://github.com/edgegap/edgegap-unity-matchmaking-sdk.git",
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "3.2.1"
+        "com.unity.nuget.newtonsoft-json": "3.2.2"
       },
-      "hash": "0fcbf783da1b7bfb05683bff08ad8f3c78159aaf"
+      "hash": "3a5ab46f9c6fadb4483bbc84e70ad7416288c3ad"
     },
     "com.edgegap.unity-servers-plugin": {
       "version": "https://github.com/edgegap/edgegap-unity-plugin.git",
@@ -257,6 +257,29 @@
         "com.unity.services.core": "1.15.1",
         "com.unity.nuget.newtonsoft-json": "3.2.1",
         "com.unity.modules.unitywebrequest": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.services.cloudcode": {
+      "version": "2.10.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.services.core": "1.15.1",
+        "com.unity.services.wire": "1.2.3",
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.services.authentication": "3.5.1"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.services.cloudsave": {
+      "version": "3.1.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.services.core": "1.4.3",
+        "com.unity.services.authentication": "2.6.1"
       },
       "url": "https://packages.unity.com"
     },

@@ -52,6 +52,7 @@ namespace EdgeParty.Editor
             AssignVisualTreeAsset(so, "homeVisualTree",           "Assets/UI/StitchUI/UXML/HomeMenu.uxml");
             AssignVisualTreeAsset(so, "shopVisualTree",           "Assets/UI/StitchUI/UXML/ShopMenu.uxml");
             AssignVisualTreeAsset(so, "matchmakingVisualTree",    "Assets/UI/StitchUI/UXML/MatchmakingMenu.uxml");
+            AssignVisualTreeAsset(so, "lockerVisualTree",         "Assets/UI/StitchUI/UXML/LockerMenu.uxml");
 
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -137,6 +138,7 @@ namespace EdgeParty.Editor
             AssignVisualTreeAsset(so, "homeVisualTree",           "Assets/UI/StitchUI/UXML/HomeMenu.uxml");
             AssignVisualTreeAsset(so, "shopVisualTree",           "Assets/UI/StitchUI/UXML/ShopMenu.uxml");
             AssignVisualTreeAsset(so, "matchmakingVisualTree",    "Assets/UI/StitchUI/UXML/MatchmakingMenu.uxml");
+            AssignVisualTreeAsset(so, "lockerVisualTree",         "Assets/UI/StitchUI/UXML/LockerMenu.uxml");
 
             so.ApplyModifiedPropertiesWithoutUndo();
 

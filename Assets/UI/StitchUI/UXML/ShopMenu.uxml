@@ -49,7 +49,7 @@
                     <ui:VisualElement class="bento-grid">
                         
                         <!-- Row 1: Featured Item (Large Card) -->
-                        <ui:VisualElement class="featured-item-card tactile-shadow">
+                        <ui:VisualElement name="shop-card-featured" class="featured-item-card tactile-shadow">
                             <!-- Image Column -->
                             <ui:VisualElement class="featured-item-image-col">
                                 <ui:Image name="featured-item-thumbnail" class="featured-item-img" />
@@ -57,48 +57,97 @@
                             <!-- Detail Column -->
                             <ui:VisualElement class="featured-item-detail-col">
                                 <ui:VisualElement class="item-tag-row">
-                                    <ui:Label text="🔥 Legendary" class="legendary-tag" />
+                                    <ui:Label text="🔥 Featured" class="legendary-tag" />
                                 </ui:VisualElement>
-                                <ui:Label text="Banana Split Cap" class="font-headline item-title-featured" />
-                                <ui:Label text="Extra squishy, extra fun!" class="font-body item-desc-featured" />
+                                <ui:Label text="Blue Cap (Cap A)" class="font-headline item-title-featured" />
+                                <ui:Label text="A cool blue cap to stand out in the forest!" class="font-body item-desc-featured" />
                                 
                                 <ui:VisualElement class="featured-price-action-row row-between mt-auto">
-                                    <ui:VisualElement class="price-indicator">
-                                        <ui:Label text="☺ 850" class="price-val-text font-headline" />
+                                    <ui:VisualElement name="featured-price-indicator" class="price-indicator" style="flex-direction: row; align-items: center;">
+                                        <ui:VisualElement class="shop-coin-icon" style="width: 24px; height: 24px; margin-right: 8px;" />
+                                        <ui:Label text="150" class="price-val-text font-headline" />
                                     </ui:VisualElement>
-                                    <ui:Button name="btn-buy-banana-cap" text="Buy Now" class="bouncy-btn btn-primary-3d featured-buy-btn" />
+                                    <ui:Button name="btn-buy-featured" text="Buy Now" class="bouncy-btn btn-primary-3d featured-buy-btn" />
                                 </ui:VisualElement>
                             </ui:VisualElement>
+                            <ui:Button name="btn-preview-featured" text="👁" class="bouncy-btn btn-surface-3d shop-item-preview-btn" />
                         </ui:VisualElement>
 
-                        <!-- Row 2: Standard Items Grid -->
-                        <ui:VisualElement class="regular-items-row">
+                        <!-- Row 2: Standard Items Grid Row 1 -->
+                        <ui:VisualElement name="shop-row-1" class="regular-items-row">
                             <!-- Standard Item 1 -->
-                            <ui:VisualElement class="regular-item-card tactile-panel-bright">
+                            <ui:VisualElement name="shop-card-item-1" class="regular-item-card tactile-panel-bright">
                                 <ui:VisualElement class="item-img-container">
                                     <ui:Image name="item-1-thumb" class="regular-item-img-1" />
                                 </ui:VisualElement>
                                 <ui:VisualElement class="regular-card-footer row-between">
                                     <ui:VisualElement class="regular-texts">
-                                        <ui:Label text="Retro Shaders" class="font-headline regular-item-title" />
-                                        <ui:Label text="☺ 320" class="font-body regular-item-price" />
+                                        <ui:Label text="Pixel Glasses" class="font-headline regular-item-title" />
+                                        <ui:VisualElement name="price-item-1" style="flex-direction: row; align-items: center;">
+                                            <ui:VisualElement class="shop-coin-icon" style="width: 20px; height: 20px; margin-right: 6px;" />
+                                            <ui:Label text="400" class="font-body regular-item-price" />
+                                        </ui:VisualElement>
                                     </ui:VisualElement>
                                     <ui:Button name="btn-buy-item-1" text="🛒" class="bouncy-btn btn-surface-3d regular-buy-btn" />
                                 </ui:VisualElement>
+                                <ui:Button name="btn-preview-item-1" text="👁" class="bouncy-btn btn-surface-3d shop-item-preview-btn" />
                             </ui:VisualElement>
 
                             <!-- Standard Item 2 -->
-                            <ui:VisualElement class="regular-item-card tactile-panel-bright">
+                            <ui:VisualElement name="shop-card-item-2" class="regular-item-card tactile-panel-bright">
                                 <ui:VisualElement class="item-img-container">
                                     <ui:Image name="item-2-thumb" class="regular-item-img-2" />
                                 </ui:VisualElement>
                                 <ui:VisualElement class="regular-card-footer row-between">
                                     <ui:VisualElement class="regular-texts">
-                                        <ui:Label text="Fuzzy Bucket" class="font-headline regular-item-title" />
-                                        <ui:Label text="☺ 450" class="font-body regular-item-price" />
+                                        <ui:Label text="Yellow Cap (Cap B)" class="font-headline regular-item-title" />
+                                        <ui:VisualElement name="price-item-2" style="flex-direction: row; align-items: center;">
+                                            <ui:VisualElement class="shop-coin-icon" style="width: 20px; height: 20px; margin-right: 6px;" />
+                                            <ui:Label text="250" class="font-body regular-item-price" />
+                                        </ui:VisualElement>
                                     </ui:VisualElement>
                                     <ui:Button name="btn-buy-item-2" text="🛒" class="bouncy-btn btn-surface-3d regular-buy-btn" />
                                 </ui:VisualElement>
+                                <ui:Button name="btn-preview-item-2" text="👁" class="bouncy-btn btn-surface-3d shop-item-preview-btn" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                        <!-- Row 3: Standard Items Grid Row 2 -->
+                        <ui:VisualElement name="shop-row-2" class="regular-items-row" style="margin-top: 16px; margin-bottom: 16px;">
+                            <!-- Standard Item 3 -->
+                            <ui:VisualElement name="shop-card-item-3" class="regular-item-card tactile-panel-bright">
+                                <ui:VisualElement class="item-img-container">
+                                    <ui:Image name="item-3-thumb" class="regular-item-img-1" style="opacity: 0.85;" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="regular-card-footer row-between">
+                                    <ui:VisualElement class="regular-texts">
+                                        <ui:Label text="Red Scarf" class="font-headline regular-item-title" />
+                                        <ui:VisualElement name="price-item-3" style="flex-direction: row; align-items: center;">
+                                            <ui:VisualElement class="shop-coin-icon" style="width: 20px; height: 20px; margin-right: 6px;" />
+                                            <ui:Label text="300" class="font-body regular-item-price" />
+                                        </ui:VisualElement>
+                                    </ui:VisualElement>
+                                    <ui:Button name="btn-buy-item-3" text="🛒" class="bouncy-btn btn-surface-3d regular-buy-btn" />
+                                </ui:VisualElement>
+                                <ui:Button name="btn-preview-item-3" text="👁" class="bouncy-btn btn-surface-3d shop-item-preview-btn" />
+                            </ui:VisualElement>
+
+                            <!-- Standard Item 4 -->
+                            <ui:VisualElement name="shop-card-item-4" class="regular-item-card tactile-panel-bright">
+                                <ui:VisualElement class="item-img-container">
+                                    <ui:Image name="item-4-thumb" class="regular-item-img-2" style="opacity: 0.85;" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="regular-card-footer row-between">
+                                    <ui:VisualElement class="regular-texts">
+                                        <ui:Label text="Gold Necklace" class="font-headline regular-item-title" />
+                                        <ui:VisualElement name="price-item-4" style="flex-direction: row; align-items: center;">
+                                            <ui:VisualElement class="shop-coin-icon" style="width: 20px; height: 20px; margin-right: 6px;" />
+                                            <ui:Label text="500" class="font-body regular-item-price" />
+                                        </ui:VisualElement>
+                                    </ui:VisualElement>
+                                    <ui:Button name="btn-buy-item-4" text="🛒" class="bouncy-btn btn-surface-3d regular-buy-btn" />
+                                </ui:VisualElement>
+                                <ui:Button name="btn-preview-item-4" text="👁" class="bouncy-btn btn-surface-3d shop-item-preview-btn" />
                             </ui:VisualElement>
                         </ui:VisualElement>
 

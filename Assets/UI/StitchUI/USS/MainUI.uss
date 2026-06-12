@@ -65,15 +65,15 @@
 
 .character-wrapper {
     position: absolute;
-    bottom: 80px;
+    bottom: -10px;
     align-items: center;
 }
 
 .character-avatar-render {
-    width: 280px;
-    height: 280px;
+    width: 672px;
+    height: 672px;
     background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_2.png');
-    -unity-background-scale-mode: scale-and-crop;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .lobby-footer-actions {
@@ -112,8 +112,9 @@
    ========================================================================= */
 
 .shop-preview-card {
-    width: 420px;
-    height: 100%;
+    width: 600px;
+    height: 650px;
+    align-self: flex-start;
     margin-right: 24px;
     display: flex;
     flex-direction: column;
@@ -137,10 +138,11 @@
 }
 
 .shop-preview-image {
-    width: 320px;
-    height: 320px;
+    width: 550px;
+    height: 550px;
+    margin-top: 75px;
     background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_2.png');
-    -unity-background-scale-mode: scale-and-crop;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .shadow-oval {
@@ -161,6 +163,8 @@
 
 .shop-board-header {
     margin-bottom: 24px;
+    flex-wrap: wrap;
+    row-gap: 12px;
 }
 
 .main-card-heading {
@@ -173,11 +177,45 @@
     font-size: 18px;
     color: #7a5741;
     margin-top: 8px;
+    white-space: normal;
+}
+
+.shop-header-texts {
+    flex-shrink: 1;
+    min-width: 220px;
 }
 
 .shop-filters-row {
     display: flex;
     flex-direction: row;
+    flex-shrink: 0;
+}
+
+.shop-filters-row .category-button {
+    width: auto;
+    height: auto;
+}
+
+/* Absolute positioned preview eye buttons on shop cards */
+.shop-item-preview-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    font-size: 22px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-width: 1px;
+    border-color: #dee2e6;
+    z-index: 10;
+}
+.shop-item-preview-btn:hover {
+    background-color: #ffffff;
+    scale: 1.1;
 }
 
 .filter-chip {
@@ -222,7 +260,7 @@
     width: 100%;
     height: 100%;
     background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_1.png');
-    -unity-background-scale-mode: scale-and-crop;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .featured-item-detail-col {
@@ -230,6 +268,17 @@
     padding-left: 24px;
     display: flex;
     flex-direction: column;
+}
+
+.item-tag-row {
+    flex-direction: row;
+    align-self: flex-start;
+}
+
+.row-between {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .legendary-tag {
@@ -241,6 +290,7 @@
     -unity-font-style: bold;
     border-width: 1px;
     border-color: #ffdbc7;
+    align-self: flex-start;
 }
 
 .item-title-featured {
@@ -263,9 +313,8 @@
 
 .price-val-text {
     font-size: 28px;
-    color: #ffd700;
+    color: #705d00;
 }
-
 .featured-buy-btn {
     font-size: 22px;
     padding: 16px 36px;
@@ -302,14 +351,14 @@
     width: 150px;
     height: 150px;
     background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_1.png');
-    -unity-background-scale-mode: scale-and-crop;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .regular-item-img-2 {
     width: 150px;
     height: 150px;
     background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_3.png');
-    -unity-background-scale-mode: scale-and-crop;
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .regular-item-title {
@@ -320,7 +369,7 @@
 
 .regular-item-price {
     font-size: 18px;
-    color: #ffd700;
+    color: #705d00;
     -unity-font-style: bold;
 }
 

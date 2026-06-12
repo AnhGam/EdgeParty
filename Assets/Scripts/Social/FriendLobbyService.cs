@@ -6,6 +6,8 @@ using Unity.Services.Core;
 using Unity.Services.Authentication;
 using Unity.Services.Friends;
 using Unity.Services.Friends.Models;
+using Unity.Services.Lobbies.Models;
+using EdgeParty.Auth;
 
 namespace EdgeParty.Social
 {
@@ -336,7 +338,12 @@ namespace EdgeParty.Social
 
             try
             {
-                var options = new Unity.Services.Lobbies.CreateLobbyOptions();
+                string myName = AuthService.Instance != null ? AuthService.Instance.CachedUsername : "Player";
+                var playerData = new Dictionary<string, PlayerDataObject>
+                {
+                    { "PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, myName) }
+                };
+                var options = new Unity.Services.Lobbies.CreateLobbyOptions { Player = new Player(data: playerData) };
                 _currentLobby = await Unity.Services.Lobbies.LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
                 CurrentLobbyId = _currentLobby.Id;
                 CurrentLobbyCode = _currentLobby.LobbyCode;
@@ -375,7 +382,12 @@ namespace EdgeParty.Social
 
             try
             {
-                var options = new Unity.Services.Lobbies.JoinLobbyByCodeOptions();
+                string myName = AuthService.Instance != null ? AuthService.Instance.CachedUsername : "Player";
+                var playerData = new Dictionary<string, PlayerDataObject>
+                {
+                    { "PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, myName) }
+                };
+                var options = new Unity.Services.Lobbies.JoinLobbyByCodeOptions { Player = new Player(data: playerData) };
                 _currentLobby = await Unity.Services.Lobbies.LobbyService.Instance.JoinLobbyByCodeAsync(joinCode, options);
                 CurrentLobbyId = _currentLobby.Id;
                 CurrentLobbyCode = _currentLobby.LobbyCode;

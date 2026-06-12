@@ -15,8 +15,8 @@
         <!-- Matchmaking Status Banner (Under Header) -->
         <ui:VisualElement name="status-banner" class="status-banner tactile-panel">
             <ui:VisualElement class="status-text-col">
-                <ui:Label text="Matchmaking..." class="font-headline banner-title" />
-                <ui:Label text="Estimated time: 0:45" class="font-body banner-sub" />
+                <ui:Label name="matchmaking-title" text="Matchmaking..." class="font-headline banner-title" />
+                <ui:Label name="matchmaking-elapsed" text="Estimated time: 0:45" class="font-body banner-sub" />
             </ui:VisualElement>
             <ui:Button name="btn-matchmaking-cancel" text="Cancel" class="bouncy-btn btn-error-3d banner-cancel-btn" />
         </ui:VisualElement>

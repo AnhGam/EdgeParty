@@ -1,12 +1,5 @@
 fileFormatVersion: 2
-guid: b1f533c278b1e194f8860587613899fd
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Pspsps/Textures/Monkey Color/T_Chibi_Monkey_00.png
-  uploadId: 834512
+guid: 6c83236db6957b747ad1633541f61192
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -72,7 +65,7 @@ TextureImporter:
   ignorePngGamma: 0
   applyGammaDecoding: 0
   swizzle: 50462976
-  cookieLightType: 1
+  cookieLightType: 0
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
