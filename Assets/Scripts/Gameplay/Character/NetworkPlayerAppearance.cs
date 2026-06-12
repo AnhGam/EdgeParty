@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections.Generic;
 using System.Linq;
+using EdgeParty.Auth;
 
 namespace EdgeParty.Gameplay.Character
 {
@@ -14,6 +15,7 @@ namespace EdgeParty.Gameplay.Character
         public Transform headBone;
         public Transform neckBone;
         public Renderer characterRenderer;
+        public List<Renderer> characterRenderers = new List<Renderer>();
 
         // Sync Variables
         public NetworkVariable<int> hatIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -21,6 +23,12 @@ namespace EdgeParty.Gameplay.Character
         public NetworkVariable<int> necklaceIndex = new(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         public NetworkVariable<int> emotionIndex = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         public NetworkVariable<int> colorIndex = new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+        private int localHat = -1;
+        private int localGlasses = -1;
+        private int localNecklace = -1;
+        private int localEmotion = 0;
+        private int localColor = 0;
 
         private GameObject currentHat;
         private GameObject currentGlasses;
@@ -33,12 +41,39 @@ namespace EdgeParty.Gameplay.Character
 
         private void InitializeComponents()
         {
-            // Auto-discover components if missing
-            if (characterRenderer == null)
+            if (data == null)
             {
-                characterRenderer = GetComponentInChildren<SkinnedMeshRenderer>(true);
-                if (characterRenderer == null)
-                    characterRenderer = GetComponentInChildren<Renderer>(true);
+                data = Resources.Load<CustomizationData>("CustomizationData");
+            }
+
+            // Auto-discover components if missing
+            if (characterRenderers == null) characterRenderers = new List<Renderer>();
+            characterRenderers.Clear();
+
+            var skinned = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            foreach (var r in skinned)
+            {
+                if (!characterRenderers.Contains(r)) characterRenderers.Add(r);
+            }
+
+            var other = GetComponentsInChildren<Renderer>(true);
+            foreach (var r in other)
+            {
+                if (!characterRenderers.Contains(r))
+                {
+                    if (headBone != null && r.transform.IsChildOf(headBone)) continue;
+                    if (neckBone != null && r.transform.IsChildOf(neckBone)) continue;
+                    characterRenderers.Add(r);
+                }
+            }
+
+            if (characterRenderer != null && !characterRenderers.Contains(characterRenderer))
+            {
+                characterRenderers.Add(characterRenderer);
+            }
+            else if (characterRenderer == null && characterRenderers.Count > 0)
+            {
+                characterRenderer = characterRenderers[0];
             }
 
             if (neckBone == null)
@@ -86,6 +121,12 @@ namespace EdgeParty.Gameplay.Character
 
             // Initial Update
             UpdateAll();
+
+            // Owner loads & broadcasts their saved outfit
+            if (IsOwner)
+            {
+                LoadAndApplyCloudOutfit();
+            }
         }
 
         private void UpdateAll()
@@ -95,6 +136,31 @@ namespace EdgeParty.Gameplay.Character
             UpdateNecklace(necklaceIndex.Value);
             UpdateEmotion(emotionIndex.Value);
             UpdateColor(colorIndex.Value);
+        }
+
+        /// <summary>
+        /// Called once for the owning player: pull the saved outfit from
+        /// CloudSaveManager cache and broadcast it via NetworkVariables.
+        /// </summary>
+        private void LoadAndApplyCloudOutfit()
+        {
+            var csm = CloudSaveManager.Instance;
+            if (csm == null || !csm.IsLoaded) return;
+
+            var outfit = csm.CachedEquipped;
+            localHat = outfit.hat;
+            localGlasses = outfit.glasses;
+            localNecklace = outfit.necklace;
+            localEmotion = outfit.emotion;
+            localColor = outfit.color;
+
+            hatIndex.Value      = outfit.hat;
+            glassesIndex.Value  = outfit.glasses;
+            necklaceIndex.Value = outfit.necklace;
+            emotionIndex.Value  = outfit.emotion;
+            colorIndex.Value    = outfit.color;
+
+            Debug.Log($"[NetworkPlayerAppearance] Cloud outfit loaded: Hat={outfit.hat} Glasses={outfit.glasses}");
         }
 
         private void UpdateHat(int index)
@@ -148,39 +214,100 @@ namespace EdgeParty.Gameplay.Character
 
         private void UpdateEmotion(int index)
         {
-            if (characterRenderer != null && index >= 0 && index < data.emotions.Count)
+            if (index < 0 || data == null || data.emotions == null || index >= data.emotions.Count) return;
+
+            foreach (var renderer in characterRenderers)
             {
-                var mats = characterRenderer.materials;
+                if (renderer == null) continue;
+                var mats = renderer.materials;
                 if (mats.Length > 1)
                 {
                     // Slot 1 is the Face
                     mats[1].shader = Shader.Find("Unlit/Transparent");
                     mats[1].mainTexture = data.emotions[index].texture;
                     mats[1].doubleSidedGI = true; // Enable Double Sided GI
-                    characterRenderer.materials = mats;
+                    renderer.materials = mats;
                 }
             }
         }
 
         private void UpdateColor(int index)
         {
-            if (characterRenderer != null && index >= 0 && index < data.colors.Count)
+            if (index < 0 || data == null || data.colors == null || index >= data.colors.Count) return;
+
+            foreach (var renderer in characterRenderers)
             {
-                var mats = characterRenderer.materials;
+                if (renderer == null) continue;
+                var mats = renderer.materials;
                 if (mats.Length > 0)
                 {
                     // Slot 0 is the Body
                     mats[0] = data.colors[index].material;
-                    characterRenderer.materials = mats;
+                    renderer.materials = mats;
                 }
             }
         }
 
+        public void PreviewItem(string category, int index)
+        {
+            if (data == null) return;
+            switch (category.ToLower())
+            {
+                case "hat": UpdateHat(index); break;
+                case "glasses": UpdateGlasses(index); break;
+                case "necklace": UpdateNecklace(index); break;
+                case "emotion": UpdateEmotion(index); break;
+                case "color": UpdateColor(index); break;
+            }
+        }
+
         // Setters for UI
-        public void SetHat(int index) { if (IsSpawned && IsOwner) hatIndex.Value = index; else UpdateHat(index); }
-        public void SetGlasses(int index) { if (IsSpawned && IsOwner) glassesIndex.Value = index; else UpdateGlasses(index); }
-        public void SetNecklace(int index) { if (IsSpawned && IsOwner) necklaceIndex.Value = index; else UpdateNecklace(index); }
-        public void SetEmotion(int index) { if (IsSpawned && IsOwner) emotionIndex.Value = index; else UpdateEmotion(index); }
-        public void SetColor(int index) { if (IsSpawned && IsOwner) colorIndex.Value = index; else UpdateColor(index); }
+        public void SetHat(int index)
+        {
+            localHat = index;
+            if (IsSpawned) hatIndex.Value = index;
+            else UpdateHat(index);
+            SaveOutfitToCloud();
+        }
+        public void SetGlasses(int index)
+        {
+            localGlasses = index;
+            if (IsSpawned) glassesIndex.Value = index;
+            else UpdateGlasses(index);
+            SaveOutfitToCloud();
+        }
+        public void SetNecklace(int index)
+        {
+            localNecklace = index;
+            if (IsSpawned) necklaceIndex.Value = index;
+            else UpdateNecklace(index);
+            SaveOutfitToCloud();
+        }
+        public void SetEmotion(int index)
+        {
+            localEmotion = index;
+            if (IsSpawned) emotionIndex.Value = index;
+            else UpdateEmotion(index);
+            SaveOutfitToCloud();
+        }
+        public void SetColor(int index)
+        {
+            localColor = index;
+            if (IsSpawned) colorIndex.Value = index;
+            else UpdateColor(index);
+            SaveOutfitToCloud();
+        }
+
+        private void SaveOutfitToCloud()
+        {
+            int hat = IsSpawned ? hatIndex.Value : localHat;
+            int glasses = IsSpawned ? glassesIndex.Value : localGlasses;
+            int necklace = IsSpawned ? necklaceIndex.Value : localNecklace;
+            int emotion = IsSpawned ? emotionIndex.Value : localEmotion;
+            int color = IsSpawned ? colorIndex.Value : localColor;
+
+            _ = CloudSaveManager.Instance?.SaveEquippedOutfitAsync(
+                hat, glasses, necklace, emotion, color);
+        }
     }
 }

@@ -1,5 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
+using Unity.Collections;
+using EdgeParty.Auth;
 using EdgeParty.Gameplay.Camera;
 
 namespace EdgeParty.Gameplay.Character
@@ -30,6 +32,12 @@ namespace EdgeParty.Gameplay.Character
 
         // TeamID can be used for team-based logic, such as friendly fire or team-specific buffs
         public NetworkVariable<int> TeamID = new NetworkVariable<int>(0,NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Server);
+        
+        // Player display name – synced once at spawn, read by all clients for nameplates
+        public NetworkVariable<FixedString64Bytes> playerNameSync = new NetworkVariable<FixedString64Bytes>(
+            new FixedString64Bytes("Player"),
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
         
         [Header("Nameplate")]
         [SerializeField] private Transform headAnchor;
@@ -64,6 +72,14 @@ namespace EdgeParty.Gameplay.Character
 
             SyncLegacyReferences();
             IgnoreInternalCollisions();
+
+            // Dynamically attach NetworkPlayerAppearance to replicate cosmetics in multiplayer
+            var appearance = GetComponentInChildren<NetworkPlayerAppearance>(true);
+            if (appearance == null)
+            {
+                appearance = gameObject.AddComponent<NetworkPlayerAppearance>();
+                Debug.Log("[PlayerController] Dynamically attached NetworkPlayerAppearance to player!");
+            }
         }
 
         private void IgnoreInternalCollisions()
@@ -117,8 +133,22 @@ namespace EdgeParty.Gameplay.Character
             {
                 nameplateInstance = Instantiate(nameplatePrefab, headAnchor);
                 nameplateInstance.transform.localPosition = Vector3.zero;
-                nameplateInstance.SetPlayerName($"Player {OwnerClientId}");
+                // Show current synced name (may already be set for late-joiners)
+                nameplateInstance.SetPlayerName(playerNameSync.Value.ToString());
                 nameplateInstance.SetMicLevel(0);
+            }
+
+            // Sync name: owner writes, everyone reads
+            playerNameSync.OnValueChanged += (_, newName) =>
+            {
+                nameplateInstance?.SetPlayerName(newName.ToString());
+            };
+
+            if (IsOwner)
+            {
+                // Write username into the network variable so all clients see it
+                string myName = AuthService.Instance != null ? AuthService.Instance.CachedUsername : $"Player {OwnerClientId}";
+                playerNameSync.Value = new FixedString64Bytes(myName);
             }
 
             // Logic server

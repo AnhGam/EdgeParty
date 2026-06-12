@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using System.Collections.Generic;
 using EdgeParty.Auth;
 using EdgeParty.Social;
+using EdgeParty.Gameplay.Character;
 
 namespace EdgeParty.UI
 {
@@ -19,6 +20,42 @@ namespace EdgeParty.UI
         [SerializeField] private VisualTreeAsset homeVisualTree;
         [SerializeField] private VisualTreeAsset shopVisualTree;
         [SerializeField] private VisualTreeAsset matchmakingVisualTree;
+        [SerializeField] private VisualTreeAsset lockerVisualTree;
+
+        [Header("Customization Data")]
+        [SerializeField] private CustomizationData customizationData;
+
+        [Header("Locker (Customization) Prefab")]
+        [SerializeField] private GameObject lockerPrefab; // Assign CharacterCustomization.prefab here
+
+        [Header("Coin Textures")]
+        [SerializeField] private Texture2D singleCoinTex;
+        [SerializeField] private Texture2D pouchTex;
+        [SerializeField] private Texture2D smallPileTex;
+        [SerializeField] private Texture2D decentPileTex;
+        [SerializeField] private Texture2D fullChestTex;
+        [SerializeField] private Texture2D massiveChestTex;
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (singleCoinTex == null) singleCoinTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/UI/Textures/single-coin.png");
+            if (pouchTex == null) pouchTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/UI/Textures/pouch.png");
+            if (smallPileTex == null) smallPileTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/UI/Textures/small pile.png");
+            if (decentPileTex == null) decentPileTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/UI/Textures/decent pile.png");
+            if (fullChestTex == null) fullChestTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/UI/Textures/full-chest.png");
+            if (massiveChestTex == null) massiveChestTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/UI/Textures/massive chest.png");
+
+            // Auto-assign visual tree templates if null
+            if (loginVisualTree == null) loginVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/LoginMenu.uxml");
+            if (registerVisualTree == null) registerVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/RegisterMenu.uxml");
+            if (forgotPasswordVisualTree == null) forgotPasswordVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/ForgotPasswordMenu.uxml");
+            if (homeVisualTree == null) homeVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/HomeMenu.uxml");
+            if (shopVisualTree == null) shopVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/ShopMenu.uxml");
+            if (matchmakingVisualTree == null) matchmakingVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/MatchmakingMenu.uxml");
+            if (lockerVisualTree == null) lockerVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/LockerMenu.uxml");
+        }
+#endif
 
         [Header("SFX Sound Names")]
         private const string SoundClick = "Click";
@@ -29,6 +66,13 @@ namespace EdgeParty.UI
         private int _onlineFriendsCount = 5;
         private string _username = "PlayerOne";
         private string _currentFriendsDrawerTab = "friends";
+
+        // Locker overlay instance
+        private GameObject _lockerInstance;
+
+        // Shop preview state
+        private string _currentlyPreviewedCategory = null;
+        private int _currentlyPreviewedIndex = -1;
 
         // UGS Auth integration states
         private string _pendingEmail = "";
@@ -54,6 +98,14 @@ namespace EdgeParty.UI
                 FriendLobbyService.Instance.OnLobbyMembersUpdated += UpdateLobbyPodiums;
                 FriendLobbyService.Instance.OnLobbyJoined += HandleLobbyJoined;
                 FriendLobbyService.Instance.OnLobbyLeft += HandleLobbyLeft;
+            }
+
+            // Register Matchmaking Events
+            if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
+            {
+                EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingStarted += HandleMatchmakingStarted;
+                EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingCancelled += HandleMatchmakingCancelled;
+                EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingSucceeded += HandleMatchmakingSucceeded;
             }
 
             // Start by showing the Login Menu by default
@@ -85,6 +137,13 @@ namespace EdgeParty.UI
                 FriendLobbyService.Instance.OnLobbyMembersUpdated -= UpdateLobbyPodiums;
                 FriendLobbyService.Instance.OnLobbyJoined -= HandleLobbyJoined;
                 FriendLobbyService.Instance.OnLobbyLeft -= HandleLobbyLeft;
+            }
+
+            if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
+            {
+                EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingStarted -= HandleMatchmakingStarted;
+                EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingCancelled -= HandleMatchmakingCancelled;
+                EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingSucceeded -= HandleMatchmakingSucceeded;
             }
         }
 
@@ -130,8 +189,23 @@ namespace EdgeParty.UI
 
         // ─── Screen Transition Methods ───────────────────────────────────
 
+        private void EnsureLockerInstance()
+        {
+            if (_lockerInstance == null)
+            {
+                if (lockerPrefab == null)
+                {
+                    Debug.LogWarning("[StitchUIController] lockerPrefab is not assigned! Please assign CharacterCustomization.prefab in the Inspector.");
+                    return;
+                }
+                _lockerInstance = Instantiate(lockerPrefab);
+                _lockerInstance.name = "LockerOverlay (runtime)";
+            }
+        }
+
         public void ShowLogin()
         {
+            if (_lockerInstance != null) _lockerInstance.SetActive(false);
             if (loginVisualTree == null) return;
             SetNewScreen(loginVisualTree.CloneTree());
             BindLoginEvents();
@@ -139,6 +213,7 @@ namespace EdgeParty.UI
 
         public void ShowRegister()
         {
+            if (_lockerInstance != null) _lockerInstance.SetActive(false);
             if (registerVisualTree == null) return;
             SetNewScreen(registerVisualTree.CloneTree());
             BindRegisterEvents();
@@ -146,6 +221,7 @@ namespace EdgeParty.UI
 
         public void ShowForgotPassword()
         {
+            if (_lockerInstance != null) _lockerInstance.SetActive(false);
             if (forgotPasswordVisualTree == null) return;
             SetNewScreen(forgotPasswordVisualTree.CloneTree());
             BindForgotPasswordEvents();
@@ -153,6 +229,7 @@ namespace EdgeParty.UI
 
         public void ShowHome()
         {
+            if (_lockerInstance != null) _lockerInstance.SetActive(false);
             if (homeVisualTree == null) return;
             SetNewScreen(homeVisualTree.CloneTree());
             BindSharedSidebarEvents("tab-home");
@@ -162,26 +239,136 @@ namespace EdgeParty.UI
 
             // Auto initialize Social once signed in
             _ = FriendLobbyService.Instance.InitializeSocialAsync();
+
+            // Setup character preview for home
+            EnsureLockerInstance();
+            if (_lockerInstance != null)
+            {
+                _lockerInstance.SetActive(true);
+                ApplyCloudOutfitToPreview();
+
+                // Hide its default UI Document
+                var lockerDoc = _lockerInstance.GetComponent<UIDocument>();
+                if (lockerDoc != null) lockerDoc.enabled = false;
+
+                // Bind preview image to RenderTexture
+                var previewCamLink = _lockerInstance.GetComponentInChildren<PreviewCameraLink>(true);
+                if (previewCamLink != null)
+                {
+                    previewCamLink.InitializeIfNeeded();
+                    previewCamLink.ConfigureCamera(60f, new Vector3(0f, 0.75f, 2.4f));
+                    if (previewCamLink.previewTexture != null)
+                    {
+                        var characterAvatar = _root.Q<VisualElement>("character-avatar");
+                        if (characterAvatar != null)
+                        {
+                            characterAvatar.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(previewCamLink.previewTexture));
+                        }
+                    }
+                }
+            }
         }
 
         public void ShowShop()
         {
+            _currentlyPreviewedCategory = null;
+            _currentlyPreviewedIndex = -1;
+
             if (shopVisualTree == null) return;
             SetNewScreen(shopVisualTree.CloneTree());
             BindSharedSidebarEvents("tab-shop");
             BindSharedHeaderEvents("tab-shop");
             BindShopEvents();
             ApplyDataBindings();
+
+            // Setup character preview for shop
+            EnsureLockerInstance();
+            if (_lockerInstance != null)
+            {
+                _lockerInstance.SetActive(true);
+                ApplyCloudOutfitToPreview();
+
+                // Hide its default UI Document
+                var lockerDoc = _lockerInstance.GetComponent<UIDocument>();
+                if (lockerDoc != null) lockerDoc.enabled = false;
+
+                // Bind preview image to RenderTexture
+                var previewCamLink = _lockerInstance.GetComponentInChildren<PreviewCameraLink>(true);
+                if (previewCamLink != null)
+                {
+                    previewCamLink.InitializeIfNeeded();
+                    previewCamLink.ConfigureCamera(60f, new Vector3(0f, 0.75f, 2.4f));
+                    if (previewCamLink.previewTexture != null)
+                    {
+                        var previewAvatar = _root.Q<Image>("shop-preview-avatar");
+                        if (previewAvatar != null)
+                        {
+                            previewAvatar.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(previewCamLink.previewTexture));
+                        }
+                    }
+                }
+            }
         }
 
         public void ShowMatchmaking()
         {
+            if (_lockerInstance != null) _lockerInstance.SetActive(false);
             if (matchmakingVisualTree == null) return;
             SetNewScreen(matchmakingVisualTree.CloneTree());
             // Matchmaking has stretched header, no sidebar, and active header tab
             BindSharedHeaderEvents("tab-matchmaking");
             BindMatchmakingEvents();
             ApplyDataBindings();
+        }
+
+        public void ShowLocker()
+        {
+            if (lockerVisualTree == null) return;
+            SetNewScreen(lockerVisualTree.CloneTree());
+            BindSharedSidebarEvents("tab-locker");
+            BindSharedHeaderEvents("tab-locker");
+            ApplyDataBindings();
+
+            // Setup character preview
+            EnsureLockerInstance();
+            if (_lockerInstance != null)
+            {
+                _lockerInstance.SetActive(true);
+                ApplyCloudOutfitToPreview();
+                
+                // Hide its default UI Document because we are rendering inside the LockerMenu page UI
+                var lockerDoc = _lockerInstance.GetComponent<UIDocument>();
+                if (lockerDoc != null) lockerDoc.enabled = false;
+
+                // Bind preview image to RenderTexture
+                var previewCamLink = _lockerInstance.GetComponentInChildren<PreviewCameraLink>(true);
+                if (previewCamLink != null)
+                {
+                    previewCamLink.InitializeIfNeeded();
+                    previewCamLink.ConfigureCamera(60f, new Vector3(0f, 0.75f, 2.4f));
+                    if (previewCamLink.previewTexture != null)
+                    {
+                        var previewAvatar = _root.Q<Image>("locker-preview-avatar");
+                        if (previewAvatar != null)
+                        {
+                            previewAvatar.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(previewCamLink.previewTexture));
+                        }
+                    }
+                }
+
+                // Bind customization controller logic to the main UI root
+                var customCtrl = _lockerInstance.GetComponent<CustomizationController>();
+                if (customCtrl != null)
+                {
+                    customCtrl.InitializeWithRoot(_root);
+                }
+            }
+        }
+
+        public void HideLocker()
+        {
+            if (_lockerInstance != null)
+                _lockerInstance.SetActive(false);
         }
 
         // Helper to replace root visual content
@@ -494,21 +681,67 @@ namespace EdgeParty.UI
 
         private void BindShopEvents()
         {
-            var btnBuyCap = _root.Q<Button>("btn-buy-banana-cap");
+            var btnBuyFeatured = _root.Q<Button>("btn-buy-featured");
             var btnBuy1 = _root.Q<Button>("btn-buy-item-1");
             var btnBuy2 = _root.Q<Button>("btn-buy-item-2");
+            var btnBuy3 = _root.Q<Button>("btn-buy-item-3");
+            var btnBuy4 = _root.Q<Button>("btn-buy-item-4");
 
-            if (btnBuyCap != null)
+            // Bind coin icons for prices
+            if (singleCoinTex != null)
             {
-                RegisterHoverAndClick(btnBuyCap, () => BuyItem("banana-cap", "Banana Split Cap", 850));
+                _root.Query<VisualElement>(className: "shop-coin-icon").ForEach(icon => {
+                    icon.style.backgroundImage = new StyleBackground(singleCoinTex);
+                });
+            }
+
+            if (btnBuyFeatured != null)
+            {
+                RegisterHoverAndClick(btnBuyFeatured, () => BuyItem("hat_0", "Blue Cap (Cap A)", 150));
             }
             if (btnBuy1 != null)
             {
-                RegisterHoverAndClick(btnBuy1, () => BuyItem("retro-shaders", "Retro Shaders", 320));
+                RegisterHoverAndClick(btnBuy1, () => BuyItem("glasses_0", "Pixel Glasses", 400));
             }
             if (btnBuy2 != null)
             {
-                RegisterHoverAndClick(btnBuy2, () => BuyItem("fuzzy-bucket", "Fuzzy Bucket", 450));
+                RegisterHoverAndClick(btnBuy2, () => BuyItem("hat_1", "Yellow Cap (Cap B)", 250));
+            }
+            if (btnBuy3 != null)
+            {
+                RegisterHoverAndClick(btnBuy3, () => BuyItem("neck_0", "Red Scarf", 300));
+            }
+            if (btnBuy4 != null)
+            {
+                RegisterHoverAndClick(btnBuy4, () => BuyItem("neck_1", "Gold Necklace", 500));
+            }
+
+            // Bind eye preview buttons
+            var btnPreviewFeatured = _root.Q<Button>("btn-preview-featured");
+            var btnPreview1 = _root.Q<Button>("btn-preview-item-1");
+            var btnPreview2 = _root.Q<Button>("btn-preview-item-2");
+            var btnPreview3 = _root.Q<Button>("btn-preview-item-3");
+            var btnPreview4 = _root.Q<Button>("btn-preview-item-4");
+
+            if (btnPreviewFeatured != null) RegisterHoverAndClick(btnPreviewFeatured, () => PreviewItemInShop("hat", 0));
+            if (btnPreview1 != null) RegisterHoverAndClick(btnPreview1, () => PreviewItemInShop("glasses", 0));
+            if (btnPreview2 != null) RegisterHoverAndClick(btnPreview2, () => PreviewItemInShop("hat", 1));
+            if (btnPreview3 != null) RegisterHoverAndClick(btnPreview3, () => PreviewItemInShop("necklace", 0));
+            if (btnPreview4 != null) RegisterHoverAndClick(btnPreview4, () => PreviewItemInShop("necklace", 1));
+
+            // Set shop item textures from CustomizationData if assigned
+            if (customizationData != null)
+            {
+                if (customizationData.hats != null && customizationData.hats.Count > 0)
+                    SetShopItemTexture("featured-item-thumbnail", customizationData.hats[0].icon);
+                if (customizationData.glasses != null && customizationData.glasses.Count > 0)
+                    SetShopItemTexture("item-1-thumb", customizationData.glasses[0].icon);
+                if (customizationData.hats != null && customizationData.hats.Count > 1)
+                    SetShopItemTexture("item-2-thumb", customizationData.hats[1].icon);
+                if (customizationData.necklaces != null && customizationData.necklaces.Count > 0)
+                    SetShopItemTexture("item-3-thumb", customizationData.necklaces[0].icon);
+                if (customizationData.necklaces != null && customizationData.necklaces.Count > 1)
+                    SetShopItemTexture("item-4-thumb", customizationData.necklaces[1].icon);
             }
 
             // Shop Filters
@@ -516,20 +749,127 @@ namespace EdgeParty.UI
             var btnHats = _root.Q<Button>("btn-filter-hats");
             var btnGlasses = _root.Q<Button>("btn-filter-glasses");
 
-            if (btnAll != null) RegisterHoverAndClick(btnAll, null);
-            if (btnHats != null) RegisterHoverAndClick(btnHats, null);
-            if (btnGlasses != null) RegisterHoverAndClick(btnGlasses, null);
+            if (btnAll != null) RegisterHoverAndClick(btnAll, () => FilterShop("All", btnAll, btnHats, btnGlasses));
+            if (btnHats != null) RegisterHoverAndClick(btnHats, () => FilterShop("Hats", btnAll, btnHats, btnGlasses));
+            if (btnGlasses != null) RegisterHoverAndClick(btnGlasses, () => FilterShop("Glasses", btnAll, btnHats, btnGlasses));
+
+            RefreshShopButtons();
         }
+
+        private void FilterShop(string category, Button btnAll, Button btnHats, Button btnGlasses)
+        {
+            var activeClass = "btn-primary-3d";
+            var inactiveClass = "btn-surface-3d";
+
+            if (btnAll != null)
+            {
+                btnAll.RemoveFromClassList(activeClass);
+                btnAll.RemoveFromClassList(inactiveClass);
+                btnAll.AddToClassList(category == "All" ? activeClass : inactiveClass);
+            }
+            if (btnHats != null)
+            {
+                btnHats.RemoveFromClassList(activeClass);
+                btnHats.RemoveFromClassList(inactiveClass);
+                btnHats.AddToClassList(category == "Hats" ? activeClass : inactiveClass);
+            }
+            if (btnGlasses != null)
+            {
+                btnGlasses.RemoveFromClassList(activeClass);
+                btnGlasses.RemoveFromClassList(inactiveClass);
+                btnGlasses.AddToClassList(category == "Glasses" ? activeClass : inactiveClass);
+            }
+
+            var cardFeatured = _root.Q<VisualElement>("shop-card-featured");
+            var card1 = _root.Q<VisualElement>("shop-card-item-1");
+            var card2 = _root.Q<VisualElement>("shop-card-item-2");
+            var card3 = _root.Q<VisualElement>("shop-card-item-3");
+            var card4 = _root.Q<VisualElement>("shop-card-item-4");
+
+            var row1 = _root.Q<VisualElement>("shop-row-1");
+            var row2 = _root.Q<VisualElement>("shop-row-2");
+
+            if (cardFeatured != null) cardFeatured.style.display = (category == "All" || category == "Hats") ? DisplayStyle.Flex : DisplayStyle.None;
+            if (card1 != null) card1.style.display = (category == "All" || category == "Glasses") ? DisplayStyle.Flex : DisplayStyle.None;
+            if (card2 != null) card2.style.display = (category == "All" || category == "Hats") ? DisplayStyle.Flex : DisplayStyle.None;
+            if (card3 != null) card3.style.display = (category == "All") ? DisplayStyle.Flex : DisplayStyle.None;
+            if (card4 != null) card4.style.display = (category == "All") ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (row1 != null)
+            {
+                row1.style.display = (category == "All" || category == "Hats" || category == "Glasses") ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+            if (row2 != null)
+            {
+                row2.style.display = (category == "All") ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+        }
+
+        private void SetShopItemTexture(string elementName, Texture2D tex)
+        {
+            var img = _root.Q<Image>(elementName);
+            if (img != null)
+            {
+                img.Clear(); // Clear any sub-elements
+                if (tex != null)
+                {
+                    img.style.backgroundImage = new StyleBackground(tex);
+                }
+                else
+                {
+                    img.style.backgroundImage = null;
+                }
+            }
+        }
+
+        private Coroutine _matchmakingTimerCoroutine;
+        private float _matchmakingStartTime;
 
         private void BindMatchmakingEvents()
         {
             var btnCancel = _root.Q<Button>("btn-matchmaking-cancel");
             var btnPlay = _root.Q<Button>("btn-matchmaking-play");
+            var statusBanner = _root.Q<VisualElement>("status-banner");
+            var matchmakingFooter = _root.Q<VisualElement>("matchmaking-footer");
+
+            // Initialize UI state based on active matchmaking
+            var mgr = EdgeParty.ConnectionManagement.MatchmakingManager.Instance;
+            if (mgr != null && mgr.IsMatchmaking)
+            {
+                if (statusBanner != null) statusBanner.style.display = DisplayStyle.Flex;
+                if (matchmakingFooter != null) matchmakingFooter.style.display = DisplayStyle.None;
+                
+                var titleLabel = _root.Q<Label>("matchmaking-title");
+                if (titleLabel != null) titleLabel.text = "Matchmaking...";
+                
+                var btnCancelBanner = _root.Q<Button>("btn-matchmaking-cancel");
+                if (btnCancelBanner != null) btnCancelBanner.style.display = DisplayStyle.Flex;
+
+                _matchmakingStartTime = mgr.MatchmakingStartTime;
+                if (_matchmakingTimerCoroutine != null) StopCoroutine(_matchmakingTimerCoroutine);
+                _matchmakingTimerCoroutine = StartCoroutine(UpdateMatchmakingTimerRoutine());
+            }
+            else
+            {
+                if (statusBanner != null) statusBanner.style.display = DisplayStyle.None;
+                if (matchmakingFooter != null) matchmakingFooter.style.display = DisplayStyle.Flex;
+                if (_matchmakingTimerCoroutine != null)
+                {
+                    StopCoroutine(_matchmakingTimerCoroutine);
+                    _matchmakingTimerCoroutine = null;
+                }
+            }
 
             if (btnCancel != null)
             {
-                RegisterHoverAndClick(btnCancel, ShowHome);
+                RegisterHoverAndClick(btnCancel, () => {
+                    if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
+                    {
+                        EdgeParty.ConnectionManagement.MatchmakingManager.Instance.StopMatchmaking();
+                    }
+                });
             }
+
             if (btnPlay != null)
             {
                 RegisterHoverAndClick(btnPlay, () => {
@@ -687,6 +1027,103 @@ namespace EdgeParty.UI
             UpdateLobbyPodiums(FriendLobbyService.Instance.LobbyMembers);
         }
 
+        private void HandleMatchmakingStarted()
+        {
+            var statusBanner = _root.Q<VisualElement>("status-banner");
+            if (statusBanner != null)
+            {
+                statusBanner.style.display = DisplayStyle.Flex;
+            }
+
+            var matchmakingFooter = _root.Q<VisualElement>("matchmaking-footer");
+            if (matchmakingFooter != null)
+            {
+                matchmakingFooter.style.display = DisplayStyle.None;
+            }
+
+            var btnCancel = _root.Q<Button>("btn-matchmaking-cancel");
+            if (btnCancel != null)
+            {
+                btnCancel.style.display = DisplayStyle.Flex;
+            }
+
+            var titleLabel = _root.Q<Label>("matchmaking-title");
+            if (titleLabel != null)
+            {
+                titleLabel.text = "Matchmaking...";
+            }
+
+            var mgr = EdgeParty.ConnectionManagement.MatchmakingManager.Instance;
+            _matchmakingStartTime = (mgr != null) ? mgr.MatchmakingStartTime : Time.time;
+
+            if (_matchmakingTimerCoroutine != null) StopCoroutine(_matchmakingTimerCoroutine);
+            _matchmakingTimerCoroutine = StartCoroutine(UpdateMatchmakingTimerRoutine());
+        }
+
+        private void HandleMatchmakingCancelled()
+        {
+            var statusBanner = _root.Q<VisualElement>("status-banner");
+            if (statusBanner != null)
+            {
+                statusBanner.style.display = DisplayStyle.None;
+            }
+
+            var matchmakingFooter = _root.Q<VisualElement>("matchmaking-footer");
+            if (matchmakingFooter != null)
+            {
+                matchmakingFooter.style.display = DisplayStyle.Flex;
+            }
+
+            if (_matchmakingTimerCoroutine != null)
+            {
+                StopCoroutine(_matchmakingTimerCoroutine);
+                _matchmakingTimerCoroutine = null;
+            }
+        }
+
+        private void HandleMatchmakingSucceeded()
+        {
+            var titleLabel = _root.Q<Label>("matchmaking-title");
+            if (titleLabel != null)
+            {
+                titleLabel.text = "Match Found!";
+            }
+
+            var elapsedLabel = _root.Q<Label>("matchmaking-elapsed");
+            if (elapsedLabel != null)
+            {
+                elapsedLabel.text = "Connecting to server...";
+            }
+
+            var btnCancel = _root.Q<Button>("btn-matchmaking-cancel");
+            if (btnCancel != null)
+            {
+                btnCancel.style.display = DisplayStyle.None;
+            }
+
+            if (_matchmakingTimerCoroutine != null)
+            {
+                StopCoroutine(_matchmakingTimerCoroutine);
+                _matchmakingTimerCoroutine = null;
+            }
+        }
+
+        private System.Collections.IEnumerator UpdateMatchmakingTimerRoutine()
+        {
+            var elapsedLabel = _root.Q<Label>("matchmaking-elapsed");
+            while (true)
+            {
+                float elapsed = Time.time - _matchmakingStartTime;
+                int minutes = (int)(elapsed / 60f);
+                int seconds = (int)(elapsed % 60f);
+                if (elapsedLabel != null)
+                {
+                    elapsedLabel.text = string.Format("Time elapsed: {0:D2}:{1:D2}", minutes, seconds);
+                }
+                yield return new WaitForSeconds(1f);
+            }
+        }
+
         // Shared sidebar navigation bindings
         private void BindSharedSidebarEvents(string activeTabName)
         {
@@ -700,7 +1137,7 @@ namespace EdgeParty.UI
 
             // Setup active visual state
             if (btnHome != null) SetupSidebarTabState(btnHome, activeTabName == "tab-home", ShowHome);
-            if (btnLocker != null) SetupSidebarTabState(btnLocker, activeTabName == "tab-locker", null);
+            if (btnLocker != null) SetupSidebarTabState(btnLocker, activeTabName == "tab-locker", ShowLocker);
             if (btnShop != null) SetupSidebarTabState(btnShop, activeTabName == "tab-shop", ShowShop);
             if (btnSettings != null) SetupSidebarTabState(btnSettings, activeTabName == "tab-settings", null);
 
@@ -773,6 +1210,21 @@ namespace EdgeParty.UI
                 RegisterHoverAndClick(btnToll, () => Debug.Log("Toll Store open requested"));
             }
 
+            var coinCounter = _root.Q<VisualElement>("coin-counter");
+            if (coinCounter != null)
+            {
+                coinCounter.RegisterCallback<PointerDownEvent>(_ => {
+                    EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                    ShowRechargePopup();
+                });
+
+                var coinIcon = coinCounter.Q<VisualElement>("coin-icon");
+                if (coinIcon != null && singleCoinTex != null)
+                {
+                    coinIcon.style.backgroundImage = new StyleBackground(singleCoinTex);
+                }
+            }
+
             if (avatar != null)
             {
                 avatar.RegisterCallback<PointerDownEvent>(_ => {
@@ -802,6 +1254,10 @@ namespace EdgeParty.UI
 
         private void ApplyDataBindings()
         {
+            // ── Pull live data from CloudSaveManager (single source of truth) ──
+            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.IsLoaded)
+                _currentCoins = CloudSaveManager.Instance.CachedCoins;
+
             if (FriendLobbyService.Instance != null)
             {
                 _onlineFriendsCount = FriendLobbyService.Instance.Friends.FindAll(f => f.IsOnline).Count;
@@ -833,6 +1289,12 @@ namespace EdgeParty.UI
                 {
                     badge.style.display = DisplayStyle.None;
                 }
+            }
+
+            // If shop page is active, refresh shop buttons state
+            if (_root != null && _root.Q<Button>("btn-buy-featured") != null)
+            {
+                RefreshShopButtons();
             }
 
             Debug.Log($"Dynamic data applied successfully. Coins: {_currentCoins}, User: {_username}");
@@ -876,15 +1338,188 @@ namespace EdgeParty.UI
 
         private void BuyItem(string itemId, string itemName, int price)
         {
-            if (_currentCoins >= price)
+            var csm = CloudSaveManager.Instance;
+            int coins = csm != null && csm.IsLoaded ? csm.CachedCoins : _currentCoins;
+
+            if (csm != null && csm.OwnsItem(itemId))
             {
-                _currentCoins -= price;
+                Debug.Log($"Already own {itemName}!");
+                return;
+            }
+
+            if (coins >= price)
+            {
+                coins -= price;
+                _currentCoins = coins;
+
+                List<string> ownedItems = csm != null ? new List<string>(csm.CachedOwnedItems) : new List<string>();
+                if (!ownedItems.Contains(itemId)) ownedItems.Add(itemId);
+
+                // Persist to cloud
+                if (csm != null)
+                    _ = csm.SaveCoinsAndItemsAsync(coins, ownedItems);
+
                 ApplyDataBindings();
-                Debug.Log($"Successfully bought {itemName}!");
+                RefreshShopButtons();
+                Debug.Log($"Successfully bought {itemName}! Remaining coins: {coins}");
             }
             else
             {
-                Debug.LogWarning($"Insufficient coins to buy {itemName}!");
+                Debug.LogWarning($"Insufficient coins to buy {itemName}! Have: {coins}, Need: {price}");
+            }
+        }
+
+        private void RefreshShopButtons()
+        {
+            if (_root == null) return;
+            var btnBuyFeatured = _root.Q<Button>("btn-buy-featured");
+            var btnBuy1 = _root.Q<Button>("btn-buy-item-1");
+            var btnBuy2 = _root.Q<Button>("btn-buy-item-2");
+            var btnBuy3 = _root.Q<Button>("btn-buy-item-3");
+            var btnBuy4 = _root.Q<Button>("btn-buy-item-4");
+
+            UpdateSingleShopButton(btnBuyFeatured, "featured-price-indicator", "hat_0", "Buy Now", true);
+            UpdateSingleShopButton(btnBuy1, "price-item-1", "glasses_0", "🛒", false);
+            UpdateSingleShopButton(btnBuy2, "price-item-2", "hat_1", "🛒", false);
+            UpdateSingleShopButton(btnBuy3, "price-item-3", "neck_0", "🛒", false);
+            UpdateSingleShopButton(btnBuy4, "price-item-4", "neck_1", "🛒", false);
+        }
+
+        private void UpdateSingleShopButton(Button button, string priceContainerName, string itemId, string defaultText, bool isFeatured)
+        {
+            if (button == null) return;
+
+            var csm = CloudSaveManager.Instance;
+            bool isOwned = csm != null && csm.IsLoaded && csm.OwnsItem(itemId);
+
+            var priceIndicator = _root.Q<VisualElement>(priceContainerName);
+
+            if (isOwned)
+            {
+                button.text = "Owned";
+                button.SetEnabled(false);
+                button.RemoveFromClassList("btn-primary-3d");
+                button.RemoveFromClassList("btn-surface-3d");
+                button.AddToClassList("btn-surface-3d");
+                button.style.opacity = 0.6f;
+
+                if (!isFeatured)
+                {
+                    button.style.width = StyleKeyword.Auto;
+                    button.style.height = 40;
+                    button.style.paddingLeft = 12;
+                    button.style.paddingRight = 12;
+                    button.style.fontSize = 14;
+                    button.style.borderTopLeftRadius = 12;
+                    button.style.borderTopRightRadius = 12;
+                    button.style.borderBottomLeftRadius = 12;
+                    button.style.borderBottomRightRadius = 12;
+                }
+
+                if (priceIndicator != null)
+                {
+                    priceIndicator.style.display = DisplayStyle.None;
+                }
+            }
+            else
+            {
+                button.text = defaultText;
+                button.SetEnabled(true);
+                button.style.opacity = 1f;
+
+                if (isFeatured)
+                {
+                    button.RemoveFromClassList("btn-surface-3d");
+                    button.AddToClassList("btn-primary-3d");
+                }
+                else
+                {
+                    button.RemoveFromClassList("btn-primary-3d");
+                    button.AddToClassList("btn-surface-3d");
+                    button.style.width = 60;
+                    button.style.height = 60;
+                    button.style.paddingLeft = StyleKeyword.Null;
+                    button.style.paddingRight = StyleKeyword.Null;
+                    button.style.fontSize = 24;
+                    button.style.borderTopLeftRadius = 30;
+                    button.style.borderTopRightRadius = 30;
+                    button.style.borderBottomLeftRadius = 30;
+                    button.style.borderBottomRightRadius = 30;
+                }
+
+                if (priceIndicator != null)
+                {
+                    priceIndicator.style.display = DisplayStyle.Flex;
+                }
+            }
+        }
+
+        private void PreviewItemInShop(string category, int index)
+        {
+            EnsureLockerInstance();
+            if (_lockerInstance == null) return;
+            var appearance = _lockerInstance.GetComponentInChildren<NetworkPlayerAppearance>(true);
+            if (appearance == null)
+            {
+                var childTransform = _lockerInstance.transform.Find("Chibi_Monkey_00 Variant");
+                if (childTransform != null)
+                {
+                    appearance = childTransform.gameObject.AddComponent<NetworkPlayerAppearance>();
+                    appearance.data = customizationData;
+                }
+            }
+
+            if (appearance != null)
+            {
+                if (_currentlyPreviewedCategory == category && _currentlyPreviewedIndex == index)
+                {
+                    // Clicked the active preview again -> Toggle it OFF (reset to cloud outfit)
+                    _currentlyPreviewedCategory = null;
+                    _currentlyPreviewedIndex = -1;
+                    ApplyCloudOutfitToPreview();
+                    Debug.Log($"[StitchUIController] Cleared shop preview (toggled OFF)");
+                }
+                else
+                {
+                    // Clicked a different preview -> Reset other previews first, then preview this single item
+                    _currentlyPreviewedCategory = category;
+                    _currentlyPreviewedIndex = index;
+                    
+                    ApplyCloudOutfitToPreview(); // Reset to actual equipped outfit
+                    appearance.PreviewItem(category, index); // Apply the single item preview
+                    Debug.Log($"[StitchUIController] Previewed single shop item: Category={category}, Index={index}");
+                }
+            }
+        }
+
+        private void ApplyCloudOutfitToPreview()
+        {
+            EnsureLockerInstance();
+            if (_lockerInstance == null) return;
+
+            var appearance = _lockerInstance.GetComponentInChildren<NetworkPlayerAppearance>(true);
+            if (appearance == null)
+            {
+                var childTransform = _lockerInstance.transform.Find("Chibi_Monkey_00 Variant");
+                if (childTransform != null)
+                {
+                    appearance = childTransform.gameObject.AddComponent<NetworkPlayerAppearance>();
+                    appearance.data = customizationData;
+                }
+            }
+
+            if (appearance != null)
+            {
+                var csm = CloudSaveManager.Instance;
+                if (csm != null && csm.IsLoaded)
+                {
+                    var outfit = csm.CachedEquipped;
+                    appearance.PreviewItem("hat", outfit.hat);
+                    appearance.PreviewItem("glasses", outfit.glasses);
+                    appearance.PreviewItem("necklace", outfit.necklace);
+                    appearance.PreviewItem("emotion", outfit.emotion);
+                    appearance.PreviewItem("color", outfit.color);
+                }
             }
         }
 
@@ -1202,6 +1837,15 @@ namespace EdgeParty.UI
 
         private void UpdateLobbyPodiums(List<string> members)
         {
+            // ── Slot 1 = always the local player ──────────────────────────────
+            var slot1Btn = _root.Q<Button>("btn-invite-slot-1");
+            if (slot1Btn != null)
+            {
+                var tagText1 = slot1Btn.Q<Label>(className: "podium-tag-text");
+                if (tagText1 != null) tagText1.text = _username;
+            }
+
+            // ── Slots 2-4 = other lobby members ──────────────────────────────
             for (int i = 2; i <= 4; i++)
             {
                 var slotBtn = _root.Q<Button>($"btn-invite-slot-{i}");
@@ -1344,6 +1988,127 @@ namespace EdgeParty.UI
             _root.Add(overlay);
 
             return card; // Return card to add content
+        }
+
+        private void ShowRechargePopup()
+        {
+            var card = CreateModalOverlay("Coin Recharge", null);
+            card.style.width = 1400; // 2.5x wider (was 560)
+
+            Label infoText = new Label("Recharge simulation. Click a tier to instantly add coins to your account.");
+            infoText.AddToClassList("font-body");
+            infoText.style.fontSize = 20;
+            infoText.style.color = new StyleColor(new Color(0.35f, 0.3f, 0.2f));
+            infoText.style.whiteSpace = WhiteSpace.Normal;
+            infoText.style.marginBottom = 24;
+            infoText.style.unityTextAlign = TextAnchor.MiddleCenter;
+            card.Add(infoText);
+
+            VisualElement grid = new VisualElement();
+            grid.style.flexDirection = FlexDirection.Row;
+            grid.style.flexWrap = Wrap.Wrap;
+            grid.style.justifyContent = Justify.Center;
+            grid.style.alignItems = Align.Center;
+            grid.style.width = Length.Percent(100);
+            card.Add(grid);
+
+            var packages = new[]
+            {
+                new { name = "Pocket", coins = 100, price = "$0.99", texture = singleCoinTex },
+                new { name = "Purse", coins = 500, price = "$3.99", texture = pouchTex },
+                new { name = "Bag", coins = 1200, price = "$7.99", texture = smallPileTex },
+                new { name = "Chest", coins = 3000, price = "$14.99", texture = decentPileTex },
+                new { name = "Vault", coins = 7500, price = "$29.99", texture = fullChestTex },
+                new { name = "Mountain", coins = 20000, price = "$69.99", texture = massiveChestTex }
+            };
+
+            foreach (var pkg in packages)
+            {
+                VisualElement pkgCard = new VisualElement();
+                pkgCard.style.width = 350;   // 2.5x wider (was 140)
+                pkgCard.style.height = 270;  // 1.5x higher (was 180)
+                pkgCard.style.marginTop = 15;
+                pkgCard.style.marginBottom = 15;
+                pkgCard.style.marginLeft = 15;
+                pkgCard.style.marginRight = 15;
+                pkgCard.style.paddingTop = 20;
+                pkgCard.style.paddingBottom = 20;
+                pkgCard.style.paddingLeft = 20;
+                pkgCard.style.paddingRight = 20;
+                pkgCard.style.alignItems = Align.Center;
+                pkgCard.style.justifyContent = Justify.SpaceBetween;
+                pkgCard.style.borderTopWidth = 3;
+                pkgCard.style.borderBottomWidth = 3;
+                pkgCard.style.borderLeftWidth = 3;
+                pkgCard.style.borderRightWidth = 3;
+                pkgCard.style.borderTopLeftRadius = 24;
+                pkgCard.style.borderTopRightRadius = 24;
+                pkgCard.style.borderBottomLeftRadius = 24;
+                pkgCard.style.borderBottomRightRadius = 24;
+                pkgCard.style.borderTopColor = new StyleColor(new Color(0.85f, 0.75f, 0.65f));
+                pkgCard.style.borderBottomColor = new StyleColor(new Color(0.85f, 0.75f, 0.65f));
+                pkgCard.style.borderLeftColor = new StyleColor(new Color(0.85f, 0.75f, 0.65f));
+                pkgCard.style.borderRightColor = new StyleColor(new Color(0.85f, 0.75f, 0.65f));
+                pkgCard.style.backgroundColor = new StyleColor(new Color(1f, 0.95f, 0.88f));
+
+                VisualElement pkgImage = new VisualElement();
+                pkgImage.style.width = 150;  // 2.5x larger image (was 60)
+                pkgImage.style.height = 150; // 2.5x larger image (was 60)
+                if (pkg.texture != null)
+                {
+                    pkgImage.style.backgroundImage = new StyleBackground(pkg.texture);
+                    pkgImage.style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Center);
+                    pkgImage.style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Center);
+                    pkgImage.style.backgroundRepeat = new BackgroundRepeat(Repeat.NoRepeat, Repeat.NoRepeat);
+                    pkgImage.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
+                }
+                pkgCard.Add(pkgImage);
+
+                Label coinLabel = new Label($"+{pkg.coins:N0}");
+                coinLabel.AddToClassList("font-headline");
+                coinLabel.style.fontSize = 28; // Larger coin text (was 20)
+                coinLabel.style.color = new StyleColor(new Color(0.2f, 0.15f, 0.05f));
+                pkgCard.Add(coinLabel);
+
+                Label nameLabel = new Label(pkg.name);
+                nameLabel.AddToClassList("font-body");
+                nameLabel.style.fontSize = 16; // Larger name text (was 12)
+                nameLabel.style.color = new StyleColor(new Color(0.5f, 0.45f, 0.35f));
+                pkgCard.Add(nameLabel);
+
+                Button buyBtn = new Button();
+                buyBtn.text = pkg.price;
+                buyBtn.AddToClassList("bouncy-btn");
+                buyBtn.AddToClassList("btn-primary-3d");
+                buyBtn.style.width = 250;  // Wider buy button (was 110)
+                buyBtn.style.height = 54;  // Higher buy button (was 36)
+                buyBtn.style.fontSize = 20; // Larger button text (was 14)
+                buyBtn.style.paddingTop = 0;
+                buyBtn.style.paddingBottom = 0;
+                
+                buyBtn.clicked += async () => {
+                    EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                    
+                    var csm = CloudSaveManager.Instance;
+                    if (csm != null)
+                    {
+                        int targetCoins = (csm.IsLoaded ? csm.CachedCoins : _currentCoins) + pkg.coins;
+                        _currentCoins = targetCoins;
+                        await csm.SaveCoinsAndItemsAsync(targetCoins, csm.IsLoaded ? csm.CachedOwnedItems : new List<string>());
+                        ApplyDataBindings();
+                    }
+                    else
+                    {
+                        _currentCoins += pkg.coins;
+                        ApplyDataBindings();
+                    }
+                    
+                    Debug.Log($"Simulated recharge: added {pkg.coins} coins. New total: {_currentCoins}");
+                };
+                
+                pkgCard.Add(buyBtn);
+                grid.Add(pkgCard);
+            }
         }
 
         private void ShowAddFriendPopup()

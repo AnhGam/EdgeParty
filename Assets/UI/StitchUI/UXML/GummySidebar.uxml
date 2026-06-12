@@ -32,7 +32,7 @@
                     <ui:Label name="request-badge-count" text="0" style="color: white; font-size: 11px; -unity-font-style: bold; margin: 0; padding: 0;" />
                 </ui:VisualElement>
             </ui:Button>
-            <ui:Button name="btn-logout" text="🚪  Logout" class="bouncy-btn btn-surface-3d logout-btn" />
+            <ui:Button name="btn-logout" text="Logout" class="bouncy-btn btn-surface-3d logout-btn" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

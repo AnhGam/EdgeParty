@@ -157,6 +157,7 @@ namespace EdgeParty.Auth
                 
                 CachedUsername = usernameOrEmail;
                 Debug.Log($"Signed in successfully. Player ID: {AuthenticationService.Instance.PlayerId}");
+                await CloudSaveManager.Instance.LoadAllAsync();
                 OnSignInSuccess?.Invoke();
             }
             catch (AuthenticationException ex)
@@ -191,6 +192,7 @@ namespace EdgeParty.Auth
                         await EnsureInitializedAsync();
                         await AuthenticationService.Instance.SignInWithGoogleAsync(idToken);
                         CachedUsername = "GoogleGamer";
+                        await CloudSaveManager.Instance.LoadAllAsync();
                         OnSignInSuccess?.Invoke();
                     }
                     catch (Exception ex)
@@ -218,11 +220,20 @@ namespace EdgeParty.Auth
             try
             {
                 await EnsureInitializedAsync();
+
+                if (AuthenticationService.Instance.IsSignedIn)
+                {
+                    Debug.Log($"Already signed in. Player ID: {AuthenticationService.Instance.PlayerId}");
+                    await CloudSaveManager.Instance.LoadAllAsync();
+                    return true;
+                }
+
                 if (AuthenticationService.Instance.SessionTokenExists)
                 {
                     // UGS will automatically reuse session token if we call SignInAnonymouslyAsync()
                     await AuthenticationService.Instance.SignInAnonymouslyAsync();
                     Debug.Log($"Auto-login successful. Player ID: {AuthenticationService.Instance.PlayerId}");
+                    await CloudSaveManager.Instance.LoadAllAsync();
                     return true;
                 }
             }
