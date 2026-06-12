@@ -244,9 +244,15 @@ namespace EdgeParty.Gameplay.Character
                     // Slot 0 is the Body
                     mats[0] = data.colors[index].material;
                     renderer.materials = mats;
+
+                    // Clear any stale per-renderer shader properties (ambient probes, GI data)
+                    // that URP may have baked from the gameplay scene's lighting environment.
+                    // This forces URP to re-evaluate lighting from the current scene.
+                    renderer.SetPropertyBlock(null);
                 }
             }
         }
+
 
         public void PreviewItem(string category, int index)
         {

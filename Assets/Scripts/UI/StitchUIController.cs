@@ -54,6 +54,9 @@ namespace EdgeParty.UI
             if (shopVisualTree == null) shopVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/ShopMenu.uxml");
             if (matchmakingVisualTree == null) matchmakingVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/MatchmakingMenu.uxml");
             if (lockerVisualTree == null) lockerVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/LockerMenu.uxml");
+
+            if (lockerPrefab == null) lockerPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Scripts/UI/Menus/CharacterCustomization.prefab");
+            if (customizationData == null) customizationData = UnityEditor.AssetDatabase.LoadAssetAtPath<CustomizationData>("Assets/UI/Resources/CustomizationData.asset");
         }
 #endif
 
