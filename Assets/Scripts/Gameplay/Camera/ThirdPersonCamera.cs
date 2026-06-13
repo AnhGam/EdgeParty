@@ -117,8 +117,16 @@ namespace EdgeParty.Gameplay.Camera
                 // 1. Read Mouse Input (Input System)
                 Vector2 mouseDelta = Mouse.current != null ? Mouse.current.delta.ReadValue() : Vector2.zero;
 
-                _yaw += mouseDelta.x * sensitivity;
-                _pitch -= mouseDelta.y * sensitivity;
+                float sensX = PlayerPrefs.GetFloat("CameraSensitivityX", 50f);
+                float sensY = PlayerPrefs.GetFloat("CameraSensitivityY", 50f);
+                bool invertX = PlayerPrefs.GetInt("InvertCameraX", 0) == 1;
+                bool invertY = PlayerPrefs.GetInt("InvertCameraY", 0) == 1;
+
+                float sensMultiplierX = sensX / 50f;
+                float sensMultiplierY = sensY / 50f;
+
+                _yaw += mouseDelta.x * sensitivity * sensMultiplierX * (invertX ? -1f : 1f);
+                _pitch -= mouseDelta.y * sensitivity * sensMultiplierY * (invertY ? -1f : 1f);
                 _pitch = Mathf.Clamp(_pitch, minPitch, maxPitch);
             }
 

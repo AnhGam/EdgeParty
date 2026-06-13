@@ -63,3 +63,7 @@ sysinfo.txt
 /[Aa]ssets/Plugins/obj/
 
 .AntigravityTests/
+
+# Agent skills
+/.agents/
+/skills-lock.json

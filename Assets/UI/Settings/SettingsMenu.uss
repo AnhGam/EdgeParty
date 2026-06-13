@@ -1,291 +1,354 @@
-:root {
-    width: 100%;
-    height: 100%;
-    --bg-color: #f8f9fa;
-    --primary: #006d41;
-    --primary-container: #60d394;
-    --on-primary-container: #005834;
-    --on-primary: #ffffff;
-    --tertiary-container: #81c7e8;
-    --tertiary: #0d6683;
-    --secondary-container: #fc9983;
-    --on-secondary-container: #762f20;
-    --surface-container: #edeeef;
-    --surface-container-low: #f3f4f5;
-    --surface-container-highest: #e1e3e4;
-    --on-surface-variant: #3e4a41;
-    --outline: #6e7a70;
-    --outline-variant: #bdcabe;
-}
+/* SettingsMenu.uss - Custom style for Gummy Bop settings screen */
 
-/* Kính mờ (Glass Panel) */
-.glass-panel {
-    background-color: rgba(255, 255, 255, 0.6);
-    border-color: rgba(255, 255, 255, 0.8);
-    border-width: 2px;
-    border-radius: 24px;
-    padding: 32px;
-}
-
-.tilt-1 { rotate: 1deg; }
-.tilt-neg-1 { rotate: -1deg; }
-.tilt-2 { rotate: 2.5deg; }
-
-/* Nút bấm nảy (Bouncy Button) */
-.bouncy-button {
-    background-color: var(--primary);
-    color: var(--on-primary);
-    border-radius: 100px;
-    border-color: var(--primary-container);
-    border-width: 0;
-    border-bottom-width: 6px;
-    padding: 24px 64px;
-    flex-direction: row;
-    align-items: center;
-    transition: scale 0.2s, translate 0.2s, border-bottom-width 0.2s;
-}
-
-.bouncy-button:hover {
-    scale: 1.05 1.05;
-    background-color: rgba(0, 109, 65, 0.9);
-}
-
-.bouncy-button:active {
-    translate: 0 4px;
-    border-bottom-width: 0px;
-}
-
-.btn-text-large {
-    font-size: 32px;
-    -unity-font-style: bold;
-    color: white;
-}
-
-/* Lớp lồng màn hình (Overlay) */
 .settings-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-color: var(--bg-color); /* Nền đặc để che khuất hoàn toàn MainMenu */
+    background-color: var(--color-background);
     align-items: center;
     justify-content: center;
+    padding: 12px;
 }
 
-/* Các cục màu trang trí Background */
-.ambient-bg {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-}
-.ambient-blob {
-    position: absolute;
-    border-radius: 500px;
-}
-
-.header {
-    align-items: center;
-    margin-bottom: 48px;
-}
-
-.header-title {
-    font-size: 48px;
-    -unity-font-style: bold-and-italic;
-    color: var(--primary);
-    rotate: -1deg;
-    text-transform: uppercase;
-}
-
-.header-line {
-    height: 8px;
-    width: 128px;
-    background-color: var(--primary-container);
-    border-radius: 4px;
-    margin-top: 8px;
-}
-
-/* Lưới Settings */
-.settings-grid {
+.settings-container {
     flex-direction: row;
-    width: 100%;
-    max-width: 1200px;
-    margin-bottom: 64px;
-}
-
-.side-buddy {
-    width: 25%;
-    align-items: center;
-    justify-content: center;
-}
-
-.buddy-container {
-    width: 200px;
-    height: 200px;
-    border-radius: 32px;
-    border-width: 4px;
-    border-color: white;
-    background-color: white;
-    overflow: hidden; /* Cắt phần ảnh thừa ra khỏi viền bo góc */
-}
-
-.buddy-container-large {
-    width: 224px;
-    height: 224px;
-}
-
-.buddy-img {
     width: 100%;
     height: 100%;
 }
 
-.buddy-badge {
-    position: absolute;
-    bottom: -16px;
-    background-color: rgba(255,255,255,0.9);
-    padding: 4px 16px;
-    border-radius: 16px;
-    border-width: 1px;
-    border-color: white;
+.settings-sidebar {
+    width: 300px;
+    height: 100%;
+    margin-right: 24px;
+    flex-shrink: 0;
 }
 
-.buddy-badge-text {
-    font-size: 14px;
-    -unity-font-style: bold;
-    color: var(--primary);
-}
-
-.buddy-badge-right {
-    background-color: var(--secondary-container);
-    right: 0;
-}
-
-.buddy-badge-text-right {
-    color: var(--on-secondary-container);
-}
-
-.center-controls {
-    width: 50%;
-}
-
-.section-title-container {
-    flex-direction: row;
-    align-items: center;
-    margin-bottom: 24px;
-}
-
-.section-title {
-    font-size: 32px;
-    -unity-font-style: bold;
-    color: var(--on-surface-variant);
-    margin-left: 16px;
-}
-
-.slider-row {
-    flex-direction: row;
-    align-items: center;
-    margin-bottom: 24px;
-}
-
-.slider-label {
-    font-size: 14px;
-    -unity-font-style: bold;
-    color: var(--outline);
-    width: 96px;
-}
-
-.slider-track {
+.settings-canvas {
     flex-grow: 1;
-    height: 24px;
-    background-color: var(--surface-container);
-    border-radius: 12px;
+    height: 100%;
 }
 
-.slider-fill-music {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 75%;
-    background-color: var(--primary-container);
-    border-radius: 12px;
+.tab-content {
+    flex-direction: column;
+    flex-grow: 1;
 }
 
-.slider-fill-sfx {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 50%;
-    background-color: var(--tertiary-container);
-    border-radius: 12px;
+.settings-section {
+    background-color: var(--color-surface-container-low);
+    border-width: 2px;
+    border-color: var(--color-surface-container-highest);
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 24px;
 }
 
-.slider-thumb {
-    position: absolute;
-    top: 50%;
-    translate: -50% -50%;
-    width: 40px; height: 40px;
-    background-color: white;
-    border-radius: 20px;
-    border-width: 4px;
+.settings-section-title-container {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 20px;
 }
-.slider-thumb-music { left: 75%; border-color: var(--primary-container); }
-.slider-thumb-sfx { left: 50%; border-color: var(--tertiary-container); }
 
-.graphics-grid {
+.settings-section-title {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: var(--color-on-surface-variant);
+    margin-left: 10px;
+}
+
+.setting-row {
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
 }
 
-.graphics-btn {
-    width: 48%;
-    padding: 16px;
+.setting-row:last-child {
+    margin-bottom: 0;
+}
+
+.setting-label-col {
+    flex-direction: column;
+    flex-grow: 1;
+    margin-right: 16px;
+}
+
+.setting-label {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: var(--color-on-surface);
+}
+
+.setting-desc {
+    font-size: 13px;
+    color: var(--color-on-surface-variant);
+    white-space: normal;
+}
+
+/* Gummy Toggle Switch */
+.gummy-toggle {
+    width: 56px;
+    height: 32px;
+    border-radius: 16px;
+    background-color: var(--color-surface-variant);
+    border-width: 2px;
+    border-color: var(--color-outline-variant);
+    flex-direction: row;
+    align-items: center;
+    padding: 2px;
+    transition: background-color 0.1s, border-color 0.1s;
+}
+
+.gummy-toggle-knob {
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: var(--color-on-surface-variant);
+    transition: translate 0.1s, background-color 0.1s;
+}
+
+.gummy-toggle--checked {
+    background-color: var(--color-primary-container);
+    border-color: var(--color-secondary-container);
+}
+
+.gummy-toggle--checked .gummy-toggle-knob {
+    translate: 24px 0;
+    background-color: white;
+}
+
+/* UI Toolkit Dropdown styling */
+.gummy-dropdown {
+    width: 260px;
+}
+
+.gummy-dropdown .unity-popup-field__input {
+    background-color: var(--color-surface-bright);
+    border-width: 2px;
+    border-color: var(--color-outline-variant);
+    border-radius: 12px;
+    padding: 8px 16px;
+    color: var(--color-on-surface);
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.gummy-dropdown .unity-popup-field__input:hover {
+    background-color: var(--color-surface-container-lowest);
+}
+
+/* Slider styling */
+.gummy-slider-container {
+    flex-direction: row;
+    align-items: center;
+    width: 260px;
+}
+
+.gummy-slider {
+    flex-grow: 1;
+}
+
+.gummy-slider .unity-slider__input {
+    min-height: 24px;
+}
+
+.gummy-slider .unity-slider__tracker {
+    height: 12px;
+    background-color: var(--color-surface-container);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: var(--color-outline-variant);
+}
+
+.gummy-slider .unity-slider__dragger {
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: var(--color-primary-container);
+    border-width: 2px;
+    border-color: var(--color-secondary-container);
+    border-bottom-width: 4px;
+    margin-top: -6px;
+}
+
+.gummy-slider .unity-slider__dragger:hover {
+    background-color: #ffe16d;
+}
+
+.slider-value-badge {
+    background-color: var(--color-primary-fixed-dim);
+    color: var(--color-primary);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    -unity-font-style: bold;
+    margin-left: 10px;
+    min-width: 45px;
+    align-items: center;
+    justify-content: center;
+    -unity-text-align: middle-center;
+}
+
+/* Navigation Tabs inside Settings */
+.settings-nav-tabs {
+    flex-direction: column;
+}
+
+.settings-nav-tab {
+    margin-bottom: 10px;
+    padding: 12px 18px;
+    font-size: 16px;
+    align-items: flex-start;
+    justify-content: center;
+    -unity-text-align: middle-left;
+    border-radius: 16px;
+}
+
+.settings-nav-tab:hover {
+    background-color: var(--color-surface-variant);
+}
+
+.settings-nav-tab.active-tab {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+    border-bottom-color: var(--color-secondary);
+}
+
+/* Icon + text layout inside nav tabs */
+.settings-nav-tab-with-icon {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Back button with icon layout */
+.settings-back-btn {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* Save button with icon layout */
+.settings-save-btn {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Radio buttons container for Transmission Mode */
+.transmission-mode-container {
+    flex-direction: row;
+    background-color: var(--color-surface-container-high);
+    border-radius: 16px;
+    padding: 4px;
+    width: 260px;
+}
+
+.transmission-mode-btn {
+    flex-grow: 1;
+    -unity-text-align: middle-center;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    border-width: 0;
+    background-color: transparent;
+    color: var(--color-on-surface-variant);
+}
+
+.transmission-mode-btn.active-mode {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+    border-bottom-width: 2px;
+    border-bottom-color: var(--color-secondary-container);
+}
+
+/* Keybindings grid */
+.keybind-grid {
+    flex-direction: column;
+}
+
+.keybind-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-surface-bright);
+    border-width: 1px;
+    border-color: var(--color-outline-variant);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+}
+
+.keybind-row:last-child {
+    margin-bottom: 0;
+}
+
+.keybind-label {
+    font-size: 15px;
+    color: var(--color-on-surface);
+}
+
+.keybind-btn {
+    min-width: 80px;
+    height: 36px;
+    padding: 0 16px;
     border-radius: 8px;
     font-size: 14px;
     -unity-font-style: bold;
-    border-width: 2px;
-    background-color: var(--surface-container-highest);
-    color: var(--primary);
-    border-color: var(--primary-container);
 }
 
-.graphics-btn-inactive {
-    background-color: var(--surface-container-low);
-    color: var(--outline);
-    border-color: transparent;
+/* ===================== MATERIAL SYMBOLS ICON STYLES ===================== */
+
+.icon-arrow-back {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/arrow_back.svg');
+}
+.icon-settings {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/settings.svg');
+}
+.icon-volume-up {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/volume_up.svg');
+}
+.icon-monitor {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/monitor.svg');
+}
+.icon-videogame-asset {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/videogame_asset.svg');
+}
+.icon-language {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/language.svg');
+}
+.icon-save {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/save.svg');
+}
+.icon-restart-alt {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/restart_alt.svg');
+}
+.icon-graphic-eq {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/graphic_eq.svg');
+}
+.icon-music-note {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/music_note.svg');
+}
+.icon-notifications-active {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/notifications_active.svg');
+}
+.icon-mic {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/mic.svg');
+}
+.icon-keyboard {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/keyboard.svg');
+}
+.icon-speaker {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/speaker.svg');
+}
+.icon-desktop-windows {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/desktop_windows.svg');
+}
+.icon-mouse {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/mouse.svg');
+}
+.icon-public {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/public.svg');
+}
+.icon-arrow-drop-down {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/arrow_drop_down.svg');
 }
 
-/* Corner Pills */
-.bottom-left-pill {
-    position: absolute;
-    bottom: 32px; left: 32px;
-    flex-direction: row;
-    align-items: center;
-    padding: 8px 24px;
-    border-radius: 24px;
-}
-
-.pulse-dot {
-    width: 8px; height: 8px;
-    background-color: var(--primary);
-    border-radius: 4px;
-    margin-right: 8px;
-}
-
-.bottom-right-pill {
-    position: absolute;
-    bottom: 32px; right: 32px;
-    flex-direction: row;
-    align-items: center;
-    background-color: rgba(255,255,255,0.6);
-    padding: 12px 24px;
-    border-radius: 16px;
-    border-width: 4px;
-    border-color: rgba(255,255,255,0.8);
-    rotate: -1deg;
-}
-
-/* Tái sử dụng class icon để chờ người dùng nạp Font Asset */
-.material-icon {
-    font-size: 32px;
-}
-
-.icon-primary { color: var(--primary); }
-.icon-tertiary { color: var(--tertiary); }
-.icon-white { color: white; font-size: 36px; }
-
-.version-text { color: var(--outline-variant); }
-.gem-text { color: var(--primary); }

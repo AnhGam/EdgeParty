@@ -90,11 +90,18 @@ namespace EdgeParty.Gameplay.Character
                 if (_controller == null) return; 
             }
 
+            // Load keybinds from PlayerPrefs
+            string forwardKey = PlayerPrefs.GetString("KeybindForward", "W");
+            string backwardKey = PlayerPrefs.GetString("KeybindBackward", "S");
+            string leftKey = PlayerPrefs.GetString("KeybindLeft", "A");
+            string rightKey = PlayerPrefs.GetString("KeybindRight", "D");
+            string jumpKey = PlayerPrefs.GetString("KeybindJump", "Space");
+
             Vector2 input = Vector2.zero;
-            if (keyboard.wKey.isPressed) input.y += 1;
-            if (keyboard.sKey.isPressed) input.y -= 1;
-            if (keyboard.aKey.isPressed) input.x -= 1;
-            if (keyboard.dKey.isPressed) input.x += 1;
+            if (IsKeyPressed(forwardKey)) input.y += 1;
+            if (IsKeyPressed(backwardKey)) input.y -= 1;
+            if (IsKeyPressed(leftKey)) input.x -= 1;
+            if (IsKeyPressed(rightKey)) input.x += 1;
 
             bool isRunning = keyboard.leftShiftKey.isPressed;
             Vector3 worldMoveDir = GetCameraRelativeDirection(input);
@@ -104,7 +111,7 @@ namespace EdgeParty.Gameplay.Character
             if (isOffline)
             {
                 _controller.OnInputReceived_Server(worldMoveDir, isRunning);
-                if (keyboard.spaceKey.wasPressedThisFrame) _controller.OnJumpTriggered_Server(worldMoveDir);
+                if (WasKeyPressedThisFrame(jumpKey)) _controller.OnJumpTriggered_Server(worldMoveDir);
                 if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) _controller.OnDashTriggered_Server();
                 if (isAttackPressed) _controller.OnAttackTriggered_Server();
                 if (keyboard.eKey.wasPressedThisFrame) _controller.OnGrabTriggered_Server();
@@ -115,12 +122,51 @@ namespace EdgeParty.Gameplay.Character
                 SubmitInputServerRpc(worldMoveDir, isRunning);
 
                 // Individual triggers to ensure no frames are missed
-                if (keyboard.spaceKey.wasPressedThisFrame) TriggerJumpServerRpc(worldMoveDir);
+                if (WasKeyPressedThisFrame(jumpKey)) TriggerJumpServerRpc(worldMoveDir);
                 
                 if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) TriggerDashServerRpc();
                 if (isAttackPressed) TriggerAttackServerRpc();
                 if (keyboard.eKey.wasPressedThisFrame) TriggerGrabServerRpc();
             }
+        }
+
+        private string MapKeyCodeToKeyName(string keyName)
+        {
+            string mappedName = keyName.Trim();
+            if (mappedName.StartsWith("Alpha", System.StringComparison.OrdinalIgnoreCase) && mappedName.Length == 6 && char.IsDigit(mappedName[5]))
+            {
+                return "Digit" + mappedName[5];
+            }
+            if (mappedName.Equals("LeftControl", System.StringComparison.OrdinalIgnoreCase)) return "LeftCtrl";
+            if (mappedName.Equals("RightControl", System.StringComparison.OrdinalIgnoreCase)) return "RightCtrl";
+            if (mappedName.Equals("Space", System.StringComparison.OrdinalIgnoreCase)) return "Space";
+            return mappedName;
+        }
+
+        private bool IsKeyPressed(string keyName)
+        {
+            if (Keyboard.current == null) return false;
+            
+            string mappedName = MapKeyCodeToKeyName(keyName);
+            
+            if (System.Enum.TryParse(mappedName, true, out Key resultKey))
+            {
+                return Keyboard.current[resultKey].isPressed;
+            }
+            return false;
+        }
+
+        private bool WasKeyPressedThisFrame(string keyName)
+        {
+            if (Keyboard.current == null) return false;
+            
+            string mappedName = MapKeyCodeToKeyName(keyName);
+
+            if (System.Enum.TryParse(mappedName, true, out Key resultKey))
+            {
+                return Keyboard.current[resultKey].wasPressedThisFrame;
+            }
+            return false;
         }
 
         private Vector3 GetCameraRelativeDirection(Vector2 input)
