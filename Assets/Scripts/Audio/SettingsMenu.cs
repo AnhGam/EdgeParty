@@ -33,7 +33,6 @@ public class SettingsMenu : MonoBehaviour
     private VisualElement _root;
     private string _activeTab = "audio";
 
-    // Rebinding state
     private string _rebindingActionName = null;
     private Button _rebindingButton = null;
 
@@ -43,10 +42,7 @@ public class SettingsMenu : MonoBehaviour
     // Initial values for tracking unsaved changes
     private Dictionary<string, object> _initialValues = new Dictionary<string, object>();
 
-    // Resolutions list
     private Resolution[] _resolutions;
-
-    // ===================== LIFECYCLE =====================
 
     private void Awake()
     {
@@ -90,20 +86,16 @@ public class SettingsMenu : MonoBehaviour
         }
     }
 
-    // ===================== UI INITIALIZATION & BINDING =====================
-
     public void InitializeWithRoot(VisualElement root)
     {
         if (root == null) return;
         _root = root;
 
-        // Bind Sidebar Tab Buttons
         BindTabButton("TabAudio", "audio");
         BindTabButton("TabGraphics", "graphics");
         BindTabButton("TabControls", "controls");
         BindTabButton("TabNetwork", "network");
 
-        // Bind Action Buttons
         var btnBack = _root.Q<Button>("BtnBack");
         if (btnBack != null)
         {
@@ -125,15 +117,12 @@ public class SettingsMenu : MonoBehaviour
             btnSaveChanges.clicked += SaveChanges;
         }
 
-        // Bind Sliders and their Badge Labels
         BindSlider("SliderMaster", "LabelMasterValue", "MasterVolume", 80, "%");
         BindSlider("SliderMusic", "LabelMusicValue", "MusicVolume", 65, "%");
         BindSlider("SliderSFX", "LabelSFXValue", "SFXVolume", 100, "%");
         BindSlider("SliderFPSLimit", "LabelFPSLimitValue", "FPSLimit", 144, " FPS");
         BindSlider("SliderSensitivityX", "LabelSensitivityXValue", "CameraSensitivityX", 50, "");
         BindSlider("SliderSensitivityY", "LabelSensitivityYValue", "CameraSensitivityY", 50, "");
-
-        // Bind Custom Toggles (VisualElements)
         BindCustomToggle("ToggleVoiceChat", "VoiceChatEnabled", true);
         BindCustomToggle("ToggleMuteUnfocused", "MuteUnfocused", false);
         BindCustomToggle("ToggleVSync", "VSyncEnabled", true);
@@ -151,7 +140,6 @@ public class SettingsMenu : MonoBehaviour
             btnModeOpenMic.clicked += () => SetTransmissionMode(false);
         }
 
-        // Setup and Populate DropdownFields
         SetupDropdowns();
 
         // Bind Keybinding buttons
@@ -410,8 +398,6 @@ public class SettingsMenu : MonoBehaviour
         }
     }
 
-    // ===================== REBINDING CONTROLS LOGIC =====================
-
     private void StartRebinding(string actionName, Button btn)
     {
         if (_rebindingActionName != null) return; // Already rebinding
@@ -448,8 +434,6 @@ public class SettingsMenu : MonoBehaviour
             e.Use();
         }
     }
-
-    // ===================== TAB NAVIGATION =====================
 
     public void SwitchTab(string tabId)
     {
@@ -536,8 +520,6 @@ public class SettingsMenu : MonoBehaviour
             }
         }
     }
-
-    // ===================== SAVE, LOAD, RESET DEFAULTS =====================
 
     private void LoadUISettingsFromPrefs()
     {

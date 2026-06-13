@@ -10,6 +10,18 @@ namespace EdgeParty.UI
     [RequireComponent(typeof(UIDocument))]
     public class StitchUIController : MonoBehaviour
     {
+        public static StitchUIController Instance { get; private set; }
+
+        private void Awake()
+        {
+            Instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
         private UIDocument _uiDocument;
         private VisualElement _root;
 
@@ -89,13 +101,11 @@ namespace EdgeParty.UI
             _uiDocument = GetComponent<UIDocument>();
             if (_uiDocument == null) return;
 
-            // Register AuthService events
             AuthService.Instance.OnSignInSuccess += HandleSignInSuccess;
             AuthService.Instance.OnSignInFailed += HandleSignInFailed;
             AuthService.Instance.OnSignUpSuccess += HandleSignUpSuccess;
             AuthService.Instance.OnSignUpFailed += HandleSignUpFailed;
 
-            // Register Social Events
             if (FriendLobbyService.Instance != null)
             {
                 FriendLobbyService.Instance.OnFriendsUpdated += HandleSocialUpdated;
@@ -105,15 +115,13 @@ namespace EdgeParty.UI
                 FriendLobbyService.Instance.OnLobbyLeft += HandleLobbyLeft;
             }
 
-            // Ensure MatchmakingManager exists in the scene
-            var matchmakingMgr = FindObjectOfType<EdgeParty.ConnectionManagement.MatchmakingManager>();
+            var matchmakingMgr = FindFirstObjectByType<EdgeParty.ConnectionManagement.MatchmakingManager>();
             if (matchmakingMgr == null)
             {
                 var go = new GameObject("MatchmakingManager");
                 matchmakingMgr = go.AddComponent<EdgeParty.ConnectionManagement.MatchmakingManager>();
             }
 
-            // Register Matchmaking Events
             if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
             {
                 EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingStarted += HandleMatchmakingStarted;
@@ -202,8 +210,6 @@ namespace EdgeParty.UI
             ShowErrorBanner(errorMessage);
         }
 
-        // ─── Screen Transition Methods ───────────────────────────────────
-
         private void EnsureLockerInstance()
         {
             if (_lockerInstance == null)
@@ -252,7 +258,6 @@ namespace EdgeParty.UI
             BindHomeEvents();
             ApplyDataBindings();
 
-            // Auto initialize Social once signed in
             _ = FriendLobbyService.Instance.InitializeSocialAsync();
 
             // Setup character preview for home
@@ -551,7 +556,6 @@ namespace EdgeParty.UI
             if (errorBanner != null) errorBanner.style.display = DisplayStyle.None;
             if (errorBannerOtp != null) errorBannerOtp.style.display = DisplayStyle.None;
 
-            // Ensure correct default visibility on load
             if (forgotEmailCard != null) forgotEmailCard.style.display = DisplayStyle.Flex;
             if (otpInnerCard != null) otpInnerCard.style.display = DisplayStyle.None;
 
@@ -760,7 +764,6 @@ namespace EdgeParty.UI
                 RegisterHoverAndClick(btnBuy4, () => BuyItem("neck_1", "Gold Necklace", 500));
             }
 
-            // Bind eye preview buttons
             var btnPreviewFeatured = _root.Q<Button>("btn-preview-featured");
             var btnPreview1 = _root.Q<Button>("btn-preview-item-1");
             var btnPreview2 = _root.Q<Button>("btn-preview-item-2");
@@ -788,7 +791,6 @@ namespace EdgeParty.UI
                     SetShopItemTexture("item-4-thumb", customizationData.necklaces[1].icon);
             }
 
-            // Shop Filters
             var btnAll = _root.Q<Button>("btn-filter-all");
             var btnHats = _root.Q<Button>("btn-filter-hats");
             var btnGlasses = _root.Q<Button>("btn-filter-glasses");
@@ -929,7 +931,6 @@ namespace EdgeParty.UI
                 });
             }
 
-            // Round matchmaking drawer add friend text field
             var matchmakingAddInput = _root.Q<TextField>("add-friend-input");
             if (matchmakingAddInput != null)
             {
@@ -1175,9 +1176,17 @@ namespace EdgeParty.UI
             ShowMatchmakingErrorPopup(message);
         }
 
-        private void ShowMatchmakingErrorPopup(string message)
+        public void ShowErrorPopup(string title, string message)
         {
-            var card = CreateModalOverlay("Lỗi Kết Nối", null);
+            if (_root == null) return;
+
+            var existing = _root.Q<VisualElement>("modal-overlay");
+            if (existing != null)
+            {
+                _root.Remove(existing);
+            }
+
+            var card = CreateModalOverlay(title, null);
 
             Label infoText = new Label(message);
             infoText.AddToClassList("font-body");
@@ -1211,6 +1220,11 @@ namespace EdgeParty.UI
             };
 
             card.Add(okBtn);
+        }
+
+        private void ShowMatchmakingErrorPopup(string message)
+        {
+            ShowErrorPopup("Lỗi Kết Nối", message);
         }
 
         private System.Collections.IEnumerator UpdateMatchmakingTimerRoutine()
@@ -1501,6 +1515,7 @@ namespace EdgeParty.UI
             else
             {
                 Debug.LogWarning($"Insufficient coins to buy {itemName}! Have: {coins}, Need: {price}");
+                ShowErrorPopup("Không Đủ Xu", $"Bạn không có đủ xu để mua {itemName}.\nBạn cần thêm {price - coins} xu.");
             }
         }
 

@@ -10,7 +10,6 @@ namespace EdgeParty.Gameplay.Character
     /// </summary>
     public class PlayerStats : NetworkBehaviour
     {
-        // ─── Tuneable defaults ───────────────────────────────────────────
         [Header("Health")]
         public float maxHealth = 100f;
         [Tooltip("Seconds before HP starts recovering after last hit")]
@@ -45,34 +44,28 @@ namespace EdgeParty.Gameplay.Character
         [Tooltip("Extra upward ratio of knockback")]
         public float knockbackUpRatio = 0.4f;
 
-        // ─── Networked values ─────────────────────────────────────────────
         public NetworkVariable<float> CurrentHealth  = new NetworkVariable<float>(100f);
         public NetworkVariable<float> CurrentStamina = new NetworkVariable<float>(100f);
         public NetworkVariable<bool>  IsDead         = new NetworkVariable<bool>(false);
 
-        // ─── Local events (UI, effects, sounds) ──────────────────────────
-        public event Action<float, float> OnHealthChanged;    // (current, max)
-        public event Action<float, float> OnStaminaChanged;   // (current, max)
-        public event Action<float, Vector3> OnHitReceived;    // (damage, hitDir)
+        public event Action<float, float> OnHealthChanged;
+        public event Action<float, float> OnStaminaChanged;
+        public event Action<float, Vector3> OnHitReceived;
         public event Action OnDied;
         public event Action OnRespawned;
 
-        // ─── Private ──────────────────────────────────────────────────────
         private CharacterMotor _motor;
         private float _regenHealthTimer;
         private float _regenStaminaTimer;
 
-        // ─── Properties ───────────────────────────────────────────────────
         public bool  IsAlive    => !IsDead.Value;
         public float HealthPct  => CurrentHealth.Value  / maxHealth;
         public float StaminaPct => CurrentStamina.Value / maxStamina;
 
-        // ─── Stamina helpers (called by other systems) ────────────────────
         public bool HasStaminaForAttack => CurrentStamina.Value >= attackStaminaCost;
         public bool HasStaminaForDash   => CurrentStamina.Value >= dashStaminaCost;
         public bool HasStaminaToSprint  => CurrentStamina.Value > 0f;
 
-        // ─────────────────────────────────────────────────────────────────
         private void Awake()
         {
             _motor = GetComponentInParent<CharacterMotor>();
@@ -81,7 +74,6 @@ namespace EdgeParty.Gameplay.Character
 
         public override void OnNetworkSpawn()
         {
-            // Initialise on server
             if (IsServer)
             {
                 CurrentHealth.Value  = maxHealth;
@@ -89,7 +81,6 @@ namespace EdgeParty.Gameplay.Character
                 IsDead.Value         = false;
             }
 
-            // Subscribe on everyone so UI/effects work on clients too
             CurrentHealth.OnValueChanged  += (_, v) => OnHealthChanged?.Invoke(v, maxHealth);
             CurrentStamina.OnValueChanged += (_, v) => OnStaminaChanged?.Invoke(v, maxStamina);
             IsDead.OnValueChanged         += (prev, now) =>
@@ -99,7 +90,6 @@ namespace EdgeParty.Gameplay.Character
             };
         }
 
-        // ─── Update (server-side logic only) ─────────────────────────────
         private void Update()
         {
             if (!IsServer) return;
@@ -107,7 +97,6 @@ namespace EdgeParty.Gameplay.Character
 
             float dt = Time.deltaTime;
 
-            // Fall-off-map detection
             if (_motor != null && _motor.pelvisRigidbody != null)
             {
                 if (_motor.pelvisRigidbody.position.y < fallDeathY)
@@ -117,14 +106,6 @@ namespace EdgeParty.Gameplay.Character
                 }
             }
 
-            // Apply speed multiplier to motor
-            if (_motor != null)
-            {
-                // We store the base values once; scale is applied live
-                // (PlayerController still controls actual force, we expose the multiplier)
-            }
-
-            // Health regen
             if (healthRegenRate > 0f)
             {
                 _regenHealthTimer -= dt;
@@ -134,15 +115,12 @@ namespace EdgeParty.Gameplay.Character
                 }
             }
 
-            // Stamina regen
             _regenStaminaTimer -= dt;
             if (_regenStaminaTimer <= 0f && CurrentStamina.Value < maxStamina)
             {
                 CurrentStamina.Value = Mathf.Min(maxStamina, CurrentStamina.Value + staminaRegenRate * dt);
             }
         }
-
-        // ─── Public API (Server-only writes) ─────────────────────────────
 
         /// <summary>Called by PunchHitbox on the server when this player is struck.</summary>
         public void TakeDamage(float damage, Vector3 hitDirection, Rigidbody pelvisRb = null)
@@ -152,14 +130,12 @@ namespace EdgeParty.Gameplay.Character
             CurrentHealth.Value = Mathf.Max(0f, CurrentHealth.Value - damage);
             _regenHealthTimer   = healthRegenDelay;
 
-            // Knockback
             if (pelvisRb != null)
             {
                 Vector3 kb = hitDirection.normalized + Vector3.up * knockbackUpRatio;
                 pelvisRb.AddForce(kb.normalized * knockbackForce, ForceMode.Impulse);
             }
 
-            // Raise client-side event RPC so VFX/sound can play everywhere
             NotifyHitClientRpc(damage, hitDirection);
 
             if (CurrentHealth.Value <= 0f)
@@ -202,7 +178,6 @@ namespace EdgeParty.Gameplay.Character
             CurrentStamina.Value = maxStamina;
             IsDead.Value         = false;
 
-            // Teleport pelvis if available
             if (_motor != null && _motor.pelvisRigidbody != null)
             {
                 _motor.pelvisRigidbody.position = position;
@@ -220,7 +195,6 @@ namespace EdgeParty.Gameplay.Character
         {
             if (!IsServer || IsDead.Value) return;
             IsDead.Value = true;
-            // Teleport pelvis back to a safe height so it doesn't keep falling
             if (_motor != null && _motor.pelvisRigidbody != null)
             {
                 var rb = _motor.pelvisRigidbody;
@@ -229,7 +203,6 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
-        // ─── Client RPCs ──────────────────────────────────────────────────
         [ClientRpc]
         private void NotifyHitClientRpc(float damage, Vector3 hitDir)
         {

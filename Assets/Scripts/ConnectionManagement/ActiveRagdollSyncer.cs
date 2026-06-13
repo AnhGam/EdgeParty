@@ -59,7 +59,6 @@ namespace EdgeParty.ConnectionManagement
         private Rigidbody[] _rigidbodies;
         private Transform[] _bones;
         
-        // Target state for interpolation on remote clients
         private RagdollFrameState _targetState;
         private RagdollFrameState _prevState;
         

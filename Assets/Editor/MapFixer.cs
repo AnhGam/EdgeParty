@@ -14,8 +14,6 @@ using UnityEngine;
 /// </summary>
 public static class MapFixer
 {
-    // ─── Name matching ─────────────────────────────────────────────────────────
-
     static readonly string[] GRASS_NAMES  = { "ForestGrass01", "ForestGrass02" };
     static readonly string[] TREE_PREFIXES = {
         "ForestTreePineTall",  "ForestTreePineShort",
@@ -25,8 +23,6 @@ public static class MapFixer
     };
     static readonly string[] LADDER_NAMES  = { "ForestLadder", "ForestLadderExtra" };
     static readonly string[] COIN_NAMES    = { "ForestCoin" };
-
-    // ─── Entry Point ───────────────────────────────────────────────────────────
 
     [MenuItem("EdgeParty/Map/Fix Map Colliders")]
     public static void FixMapColliders()
@@ -40,7 +36,6 @@ public static class MapFixer
         {
             string n = go.name;
 
-            // ── Grass: remove all mesh and box colliders ──────────────────────
             if (MatchesAny(n, GRASS_NAMES))
             {
                 var cols = go.GetComponents<Collider>();
@@ -52,7 +47,6 @@ public static class MapFixer
                 continue;
             }
 
-            // ── Trees: replace MeshCollider with CapsuleCollider ──────────────
             if (StartsWithAny(n, TREE_PREFIXES))
             {
                 var meshCols = go.GetComponents<MeshCollider>();
@@ -85,7 +79,6 @@ public static class MapFixer
                 continue;
             }
 
-            // ── Ladders: replace MeshCollider with BoxCollider and tilt ───────
             if (MatchesAny(n, LADDER_NAMES))
             {
                 var meshCols = go.GetComponents<MeshCollider>();
@@ -114,7 +107,6 @@ public static class MapFixer
                 continue;
             }
 
-            // ── Coins: replace MeshCollider with SphereCollider trigger and setup script
             if (MatchesAny(n, COIN_NAMES))
             {
                 var meshCol = go.GetComponent<MeshCollider>();
@@ -162,8 +154,6 @@ public static class MapFixer
                   $"  Ladders fixed (BoxCollider + Tilt): {ladderFixed}\n" +
                   $"  Coin triggers configured: {coinFixed}");
     }
-
-    // ─── Helpers ───────────────────────────────────────────────────────────────
 
     private static string CleanName(string name)
     {

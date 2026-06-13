@@ -13,6 +13,7 @@ public class HUDController : MonoBehaviour
     
     private Label redScoreLabel;
     private Label blueScoreLabel;
+    private Label matchTimerLabel;
     
     private Button soundButton;
     private Button settingsButton;
@@ -36,7 +37,6 @@ public class HUDController : MonoBehaviour
 
     private void Start()
     {
-        // Load settings and initialize volumes
         float musicVol = PlayerPrefs.GetFloat("MusicVolume", 1f);
         float sfxVol = PlayerPrefs.GetFloat("SFXVolume", 1f);
 
@@ -54,11 +54,10 @@ public class HUDController : MonoBehaviour
         root = uiDocument.rootVisualElement;
         if (root == null) return;
         
-        // Score labels
         redScoreLabel = root.Q<Label>("RedScore");
         blueScoreLabel = root.Q<Label>("BlueScore");
+        matchTimerLabel = root.Q<Label>("MatchTimer");
         
-        // Buttons
         soundButton = root.Q<Button>("SoundButton");
         settingsButton = root.Q<Button>("SettingsButton");
         exitButton = root.Q<Button>("ExitButton");
@@ -70,7 +69,6 @@ public class HUDController : MonoBehaviour
         settingsButton?.RegisterCallback<ClickEvent>(evt => OpenSettings());
         exitButton?.RegisterCallback<ClickEvent>(evt => QuitGame());
 
-        // Settings panel setup
         settingsPanel = root.Q<VisualElement>("SettingsPanel");
         if (settingsPanel != null)
         {
@@ -90,23 +88,27 @@ public class HUDController : MonoBehaviour
             settingsMenu.OnCloseSettingsEvent += SyncCursorOnClose;
         }
         
-        // Initial setup
         UpdateInstructionBar("BOOST", new string[] { "CTRL", "J", "F" });
         SetCursorState(false);
     }
 
     void Update()
     {
-        // Update score from ForestGameManager
         if (ForestGameManager.Instance != null)
         {
             if (redScoreLabel != null)
                 redScoreLabel.text = ForestGameManager.Instance.Team1Score.Value.ToString("00");
             if (blueScoreLabel != null)
                 blueScoreLabel.text = ForestGameManager.Instance.Team2Score.Value.ToString("00");
+            if (matchTimerLabel != null)
+            {
+                float timeRemaining = ForestGameManager.Instance.MatchTimeRemaining.Value;
+                int minutes = Mathf.FloorToInt(timeRemaining / 60f);
+                int seconds = Mathf.FloorToInt(timeRemaining % 60f);
+                matchTimerLabel.text = $"{minutes:00}:{seconds:00}";
+            }
         }
 
-        // Toggle settings on Escape key
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             if (settingsMenu != null)
@@ -147,7 +149,6 @@ public class HUDController : MonoBehaviour
         {
             if (pingFpsCounter == null && root != null)
             {
-                // Create container dynamically
                 pingFpsCounter = new VisualElement();
                 pingFpsCounter.AddToClassList("ping-fps-counter");
                 
@@ -162,7 +163,6 @@ public class HUDController : MonoBehaviour
             {
                 pingFpsCounter.style.display = DisplayStyle.Flex;
 
-                // Calculate FPS
                 fpsTimer += Time.unscaledDeltaTime;
                 fpsCount++;
                 if (fpsTimer >= 0.5f)
@@ -172,7 +172,6 @@ public class HUDController : MonoBehaviour
                     fpsCount = 0;
                 }
 
-                // Get RTT (Ping)
                 int pingVal = 0;
                 if (Unity.Netcode.NetworkManager.Singleton != null && 
                     Unity.Netcode.NetworkManager.Singleton.IsClient && 
@@ -306,8 +305,6 @@ public class HUDController : MonoBehaviour
 
         UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
     }
-
-    // ─── Custom Slider Interaction Helpers ─────────────────────────────────
 
     private void RegisterSliderEvents(VisualElement track, VisualElement fill, VisualElement thumb, string prefKey, System.Action<float> onVolumeChanged)
     {

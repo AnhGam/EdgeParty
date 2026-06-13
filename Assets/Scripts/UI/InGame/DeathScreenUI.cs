@@ -3,14 +3,11 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using EdgeParty.Gameplay.Character;
 
-/// <summary>
-/// Displays a death/spectating overlay with a 10-second countdown when the local player dies.
-/// Attach to the same GameObject as HUDController (which has the UIDocument for MainHUD.uxml).
-/// </summary>
 public class DeathScreenUI : MonoBehaviour
 {
     [Header("Settings")]
-    public float respawnCountdown = 10f;
+    [Tooltip("Phải khớp với PlayerController.autoRespawnDelay để hiển thị đúng")]
+    public float respawnCountdown = 5f;
 
     private UIDocument _uiDoc;
     private VisualElement _deathOverlay;
@@ -31,10 +28,8 @@ public class DeathScreenUI : MonoBehaviour
         _spectatingLabel = root.Q<Label>("SpectatingLabel");
         _countdownLabel  = root.Q<Label>("CountdownLabel");
 
-        // Start hidden
         SetOverlayVisible(false);
 
-        // Subscribe once local player spawns
         StartCoroutine(WaitForLocalPlayer());
     }
 
@@ -61,10 +56,10 @@ public class DeathScreenUI : MonoBehaviour
     {
         SetOverlayVisible(true);
         if (_spectatingLabel != null)
-            _spectatingLabel.text = "SPECTATING";
+            _spectatingLabel.text = "ĐANG NẰM...";
 
         if (_countdownCoroutine != null) StopCoroutine(_countdownCoroutine);
-        _countdownCoroutine = StartCoroutine(RunCountdown());
+        _countdownCoroutine = StartCoroutine(RunDisplayCountdown());
     }
 
     private void OnRespawned()
@@ -77,37 +72,21 @@ public class DeathScreenUI : MonoBehaviour
         SetOverlayVisible(false);
     }
 
-    private IEnumerator RunCountdown()
+    private IEnumerator RunDisplayCountdown()
     {
         float remaining = respawnCountdown;
 
         while (remaining > 0f)
         {
             if (_countdownLabel != null)
-                _countdownLabel.text = $"Respawning in {Mathf.CeilToInt(remaining)}s";
+                _countdownLabel.text = $"Hồi lại sau {Mathf.CeilToInt(remaining)}s";
 
             yield return new WaitForSeconds(1f);
             remaining -= 1f;
         }
 
-        // Request respawn from server
-        if (_localPlayer != null && _localPlayer.stats != null)
-        {
-            // Use PlayerController to request respawn via server
-            RequestRespawnServerRpc_Via(_localPlayer);
-        }
-
-        SetOverlayVisible(false);
-    }
-
-    private void RequestRespawnServerRpc_Via(PlayerController pc)
-    {
-        // PlayerController handles SpawnByTeam on the server side.
-        // We trigger it by calling the RPC if available, else directly.
-        // Since PlayerController is a NetworkBehaviour, send respawn RPC.
-        // We'll rely on a simple approach: call stats.Respawn via the server.
-        // The cleanest path is asking PlayerController to call a server RPC.
-        pc.RequestRespawnRpc();
+        if (_countdownLabel != null)
+            _countdownLabel.text = "Đang hồi...";
     }
 
     private void SetOverlayVisible(bool visible)

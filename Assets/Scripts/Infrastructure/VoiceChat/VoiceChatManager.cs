@@ -21,6 +21,9 @@ namespace EdgeParty.Infrastructure.VoiceChat
 
         private bool _isInitialized = false;
         private HashSet<string> _activeSpeakers = new HashSet<string>();
+        private string _currentGameChannel = "";  // channel đang join trong game
+
+        public string CurrentGameChannel => _currentGameChannel;
 
         private void Awake()
         {
@@ -68,7 +71,6 @@ namespace EdgeParty.Infrastructure.VoiceChat
                     Debug.Log("[VoiceChat] UGS Initialized.");
                 }
 
-                // 2. Authenticate anonymously if not already signed in
                 if (!AuthenticationService.Instance.IsSignedIn)
                 {
                     await AuthenticationService.Instance.SignInAnonymouslyAsync();
@@ -77,18 +79,15 @@ namespace EdgeParty.Infrastructure.VoiceChat
 
                 string playerId = AuthenticationService.Instance.PlayerId;
 
-                // 3. Register our custom token provider BEFORE initializing Vivox
+                // Register our custom token provider BEFORE initializing Vivox
                 VivoxService.Instance.SetTokenProvider(new VivoxManualTokenProvider(playerId));
 
-                // 4. Initialize Vivox (server/domain/issuer already injected in step 1)
                 await VivoxService.Instance.InitializeAsync();
                 Debug.Log("[VoiceChat] Vivox Initialized.");
 
-                // 5. Subscribe to participant events
                 VivoxService.Instance.ParticipantAddedToChannel   += OnParticipantAdded;
                 VivoxService.Instance.ParticipantRemovedFromChannel += OnParticipantRemoved;
 
-                // 6. Login to Vivox
                 var loginOptions = new LoginOptions
                 {
                     DisplayName = playerId,
@@ -99,7 +98,6 @@ namespace EdgeParty.Infrastructure.VoiceChat
 
                 _isInitialized = true;
 
-                // 7. Join default positional channel
                 await JoinChannel(defaultChannelName);
             }
             catch (Exception e)
@@ -108,7 +106,38 @@ namespace EdgeParty.Infrastructure.VoiceChat
             }
         }
 
-        /// <summary>Join a positional (3D audio) Vivox channel.</summary>
+        public async Task JoinMatchChannel(string matchId)
+        {
+            if (!_isInitialized)
+            {
+                Debug.LogWarning("[VoiceChat] JoinMatchChannel called before initialized.");
+                return;
+            }
+
+            // Sanitize channel name: chỉ giữ [a-zA-Z0-9-_]
+            string sanitized = System.Text.RegularExpressions.Regex.Replace(matchId, @"[^a-zA-Z0-9\-_]", "-");
+            if (string.IsNullOrEmpty(sanitized)) sanitized = defaultChannelName;
+            // Giới hạn 200 ký tự (Vivox limit)
+            if (sanitized.Length > 200) sanitized = sanitized.Substring(0, 200);
+
+            // Rời channel cũ nếu đang join channel khác
+            if (!string.IsNullOrEmpty(_currentGameChannel) && _currentGameChannel != sanitized)
+            {
+                await LeaveCurrentGameChannel();
+            }
+
+            _currentGameChannel = sanitized;
+            await JoinChannel(sanitized);
+            Debug.Log($"[VoiceChat] Joined match channel: {sanitized} (from matchId: {matchId})");
+        }
+
+        public async Task LeaveCurrentGameChannel()
+        {
+            if (string.IsNullOrEmpty(_currentGameChannel)) return;
+            await LeaveChannel(_currentGameChannel);
+            _currentGameChannel = "";
+        }
+
         public async Task JoinChannel(string channelName)
         {
             if (!_isInitialized) return;
@@ -126,14 +155,12 @@ namespace EdgeParty.Infrastructure.VoiceChat
             }
         }
 
-        /// <summary>Leave a specific channel.</summary>
         public async Task LeaveChannel(string channelName)
         {
             if (!_isInitialized) return;
             await VivoxService.Instance.LeaveChannelAsync(channelName);
         }
 
-        /// <summary>Mute or unmute the local user's microphone.</summary>
         public void SetMute(bool mute)
         {
             if (!_isInitialized) return;
@@ -141,26 +168,21 @@ namespace EdgeParty.Infrastructure.VoiceChat
             else VivoxService.Instance.UnmuteInputDevice();
         }
 
-        /// <summary>Toggle mute.</summary>
         public void ToggleMute()
         {
             SetMute(!IsMuted);
         }
 
-        /// <summary>Whether the local user's mic is muted.</summary>
         public bool IsMuted => _isInitialized && VivoxService.Instance.IsInputDeviceMuted;
 
-        /// <summary>Whether voice chat is ready.</summary>
         public bool IsReady => _isInitialized;
 
-        /// <summary>Update the player's 3D position in a positional channel.</summary>
         public void UpdateParticipantPosition(GameObject participant, string channelName)
         {
             if (!_isInitialized || !VivoxService.Instance.IsLoggedIn) return;
             VivoxService.Instance.Set3DPosition(participant, channelName);
         }
 
-        /// <summary>Returns the set of player IDs currently speaking.</summary>
         public HashSet<string> GetActiveSpeakers() => _activeSpeakers;
 
         #region Vivox Event Handlers
@@ -170,7 +192,6 @@ namespace EdgeParty.Infrastructure.VoiceChat
             Debug.Log($"[VoiceChat] Participant joined: {participant.PlayerId}");
             OnParticipantJoined?.Invoke(participant.PlayerId);
 
-            // Subscribe to speech detection using a closure to capture the participant reference
             participant.ParticipantSpeechDetected += () => OnVivoxSpeechDetected(participant);
         }
 
@@ -183,7 +204,6 @@ namespace EdgeParty.Infrastructure.VoiceChat
 
         private void OnVivoxSpeechDetected(VivoxParticipant participant)
         {
-            // SpeechDetected toggles true/false as the participant starts/stops speaking
             bool isSpeaking = participant.SpeechDetected;
             if (isSpeaking) _activeSpeakers.Add(participant.PlayerId);
             else _activeSpeakers.Remove(participant.PlayerId);

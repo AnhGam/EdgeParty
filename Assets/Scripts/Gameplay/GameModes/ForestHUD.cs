@@ -37,7 +37,9 @@ public class ForestHUD : MonoBehaviour
         if (premiumHudPrefab != null)
         {
             _premiumHudInstance = Instantiate(premiumHudPrefab);
-            Debug.Log("[ForestHUD] Premium HUD instantiated successfully.");
+            _premiumHudInstance.AddComponent<DeathScreenUI>();
+            _premiumHudInstance.AddComponent<WinScreenUI>();
+            Debug.Log("[ForestHUD] Premium HUD instantiated successfully with DeathScreenUI and WinScreenUI.");
         }
         else
         {
@@ -48,7 +50,9 @@ public class ForestHUD : MonoBehaviour
             if (premiumHudPrefab != null)
             {
                 _premiumHudInstance = Instantiate(premiumHudPrefab);
-                Debug.Log("[ForestHUD] Premium HUD loaded from Resources and instantiated.");
+                _premiumHudInstance.AddComponent<DeathScreenUI>();
+                _premiumHudInstance.AddComponent<WinScreenUI>();
+                Debug.Log("[ForestHUD] Premium HUD loaded from Resources and instantiated with DeathScreenUI and WinScreenUI.");
             }
             else
             {

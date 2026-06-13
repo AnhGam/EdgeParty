@@ -61,10 +61,6 @@
     margin-bottom: 16px;
 }
 
-.setting-row:last-child {
-    margin-bottom: 0;
-}
-
 .setting-label-col {
     flex-direction: column;
     flex-grow: 1;
@@ -275,10 +271,6 @@
     border-radius: 12px;
     padding: 12px 20px;
     margin-bottom: 10px;
-}
-
-.keybind-row:last-child {
-    margin-bottom: 0;
 }
 
 .keybind-label {
