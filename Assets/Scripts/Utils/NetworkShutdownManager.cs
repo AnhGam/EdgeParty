@@ -21,7 +21,6 @@ namespace EdgeParty.Utils
 #if UNITY_EDITOR
         private void OnDisable()
         {
-            // In the editor, OnDisable on a scene object is called when Play Mode stops.
             if (!Application.isPlaying && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
                 Debug.Log("[NetworkShutdownManager] Shutting down NetworkManager due to Play Mode stop.");

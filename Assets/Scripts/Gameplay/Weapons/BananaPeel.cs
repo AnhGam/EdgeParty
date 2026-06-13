@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
 
@@ -28,7 +28,6 @@ namespace EdgeParty.Gameplay.Items
         {
             if (IsServer)
             {
-                // SFX đặt bẫy cho tất cả client
                 PlayPlaceSFXClientRpc(transform.position);
             }
         }
@@ -43,7 +42,6 @@ namespace EdgeParty.Gameplay.Items
             }
         }
 
-        // Dùng trigger collider (Is Trigger = true trên Collider của object này)
         private void OnTriggerEnter(Collider other)
         {
             if (!IsServer || _isTriggered) return;
@@ -51,19 +49,13 @@ namespace EdgeParty.Gameplay.Items
             var controller = other.GetComponentInParent<EdgeParty.Gameplay.Character.PlayerController>();
             if (controller == null) return;
 
-            // Không trap chính mình (tuỳ chọn — có thể bỏ comment để trap cả người đặt)
-            // if (controller.OwnerClientId == OwnerClientId) return;
-
             _isTriggered = true;
 
-            // Lấy Rigidbody của nạn nhân (pelvis)
             var victimRb = controller.pelvisRigidbody;
             ulong victimId = controller.GetComponent<NetworkObject>().NetworkObjectId;
 
-            // Trigger slide effect trên tất cả client
             TriggerSlideClientRpc(victimId, transform.position);
 
-            // Despawn bẫy
             if (IsSpawned) GetComponent<NetworkObject>().Despawn(true);
         }
 
@@ -76,11 +68,9 @@ namespace EdgeParty.Gameplay.Items
             var controller = targetNetObj.GetComponent<EdgeParty.Gameplay.Character.PlayerController>();
             if (controller == null) return;
 
-            // ── SFX ──
             if (slipSFX != null && AudioManager.Instance != null)
                 AudioManager.Instance.PlaySFX(slipSFX);
 
-            // ── VFX vệt trượt gắn vào nạn nhân ──
             GameObject trailVFX = null;
             if (slideTrailVFXPrefab != null)
             {
@@ -95,11 +85,9 @@ namespace EdgeParty.Gameplay.Items
         {
             var rb = target.pelvisRigidbody;
 
-            // ── Vô hiệu hoá input ──
             bool isOwner = target.IsOwner;
             if (isOwner) target.enabled = false;
 
-            // ── Áp lực trượt: phóng theo hướng đang đi với lực nhân thêm ──
             if (rb != null)
             {
                 Vector3 slideDir = rb.linearVelocity.sqrMagnitude > 0.1f
@@ -108,14 +96,12 @@ namespace EdgeParty.Gameplay.Items
 
                 rb.AddForce(slideDir * slideForceMultiplier, ForceMode.VelocityChange);
 
-                // Giảm ma sát trong khi trượt
                 var colliders = target.GetComponentsInChildren<Collider>();
                 PhysicsMaterial slippyMat = new PhysicsMaterial { dynamicFriction = 0f, staticFriction = 0f };
                 foreach (var col in colliders) col.material = slippyMat;
 
                 yield return new WaitForSeconds(slideDuration);
 
-                // Phục hồi ma sát mặc định
                 PhysicsMaterial defaultMat = new PhysicsMaterial { dynamicFriction = 0.6f, staticFriction = 0.6f };
                 foreach (var col in colliders) col.material = defaultMat;
             }
@@ -124,10 +110,8 @@ namespace EdgeParty.Gameplay.Items
                 yield return new WaitForSeconds(slideDuration);
             }
 
-            // ── Phục hồi input ──
             if (target != null && isOwner) target.enabled = true;
 
-            // ── Dọn VFX ──
             if (trailVFX != null) Destroy(trailVFX);
         }
 

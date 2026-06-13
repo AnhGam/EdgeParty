@@ -10,7 +10,6 @@ namespace EdgeParty.Gameplay.Character
     /// </summary>
     public class CharacterAnimationController : MonoBehaviour
     {
-        // ─── Inspector ────────────────────────────────────────────────────
         [Header("References")]
         public Animator ghostAnimator;
         public Transform ghostRoot;
@@ -49,7 +48,6 @@ namespace EdgeParty.Gameplay.Character
         public PunchHitbox rightFistHitbox;
         public PunchHitbox leftFistHitbox;
 
-        // ─── Public state ─────────────────────────────────────────────────
         public PlayerState CurrentState { get; private set; } = PlayerState.Idle;
         public bool IsPlayingOneShot { get; private set; }
         public bool IsGrabbing => CurrentState == PlayerState.Grab;
@@ -58,17 +56,14 @@ namespace EdgeParty.Gameplay.Character
         public bool CanAttack() => _attackCooldownTimer <= 0f && !_isDead;
         public bool CanDash() => _dashTimer <= 0f && !_isDead;
 
-        // ─── Private ──────────────────────────────────────────────────────
         private CharacterMotor _motor;
         private PlayerStats _stats;
 
-        // Locomotion
         private Vector3 _moveDir;
         private bool _isRunning;
         private string _activeBaseState;
         private bool _isDead;
 
-        // Attack state
         private bool _upperBodyActive;
         private string _currentAtkState;
         private bool _hitboxOpen;
@@ -80,7 +75,6 @@ namespace EdgeParty.Gameplay.Character
         private bool _nextAttackIsLeft;
         private RagdollBoneFollower[] _cachedFollowers;
 
-        // ─────────────────────────────────────────────────────────────────
         private void Awake()
         {
             FindReferences();
@@ -113,7 +107,6 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
-        // ─── Public input API ─────────────────────────────────────────────
         public void SetMovementInput(Vector3 moveDir, bool isRunning)
         {
             _moveDir = moveDir;
@@ -161,7 +154,6 @@ namespace EdgeParty.Gameplay.Character
             return false;
         }
 
-        // ─── Main Update ──────────────────────────────────────────────────
         private void Update()
         {
             float dt = Time.deltaTime;
@@ -291,12 +283,11 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
-        // ─── Base Locomotion State Machine ────────────────────────────────
         private void DetermineBaseState()
         {
             if (IsPlayingOneShot)
             {
-                if (CurrentState == PlayerState.Grab) return; // Keep grab active
+                if (CurrentState == PlayerState.Grab) return;
 
                 bool landedFromJump = CurrentState == PlayerState.InAir
                                       && _motor != null && _motor.pelvisRigidbody != null && Mathf.Abs(_motor.pelvisRigidbody.linearVelocity.y) < 0.1f;

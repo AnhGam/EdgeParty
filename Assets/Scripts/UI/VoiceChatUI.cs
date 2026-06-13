@@ -6,10 +6,6 @@ namespace EdgeParty.UI
 {
     using EdgeParty.Infrastructure.VoiceChat;
 
-    /// <summary>
-    /// Simple voice chat HUD - shows mute toggle and active speakers.
-    /// Assign Button and Text references in the Inspector.
-    /// </summary>
     public class VoiceChatUI : MonoBehaviour
     {
         [Header("UI Elements")]

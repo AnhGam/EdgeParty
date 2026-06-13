@@ -5,6 +5,7 @@ using Unity.Services.CloudSave;
 using Unity.Services.CloudSave.Models;
 using Unity.Services.Core;
 using UnityEngine;
+using EdgeParty.UI;
 
 namespace EdgeParty.Auth
 {
@@ -19,7 +20,6 @@ namespace EdgeParty.Auth
     /// </summary>
     public class CloudSaveManager : MonoBehaviour
     {
-        // ─── Singleton ────────────────────────────────────────────────────
         public static CloudSaveManager Instance
         {
             get
@@ -38,23 +38,19 @@ namespace EdgeParty.Auth
         }
         private static CloudSaveManager _instance;
 
-        // ─── Cloud Save Keys ──────────────────────────────────────────────
         private const string KEY_COINS       = "Coins";
         private const string KEY_OWNED_ITEMS = "OwnedItems";
         private const string KEY_EQUIPPED    = "EquippedCustomization";
 
-        // ─── In-Memory Cache ──────────────────────────────────────────────
         public int          CachedCoins      { get; private set; } = 1240;
         public List<string> CachedOwnedItems { get; private set; } = new List<string>();
         public EquippedOutfit CachedEquipped { get; private set; } = new EquippedOutfit();
 
         public bool IsLoaded { get; private set; } = false;
 
-        // ─── Events ───────────────────────────────────────────────────────
         public event Action OnDataLoaded;
         public event Action OnDataSaved;
 
-        // ─── Data Models ──────────────────────────────────────────────────
         [Serializable]
         public class EquippedOutfit
         {
@@ -65,7 +61,6 @@ namespace EdgeParty.Auth
             public int color    = 0;
         }
 
-        // ─── Lifecycle ────────────────────────────────────────────────────
         private void Awake()
         {
             if (_instance == null)
@@ -78,8 +73,6 @@ namespace EdgeParty.Auth
                 Destroy(gameObject);
             }
         }
-
-        // ─── Public API ───────────────────────────────────────────────────
 
         /// <summary>
         /// Loads all player data from the cloud in one batch call.
@@ -94,13 +87,11 @@ namespace EdgeParty.Auth
                 var keys = new HashSet<string> { KEY_COINS, KEY_OWNED_ITEMS, KEY_EQUIPPED };
                 var results = await CloudSaveService.Instance.Data.Player.LoadAsync(keys);
 
-                // ── Coins ───────────────────────────────────────────────
                 if (results.TryGetValue(KEY_COINS, out var coinsItem))
                     CachedCoins = coinsItem.Value.GetAs<int>();
                 else
                     CachedCoins = 1240;
 
-                // ── Owned Items ─────────────────────────────────────────
                 if (results.TryGetValue(KEY_OWNED_ITEMS, out var ownedItem))
                 {
                     var list = ownedItem.Value.GetAs<List<string>>();
@@ -109,7 +100,6 @@ namespace EdgeParty.Auth
                 else
                     CachedOwnedItems = new List<string>();
 
-                // ── Equipped Outfit ─────────────────────────────────────
                 if (results.TryGetValue(KEY_EQUIPPED, out var equippedItem))
                 {
                     var outfit = equippedItem.Value.GetAs<EquippedOutfit>();
@@ -154,6 +144,7 @@ namespace EdgeParty.Auth
             catch (Exception ex)
             {
                 Debug.LogError($"[CloudSaveManager] SaveCoinsAndItems failed: {ex.Message}");
+                StitchUIController.Instance?.ShowErrorPopup("Lỗi Lưu Trữ", $"Không thể lưu xu và vật phẩm lên đám mây: {ex.Message}");
             }
         }
 
@@ -184,13 +175,11 @@ namespace EdgeParty.Auth
             catch (Exception ex)
             {
                 Debug.LogError($"[CloudSaveManager] SaveEquippedOutfit failed: {ex.Message}");
+                StitchUIController.Instance?.ShowErrorPopup("Lỗi Lưu Trữ", $"Không thể lưu trang phục được trang bị lên đám mây: {ex.Message}");
             }
         }
 
-        /// <summary>Returns true if the player already owns the given item ID.</summary>
         public bool OwnsItem(string itemId) => CachedOwnedItems.Contains(itemId);
-
-        // ─── Private Helpers ──────────────────────────────────────────────
 
         private async Task EnsureServicesReady()
         {

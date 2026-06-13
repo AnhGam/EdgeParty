@@ -39,7 +39,6 @@ namespace EdgeParty.Gameplay.Character
         {
             if (pelvisRigidbody == null)
             {
-                // Deep search in the entire player hierarchy
                 var allRbs = transform.root.GetComponentsInChildren<Rigidbody>();
                 foreach (var rb in allRbs)
                 {
@@ -117,7 +116,6 @@ namespace EdgeParty.Gameplay.Character
         {
             if (pelvisRigidbody == null || ghostPelvis == null || ghostRoot == null) return;
 
-            // Direct rotation matching of visual root
             if (_facingDir.sqrMagnitude > 0.001f)
             {
                 ghostRoot.rotation = Quaternion.LookRotation(_facingDir, Vector3.up);

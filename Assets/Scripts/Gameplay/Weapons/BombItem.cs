@@ -1,13 +1,8 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Unity.Netcode;
 
 namespace EdgeParty.Gameplay.Items
 {
-    /// <summary>
-    /// Lựu đạn: Đẩy lùi (Knockback) vật lý mạnh + VFX + SFX nổ.
-    /// Server-authoritative: Physics và damage tính trên Server, 
-    /// VFX/SFX được trigger xuống tất cả Client qua ClientRpc.
-    /// </summary>
     public class BombItem : NetworkBehaviour
     {
         [Header("Explosion Settings")]
@@ -16,8 +11,10 @@ namespace EdgeParty.Gameplay.Items
         public float fuseTime = 2f;       // Thời gian nổ sau khi ném
 
         [Header("VFX / SFX")]
-        public GameObject explosionVFXPrefab;  // Kéo Explosion VFX Prefab vào
-        public AudioClip explosionSFX;         // Kéo tiếng nổ vào
+        [Tooltip("Kéo Explosion VFX Prefab vào — hoặc để trống để dùng built-in particle")]
+        public GameObject explosionVFXPrefab;
+        [Tooltip("Kéo Assets/Scripts/Audio/Audios/EXPLOSION_sfx.wav vào đây")]
+        public AudioClip explosionSFX;
 
         private bool _hasExploded = false;
         private float _timer = 0f;
@@ -26,9 +23,12 @@ namespace EdgeParty.Gameplay.Items
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
+
+            // Auto-load SFX nếu không gán trong Inspector
+            if (explosionSFX == null)
+                explosionSFX = Resources.Load<AudioClip>("Audios/EXPLOSION_sfx");
         }
 
-        /// <summary>Gọi từ PlayerController khi throw bomb (chỉ gọi trên Server)</summary>
         public void ThrowBomb(Vector3 throwDirection, float throwForce)
         {
             if (!IsServer) return;
@@ -42,26 +42,24 @@ namespace EdgeParty.Gameplay.Items
 
             _timer += Time.deltaTime;
             if (_timer >= fuseTime)
-                ExplodeServerRpc();
+                Explode();
         }
 
         private void OnCollisionEnter(Collision collision)
         {
-            // Nổ sớm nếu va chạm mạnh (tuỳ chọn)
             if (!IsServer || _hasExploded) return;
             if (collision.relativeVelocity.magnitude > 8f)
-                ExplodeServerRpc();
+                Explode();
         }
 
-        [ServerRpc]
-        private void ExplodeServerRpc()
+        private void Explode()
         {
             if (_hasExploded) return;
             _hasExploded = true;
 
             Vector3 explosionPos = transform.position;
 
-            // ── 1. Áp lực vật lý (chỉ tính trên Server) ──
+            // Physics knockback — tính trên server
             Collider[] hits = Physics.OverlapSphere(explosionPos, explosionRadius);
             foreach (var hit in hits)
             {
@@ -78,23 +76,26 @@ namespace EdgeParty.Gameplay.Items
                 rb.AddForce(knockDir * force, ForceMode.Impulse);
             }
 
-            // ── 2. Trigger VFX + SFX trên tất cả Client ──
+            // Trigger VFX + SFX trên tất cả clients
             TriggerExplosionEffectsClientRpc(explosionPos);
 
-            // ── 3. Despawn object ──
             if (IsSpawned)
                 GetComponent<NetworkObject>().Despawn(true);
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         private void TriggerExplosionEffectsClientRpc(Vector3 position)
         {
             // VFX
             if (explosionVFXPrefab != null)
             {
                 var vfx = Instantiate(explosionVFXPrefab, position, Quaternion.identity);
-                // Tự destroy VFX sau 3 giây
                 Destroy(vfx, 3f);
+            }
+            else
+            {
+                // Built-in fallback: tạo particle system đơn giản
+                SpawnBuiltinExplosionVFX(position);
             }
 
             // SFX
@@ -102,7 +103,53 @@ namespace EdgeParty.Gameplay.Items
                 AudioManager.Instance.PlaySFX(explosionSFX);
         }
 
-        // Debug visualization trong Scene view
+        private void SpawnBuiltinExplosionVFX(Vector3 position)
+        {
+            var root = new GameObject("ExplosionVFX_Auto");
+            root.transform.position = position;
+
+            // 1. Lửa — burst cam-đỏ
+            var fireGO = new GameObject("Fire");
+            fireGO.transform.SetParent(root.transform, false);
+            var fireSys = fireGO.AddComponent<ParticleSystem>();
+            var fireMain = fireSys.main;
+            fireMain.duration = 0.4f;
+            fireMain.loop = false;
+            fireMain.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.8f);
+            fireMain.startSpeed = new ParticleSystem.MinMaxCurve(5f, 12f);
+            fireMain.startSize = new ParticleSystem.MinMaxCurve(0.4f, 1.2f);
+            fireMain.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(1f, 0.5f, 0f), new Color(1f, 0.2f, 0f));
+            fireMain.gravityModifier = -0.3f;
+            var fireBurst = fireSys.emission;
+            fireBurst.SetBurst(0, new ParticleSystem.Burst(0f, 40));
+            fireBurst.rateOverTime = 0;
+            var fireShape = fireSys.shape;
+            fireShape.shapeType = ParticleSystemShapeType.Sphere;
+            fireShape.radius = 0.3f;
+            fireSys.Play();
+
+            // 2. Khói — burst xám
+            var smokeGO = new GameObject("Smoke");
+            smokeGO.transform.SetParent(root.transform, false);
+            var smokeSys = smokeGO.AddComponent<ParticleSystem>();
+            var smokeMain = smokeSys.main;
+            smokeMain.duration = 0.5f;
+            smokeMain.loop = false;
+            smokeMain.startLifetime = new ParticleSystem.MinMaxCurve(1f, 2f);
+            smokeMain.startSpeed = new ParticleSystem.MinMaxCurve(2f, 6f);
+            smokeMain.startSize = new ParticleSystem.MinMaxCurve(0.6f, 1.8f);
+            smokeMain.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.3f, 0.3f, 0.3f, 0.8f), new Color(0.6f, 0.6f, 0.6f, 0.4f));
+            smokeMain.gravityModifier = -0.15f;
+            var smokeBurst = smokeSys.emission;
+            smokeBurst.SetBurst(0, new ParticleSystem.Burst(0f, 20));
+            smokeBurst.rateOverTime = 0;
+            smokeSys.Play();
+
+            Destroy(root, 3f);
+        }
+
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(1f, 0.3f, 0f, 0.3f);

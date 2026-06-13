@@ -8,6 +8,7 @@ using Unity.Services.Friends;
 using Unity.Services.Friends.Models;
 using Unity.Services.Lobbies.Models;
 using EdgeParty.Auth;
+using EdgeParty.UI;
 
 namespace EdgeParty.Social
 {
@@ -47,7 +48,6 @@ namespace EdgeParty.Social
             public string Username;
         }
 
-        // Public lists for UI binding
         public List<FriendInfo> Friends { get; private set; } = new List<FriendInfo>();
         public List<FriendRequest> IncomingRequests { get; private set; } = new List<FriendRequest>();
         public List<string> LobbyMembers { get; private set; } = new List<string>();
@@ -56,7 +56,6 @@ namespace EdgeParty.Social
         public string CurrentLobbyId { get; private set; } = "";
         public bool IsHost { get; private set; } = false;
 
-        // Events
         public event Action OnFriendsUpdated;
         public event Action OnFriendRequestsUpdated;
         public event Action<List<string>> OnLobbyMembersUpdated;
@@ -65,6 +64,8 @@ namespace EdgeParty.Social
 
         private bool _useMockMode = true; // Defaults to mock mode until initialized successfully
         private float _heartbeatTimer = 0f;
+        private float _presenceRefreshTimer = 0f;
+        private const float PresenceRefreshInterval = 30f;  // Refresh presence mỗi 30s
         private Unity.Services.Lobbies.Models.Lobby _currentLobby;
 
         private void Awake()
@@ -85,7 +86,6 @@ namespace EdgeParty.Social
 
         private void Update()
         {
-            // Send heartbeat to UGS Lobby if host
             if (!_useMockMode && IsHost && !string.IsNullOrEmpty(CurrentLobbyId))
             {
                 _heartbeatTimer += Time.deltaTime;
@@ -93,6 +93,17 @@ namespace EdgeParty.Social
                 {
                     _heartbeatTimer = 0f;
                     SendLobbyHeartbeatAsync();
+                }
+            }
+
+            // Periodic presence refresh để đảm bảo bạn bè thấy trạng thái online
+            if (!_useMockMode)
+            {
+                _presenceRefreshTimer += Time.deltaTime;
+                if (_presenceRefreshTimer >= PresenceRefreshInterval)
+                {
+                    _presenceRefreshTimer = 0f;
+                    _ = RefreshFriendsAndRequestsAsync();
                 }
             }
         }
@@ -126,7 +137,6 @@ namespace EdgeParty.Social
             LobbyMembers.Add("You");
         }
 
-        // Try initializing actual UGS services. If it fails, fall back gracefully to Mock mode.
         public async Task InitializeSocialAsync()
         {
             try
@@ -143,21 +153,35 @@ namespace EdgeParty.Social
                     return;
                 }
 
-                // Clear mock data immediately while initializing real services
                 Friends.Clear();
                 IncomingRequests.Clear();
                 OnFriendsUpdated?.Invoke();
                 OnFriendRequestsUpdated?.Invoke();
 
-                // Try initializing Friends service
                 await FriendsService.Instance.InitializeAsync();
                 _useMockMode = false;
-                Debug.Log("[FriendLobbyService] Real UGS Friends initialized successfully. Running in real UGS Mode.");
+                Debug.Log("[FriendLobbyService] Real UGS Friends initialized. Running in real UGS Mode.");
 
-                // Subscribe to real-time events to update the UI instantly
+                // ✅ Đặt presence = Online để bạn bè thấy mình online
+                // SetPresenceAsync<T>(Availability, T activity) — T phải là struct/class có constructor rỗng
+                try
+                {
+                    await FriendsService.Instance.SetPresenceAsync(Availability.Online, new EmptyActivity());
+                    Debug.Log("[FriendLobbyService] Presence set to Online.");
+                }
+                catch (Exception presEx)
+                {
+                    Debug.LogWarning($"[FriendLobbyService] SetPresence failed (non-fatal): {presEx.Message}");
+                }
+
                 FriendsService.Instance.RelationshipAdded += (evt) => _ = RefreshFriendsAndRequestsAsync();
                 FriendsService.Instance.RelationshipDeleted += (evt) => _ = RefreshFriendsAndRequestsAsync();
-                FriendsService.Instance.PresenceUpdated += (evt) => _ = RefreshFriendsAndRequestsAsync();
+                FriendsService.Instance.PresenceUpdated += (evt) =>
+                {
+                    // IPresenceUpdatedEvent: evt.ID (string), evt.Presence (Presence model)
+                    Debug.Log($"[FriendLobbyService] PresenceUpdated: id={evt.ID}, availability={evt.Presence?.Availability}");
+                    _ = RefreshFriendsAndRequestsAsync();
+                };
 
                 await RefreshFriendsAndRequestsAsync();
             }
@@ -171,24 +195,31 @@ namespace EdgeParty.Social
             }
         }
 
-        public Task RefreshFriendsAndRequestsAsync()
+        public async Task RefreshFriendsAndRequestsAsync()
         {
             if (_useMockMode)
             {
                 OnFriendsUpdated?.Invoke();
                 OnFriendRequestsUpdated?.Invoke();
-                return Task.CompletedTask;
+                return;
             }
 
             try
             {
-                // Retrieve friends list from local cache
+                // ✅ Force fetch từ server thay vì đọc local cache
+                await FriendsService.Instance.ForceRelationshipsRefreshAsync();
+
                 var friendsList = FriendsService.Instance.Friends;
+                Debug.Log($"[FriendLobbyService] Refreshed {friendsList.Count} friends from server.");
+
                 Friends.Clear();
                 foreach (var friend in friendsList)
                 {
-                    bool isOnline = friend.Member != null && friend.Member.Presence != null && friend.Member.Presence.Availability == Availability.Online;
-                    string name = friend.Member != null && friend.Member.Profile != null ? friend.Member.Profile.Name : "Unknown";
+                    var presence = friend.Member?.Presence;
+                    bool isOnline = presence != null && presence.Availability == Availability.Online;
+                    string name = friend.Member?.Profile?.Name ?? "Unknown";
+
+                    Debug.Log($"[FriendLobbyService] Friend: {name} | Availability: {presence?.Availability} | IsOnline: {isOnline}");
 
                     Friends.Add(new FriendInfo
                     {
@@ -199,12 +230,11 @@ namespace EdgeParty.Social
                     });
                 }
 
-                // Retrieve incoming friend requests from local cache
                 var incoming = FriendsService.Instance.IncomingFriendRequests;
                 IncomingRequests.Clear();
                 foreach (var req in incoming)
                 {
-                    string name = req.Member != null && req.Member.Profile != null ? req.Member.Profile.Name : "Unknown";
+                    string name = req.Member?.Profile?.Name ?? "Unknown";
                     IncomingRequests.Add(new FriendRequest
                     {
                         Id = req.Member?.Id ?? req.Id,
@@ -217,9 +247,8 @@ namespace EdgeParty.Social
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[FriendLobbyService] Error refreshing friends: {ex.Message}");
+                Debug.LogError($"[FriendLobbyService] Error refreshing friends: {ex.Message}\n{ex.StackTrace}");
             }
-            return Task.CompletedTask;
         }
 
         public async Task<bool> SendFriendRequestAsync(string username)
@@ -277,6 +306,7 @@ namespace EdgeParty.Social
             catch (Exception ex)
             {
                 Debug.LogError($"[FriendLobbyService] Error accepting request: {ex.Message}");
+                StitchUIController.Instance?.ShowErrorPopup("Lỗi Bạn Bè", $"Không thể chấp nhận yêu cầu kết bạn: {ex.Message}");
                 return false;
             }
         }
@@ -305,6 +335,7 @@ namespace EdgeParty.Social
             catch (Exception ex)
             {
                 Debug.LogError($"[FriendLobbyService] Error declining request: {ex.Message}");
+                StitchUIController.Instance?.ShowErrorPopup("Lỗi Bạn Bè", $"Không thể từ chối yêu cầu kết bạn: {ex.Message}");
                 return false;
             }
         }
@@ -313,7 +344,7 @@ namespace EdgeParty.Social
         {
             try
             {
-                await FriendsService.Instance.ForceRelationshipsRefreshAsync();
+                // RefreshFriendsAndRequestsAsync đã gọi ForceRelationshipsRefreshAsync bên trong
                 await RefreshFriendsAndRequestsAsync();
             }
             catch (Exception ex)
@@ -321,8 +352,6 @@ namespace EdgeParty.Social
                 Debug.LogWarning($"[FriendLobbyService] Failed to force refresh: {ex.Message}");
             }
         }
-
-        // ─── Lobby Services ──────────────────────────────────────────────
 
         public async Task<bool> CreateLobbyAsync(string lobbyName, int maxPlayers = 4)
         {
@@ -361,6 +390,7 @@ namespace EdgeParty.Social
             catch (Exception ex)
             {
                 Debug.LogError($"[FriendLobbyService] Error creating lobby: {ex.Message}");
+                StitchUIController.Instance?.ShowErrorPopup("Lỗi Phòng", $"Không thể tạo phòng: {ex.Message}");
                 return false;
             }
         }
@@ -405,6 +435,7 @@ namespace EdgeParty.Social
             catch (Exception ex)
             {
                 Debug.LogError($"[FriendLobbyService] Error joining lobby: {ex.Message}");
+                StitchUIController.Instance?.ShowErrorPopup("Lỗi Phòng", $"Không thể tham gia phòng: {ex.Message}");
                 return false;
             }
         }
@@ -444,6 +475,7 @@ namespace EdgeParty.Social
             catch (Exception ex)
             {
                 Debug.LogError($"[FriendLobbyService] Error leaving lobby: {ex.Message}");
+                StitchUIController.Instance?.ShowErrorPopup("Lỗi Phòng", $"Không thể rời phòng: {ex.Message}");
             }
         }
 
@@ -477,4 +509,6 @@ namespace EdgeParty.Social
             OnLobbyMembersUpdated?.Invoke(LobbyMembers);
         }
     }
+
+    public class EmptyActivity { }
 }

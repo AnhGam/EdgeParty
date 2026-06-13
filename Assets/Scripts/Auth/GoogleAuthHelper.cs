@@ -41,18 +41,15 @@ namespace EdgeParty.Auth
 
             try
             {
-                // ── PKCE: Generate code_verifier and code_challenge ──────────
                 string codeVerifier = GenerateCodeVerifier();
                 string codeChallenge = GenerateCodeChallenge(codeVerifier);
                 string state = Guid.NewGuid().ToString("N");
                 string redirectUri = $"http://localhost:{port}";
 
-                // ── Start local HTTP listener ────────────────────────────────
                 _httpListener = new HttpListener();
                 _httpListener.Prefixes.Add($"http://localhost:{port}/");
                 _httpListener.Start();
 
-                // ── Build Google OAuth URL with PKCE params ──────────────────
                 string authUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
                                  $"?client_id={Uri.EscapeDataString(clientId)}" +
                                  $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
@@ -75,14 +72,10 @@ namespace EdgeParty.Auth
             }
         }
 
-        // ── Legacy overload: ignores secret, forwards to PKCE flow ──────────
-        // Kept for backward compatibility with any old call sites.
         public static void StartLogin(string clientId, string _ignoredSecret, int port, Action<string> onSuccess, Action<string> onFailure)
         {
             StartLogin(clientId, port, onSuccess, onFailure);
         }
-
-        // ────────────────────────────────────────────────────────────────────
 
         private static async void ListenForRedirectAsync(
             string clientId, string codeVerifier, string redirectUri,
@@ -179,8 +172,6 @@ namespace EdgeParty.Auth
             }
         }
 
-        // ── PKCE Helpers ─────────────────────────────────────────────────────
-
         /// <summary>Generates a cryptographically random code_verifier (43-128 chars, RFC 7636).</summary>
         private static string GenerateCodeVerifier()
         {
@@ -207,8 +198,6 @@ namespace EdgeParty.Auth
                 .Replace('+', '-')
                 .Replace('/', '_');
         }
-
-        // ── HTML response page ───────────────────────────────────────────────
 
         private static void SendHtmlResponse(HttpListenerResponse response, string message, bool isSuccess)
         {

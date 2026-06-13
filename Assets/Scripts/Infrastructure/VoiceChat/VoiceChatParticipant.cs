@@ -3,16 +3,9 @@ using Unity.Netcode;
 
 namespace EdgeParty.Infrastructure.VoiceChat
 {
-    /// <summary>
-    /// Attach to player Prefab. Updates the local player's 3D position in Vivox
-    /// so other players hear positional audio relative to their distance.
-    /// Only runs on the local owner.
-    /// </summary>
     [RequireComponent(typeof(NetworkObject))]
     public class VoiceChatParticipant : NetworkBehaviour
     {
-        [SerializeField] private string channelName = "MainLobby";
-
         private float _timer;
         private const float UpdateInterval = 0.25f; // 4 times/sec
 
@@ -28,15 +21,16 @@ namespace EdgeParty.Infrastructure.VoiceChat
         private void Update()
         {
             if (!IsOwner) return;
+            if (VoiceChatManager.Instance == null || !VoiceChatManager.Instance.IsReady) return;
+
+            string channel = VoiceChatManager.Instance.CurrentGameChannel;
+            if (string.IsNullOrEmpty(channel)) return;
 
             _timer += Time.deltaTime;
             if (_timer >= UpdateInterval)
             {
                 _timer = 0f;
-                if (VoiceChatManager.Instance != null && VoiceChatManager.Instance.IsReady)
-                {
-                    VoiceChatManager.Instance.UpdateParticipantPosition(gameObject, channelName);
-                }
+                VoiceChatManager.Instance.UpdateParticipantPosition(gameObject, channel);
             }
         }
     }

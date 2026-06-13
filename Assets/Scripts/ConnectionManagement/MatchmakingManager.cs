@@ -8,6 +8,7 @@ using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Services.CloudCode;
 using UnityEngine;
+using EdgeParty.Infrastructure.VoiceChat;
 
 namespace EdgeParty.ConnectionManagement
 {
@@ -25,11 +26,11 @@ namespace EdgeParty.ConnectionManagement
         public string portName = "gameport";
         public float pollingInterval = 3f;
 
-        // We use Edgegap's Ping class directly for client-side latency checks
         private Edgegap.Ping pingService;
 
         private string currentTicketId;
         private bool isPolling = false;
+        private string _lastMatchId = "";  // Lưu ticket ID để dùng làm Vivox channel name
 
         public bool IsMatchmaking => isPolling;
         public float MatchmakingStartTime { get; private set; }
@@ -44,7 +45,6 @@ namespace EdgeParty.ConnectionManagement
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            // Initialize the Edgegap Ping service
             pingService = new Edgegap.Ping(this);
         }
 
@@ -60,7 +60,6 @@ namespace EdgeParty.ConnectionManagement
         {
             try
             {
-                // 1. Get Beacons list from UGS Cloud Code
                 Debug.Log("[MatchmakingManager] Requesting beacons from UGS Cloud Code...");
                 var jsonResponse = await CloudCodeService.Instance.CallEndpointAsync(
                     "GetBeacons", new Dictionary<string, object>()
@@ -75,7 +74,6 @@ namespace EdgeParty.ConnectionManagement
                     return;
                 }
 
-                // 2. Measure ping latencies locally
                 Debug.Log($"[MatchmakingManager] Measuring round trip time for {beaconsResponse.Beacons.Length} beacons...");
                 StartCoroutine(MeasureBeaconsRoundTripTimeRoutine(
                     beaconsResponse.Beacons,
@@ -112,7 +110,6 @@ namespace EdgeParty.ConnectionManagement
                             string city = beacon.Location?.City ?? "Unknown";
                             float pingVal = (float)ping;
 
-                            // If ping failed (returned 0 or negative), set to a default high latency
                             if (pingVal <= 0) pingVal = 999f;
 
                             if (results.ContainsKey(city))
@@ -178,7 +175,6 @@ namespace EdgeParty.ConnectionManagement
             {
                 FilterPingsByRegion(pings);
 
-                Debug.Log("[MatchmakingManager] Sending pings to UGS Cloud Code to create matchmaking ticket...");
                 var args = new Dictionary<string, object> { { "pings", pings } };
                 var jsonResponse = await CloudCodeService.Instance.CallEndpointAsync(
                     "StartMatchmaking", args
@@ -194,16 +190,15 @@ namespace EdgeParty.ConnectionManagement
                 }
 
                 currentTicketId = ticket.ID;
+                _lastMatchId = ticket.ID;
                 Debug.Log($"[MatchmakingManager] Matchmaking ticket created! ID: {currentTicketId}, Status: {ticket.Status}");
 
-                // Check if already assigned (fast path)
                 if (ticket.Status == "HOST_ASSIGNED" && ticket.Assignment != null)
                 {
                     HandleAssignment(ticket.Assignment);
                     return;
                 }
 
-                // 3. Start polling matchmaking status
                 StartPolling();
             }
             catch (Exception ex)
@@ -229,7 +224,6 @@ namespace EdgeParty.ConnectionManagement
             {
                 yield return new WaitForSeconds(pollingInterval);
 
-                // Build args: ticketId to poll, cancel=false
                 var args = new Dictionary<string, object>
                 {
                     { "ticketId", currentTicketId },
@@ -255,7 +249,18 @@ namespace EdgeParty.ConnectionManagement
                 }
                 consecutiveErrors = 0;
 
-                var ticket = Newtonsoft.Json.JsonConvert.DeserializeObject<TicketResponseDTO>(task.Result);
+                TicketResponseDTO ticket = null;
+                try
+                {
+                    ticket = Newtonsoft.Json.JsonConvert.DeserializeObject<TicketResponseDTO>(task.Result);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[MatchmakingManager] Failed to deserialize ticket response: {ex.Message}");
+                    isPolling = false;
+                    OnMatchmakingFailed?.Invoke("Lỗi dữ liệu phản hồi từ máy chủ");
+                    yield break;
+                }
                 if (ticket == null) continue;
 
                 Debug.Log($"[MatchmakingManager] Polling ticket status: {ticket.Status}");
@@ -271,7 +276,6 @@ namespace EdgeParty.ConnectionManagement
                     isPolling = false;
                     OnMatchmakingCancelled?.Invoke();
                 }
-                // SEARCHING / TEAM_FOUND / MATCH_FOUND → keep polling
             }
         }
 
@@ -305,6 +309,14 @@ namespace EdgeParty.ConnectionManagement
 
             Debug.Log($"[MatchmakingManager] Match Found! Connecting to {host}:{port}");
             OnMatchmakingSucceeded?.Invoke();
+
+            // Tham gia Vivox channel cho match (dùng ticket ID là channel name chung)
+            if (!string.IsNullOrEmpty(_lastMatchId) && VoiceChatManager.Instance != null)
+            {
+                _ = VoiceChatManager.Instance.JoinMatchChannel(_lastMatchId);
+                Debug.Log($"[MatchmakingManager] Joining Vivox channel for match: {_lastMatchId}");
+            }
+
             ConnectToServer(host, port);
         }
 
@@ -313,7 +325,7 @@ namespace EdgeParty.ConnectionManagement
             var networkManager = NetworkManager.Singleton;
             if (networkManager == null)
             {
-                networkManager = FindObjectOfType<NetworkManager>(true);
+                networkManager = FindFirstObjectByType<NetworkManager>(FindObjectsInactive.Include);
             }
 
 #if UNITY_EDITOR
@@ -346,7 +358,19 @@ namespace EdgeParty.ConnectionManagement
             utp.ConnectTimeoutMS = 1000;
 
             Debug.Log($"[MatchmakingManager] Netcode connecting to {host}:{port}... (Will retry up to 600 seconds for container startup)");
-            networkManager.StartClient();
+            try
+            {
+                if (!networkManager.StartClient())
+                {
+                    Debug.LogError("[MatchmakingManager] StartClient returned false!");
+                    OnMatchmakingFailed?.Invoke("Không thể khởi động kết nối client");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[MatchmakingManager] Exception during StartClient: {ex.Message}");
+                OnMatchmakingFailed?.Invoke($"Lỗi khởi động kết nối: {ex.Message}");
+            }
         }
 
         public async void StopMatchmaking()

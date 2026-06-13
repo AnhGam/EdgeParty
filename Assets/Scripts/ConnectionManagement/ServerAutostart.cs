@@ -12,7 +12,6 @@ namespace EdgeParty.ConnectionManagement
             {
                 Debug.Log("[ServerAutostart] Batch mode (headless server) detected. Checking for NetworkManager...");
                 
-                // Find any existing NetworkManager in the startup scene
                 var networkManager = Object.FindAnyObjectByType<NetworkManager>();
                 if (networkManager != null)
                 {
@@ -22,7 +21,6 @@ namespace EdgeParty.ConnectionManagement
 
                 Debug.Log("[ServerAutostart] NetworkManager not found in startup scene. Attempting to load from Resources...");
                 
-                // Attempt to load from Resources folder
                 var prefab = Resources.Load<GameObject>("NetworkManager");
                 if (prefab != null)
                 {

@@ -83,7 +83,6 @@ namespace EdgeParty.Gameplay.Character
                 }
             }
 
-            // Buttons
             root.Q<Button>("BackButton")?.RegisterCallback<ClickEvent>(evt => {
                 gameObject.SetActive(false);
                 var mainUI = Object.FindAnyObjectByType<StitchUIController>();
@@ -103,7 +102,6 @@ namespace EdgeParty.Gameplay.Character
             UpdateCategoryVisuals();
             RefreshGrid();
 
-            // Apply saved outfit from Cloud Save (if loaded), otherwise apply defaults
             if (targetAppearance != null)
             {
                 var csm = CloudSaveManager.Instance;
@@ -119,7 +117,6 @@ namespace EdgeParty.Gameplay.Character
                 }
                 else
                 {
-                    // Fresh start defaults
                     targetAppearance.SetHat(-1);
                     targetAppearance.SetGlasses(-1);
                     targetAppearance.SetNecklace(-1);
@@ -217,7 +214,6 @@ namespace EdgeParty.Gameplay.Character
             var card = new VisualElement();
             card.AddToClassList("item-card");
 
-            // Check lock state for accessories (Hats, Glasses, Neck) - index -1 is always "None" (unlocked)
             bool isLocked = false;
             if (index != -1 && CloudSaveManager.Instance != null && CloudSaveManager.Instance.IsLoaded)
             {
@@ -279,7 +275,6 @@ namespace EdgeParty.Gameplay.Character
             }
             else
             {
-                // Fallback emoji based on category
                 string emoji = "";
                 if (currentCategory == Category.Hats) emoji = "🧢";
                 else if (currentCategory == Category.Glasses) emoji = "👓";
@@ -351,7 +346,6 @@ namespace EdgeParty.Gameplay.Character
                 }
             }
 
-            // Also search for any active gameplay player in the scene and apply it
             var scenePlayers = Object.FindObjectsByType<NetworkPlayerAppearance>(FindObjectsSortMode.None);
             foreach (var player in scenePlayers)
             {

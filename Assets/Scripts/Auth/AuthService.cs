@@ -40,7 +40,6 @@ namespace EdgeParty.Auth
         public bool IsSignedIn => IsInitialized && AuthenticationService.Instance.IsSignedIn;
         public string PlayerId => IsSignedIn ? AuthenticationService.Instance.PlayerId : null;
         
-        // Simple cached session key for UI username binding
         private const string LastUsernamePrefKey = "EdgeParty_LastUsername";
         public string CachedUsername
         {
@@ -75,7 +74,6 @@ namespace EdgeParty.Auth
                     await UnityServices.InitializeAsync();
                     Debug.Log("Unity Services Initialized successfully.");
                     
-                    // Setup UGS authentication events
                     AuthenticationService.Instance.SignedIn += () =>
                     {
                         Debug.Log($"UGS Signed In: {AuthenticationService.Instance.PlayerId}");
@@ -115,7 +113,6 @@ namespace EdgeParty.Auth
                 // UGS SignUp requires a username (3-20 characters) and password (8-30 characters)
                 await AuthenticationService.Instance.SignUpWithUsernamePasswordAsync(username, password);
                 
-                // Optional: Update Player Name on profile
                 try
                 {
                     await AuthenticationService.Instance.UpdatePlayerNameAsync(username);
@@ -286,8 +283,6 @@ namespace EdgeParty.Auth
             return false;
         }
 
-        // ─── OTP Password Reset Simulators (Mock) ──────────────────────
-
         private string _lastSentOtp = "";
         private string _lastOtpEmail = "";
 
@@ -297,13 +292,11 @@ namespace EdgeParty.Auth
             // we simulate a beautiful OTP workflow.
             _lastOtpEmail = email;
             
-            // Generate simple random 4-digit code
             System.Random rand = new System.Random();
             _lastSentOtp = rand.Next(1000, 9999).ToString();
             
             Debug.Log($"[MOCK OTP] Sent code {_lastSentOtp} to {email}");
             
-            // Simulate networking delay
             return Task.FromResult(true);
         }
 
