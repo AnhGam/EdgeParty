@@ -27,6 +27,13 @@ public class HUDController : MonoBehaviour
 
     private bool isSoundOn = true;
 
+    private SettingsMenu settingsMenu;
+    private VisualElement pingFpsCounter;
+    private Label pingFpsLabel;
+    private float fpsTimer = 0f;
+    private int fpsCount = 0;
+    private float lastFps = 0f;
+
     private void Start()
     {
         // Load settings and initialize volumes
@@ -67,64 +74,20 @@ public class HUDController : MonoBehaviour
         settingsPanel = root.Q<VisualElement>("SettingsPanel");
         if (settingsPanel != null)
         {
-            musicFill = settingsPanel.Q<VisualElement>(className: "slider-fill-music");
-            musicThumb = settingsPanel.Q<VisualElement>(className: "slider-thumb-music");
-            sfxFill = settingsPanel.Q<VisualElement>(className: "slider-fill-sfx");
-            sfxThumb = settingsPanel.Q<VisualElement>(className: "slider-thumb-sfx");
-
-            var returnBtn = settingsPanel.Q<Button>("ReturnBtn");
-            returnBtn?.RegisterCallback<ClickEvent>(evt => CloseSettings());
-
-            // Wire up custom sliders
-            var musicTrack = musicFill?.parent;
-            var sfxTrack = sfxFill?.parent;
-
-            RegisterSliderEvents(musicTrack, musicFill, musicThumb, "MusicVolume", val => {
-                ApplyVolumes(val, PlayerPrefs.GetFloat("SFXVolume", 1f));
-            });
-
-            RegisterSliderEvents(sfxTrack, sfxFill, sfxThumb, "SFXVolume", val => {
-                ApplyVolumes(PlayerPrefs.GetFloat("MusicVolume", 1f), val);
-            });
-
-            // Wire up quality options
-            var graphicsButtons = settingsPanel.Query<Button>(className: "graphics-btn").ToList();
-            if (graphicsButtons != null && graphicsButtons.Count >= 2)
+            settingsMenu = GetComponent<SettingsMenu>();
+            if (settingsMenu == null)
             {
-                var qualityBtn = graphicsButtons[0];
-                var fpsBtn = graphicsButtons[1];
-
-                qualityBtn.text = QualitySettings.names[QualitySettings.GetQualityLevel()].ToUpper() + " QUALITY";
-                fpsBtn.text = Application.targetFrameRate == 60 ? "60 FPS LIMIT" : "UNLIMITED FPS";
-                if (Application.targetFrameRate != 60)
-                    fpsBtn.AddToClassList("graphics-btn-inactive");
-                
-                qualityBtn.RegisterCallback<ClickEvent>(evt =>
-                {
-                    int currentLevel = QualitySettings.GetQualityLevel();
-                    int nextLevel = (currentLevel + 1) % QualitySettings.names.Length;
-                    QualitySettings.SetQualityLevel(nextLevel);
-                    qualityBtn.text = QualitySettings.names[nextLevel].ToUpper() + " QUALITY";
-                    EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
-                });
-
-                fpsBtn.RegisterCallback<ClickEvent>(evt =>
-                {
-                    if (Application.targetFrameRate == 60)
-                    {
-                        Application.targetFrameRate = -1;
-                        fpsBtn.text = "UNLIMITED FPS";
-                        fpsBtn.AddToClassList("graphics-btn-inactive");
-                    }
-                    else
-                    {
-                        Application.targetFrameRate = 60;
-                        fpsBtn.text = "60 FPS LIMIT";
-                        fpsBtn.RemoveFromClassList("graphics-btn-inactive");
-                    }
-                    EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
-                });
+                settingsMenu = gameObject.AddComponent<SettingsMenu>();
             }
+
+            settingsMenu.InitializeWithRoot(settingsPanel);
+            
+            // Subscribe to settings menu open/close events to keep cursor synced
+            settingsMenu.OnOpenSettingsEvent -= SyncCursorOnOpen;
+            settingsMenu.OnOpenSettingsEvent += SyncCursorOnOpen;
+
+            settingsMenu.OnCloseSettingsEvent -= SyncCursorOnClose;
+            settingsMenu.OnCloseSettingsEvent += SyncCursorOnClose;
         }
         
         // Initial setup
@@ -146,7 +109,14 @@ public class HUDController : MonoBehaviour
         // Toggle settings on Escape key
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            if (settingsPanel != null)
+            if (settingsMenu != null)
+            {
+                if (settingsMenu.IsOpen)
+                    settingsMenu.HandleBackButton();
+                else
+                    settingsMenu.OpenSettings();
+            }
+            else if (settingsPanel != null)
             {
                 if (settingsPanel.style.display == DisplayStyle.Flex)
                     CloseSettings();
@@ -156,15 +126,8 @@ public class HUDController : MonoBehaviour
         }
 
         // Enforce cursor state every frame while Alt is held or settings are open
-        bool shouldShowCursor = false;
-        if (Keyboard.current != null && Keyboard.current.leftAltKey.isPressed)
-        {
-            shouldShowCursor = true;
-        }
-        else if (settingsPanel != null && settingsPanel.style.display == DisplayStyle.Flex)
-        {
-            shouldShowCursor = true;
-        }
+        bool isSettingsOpen = (settingsMenu != null && settingsMenu.IsOpen) || (settingsPanel != null && settingsPanel.style.display == DisplayStyle.Flex);
+        bool shouldShowCursor = (Keyboard.current != null && Keyboard.current.leftAltKey.isPressed) || isSettingsOpen;
 
         if (shouldShowCursor)
         {
@@ -176,6 +139,65 @@ public class HUDController : MonoBehaviour
         else if (Keyboard.current != null && Keyboard.current.leftAltKey.wasReleasedThisFrame)
         {
             SetCursorState(false);
+        }
+
+        // Update Ping and FPS counter if enabled
+        bool showPingFps = PlayerPrefs.GetInt("ShowPingFPS", 0) == 1;
+        if (showPingFps)
+        {
+            if (pingFpsCounter == null && root != null)
+            {
+                // Create container dynamically
+                pingFpsCounter = new VisualElement();
+                pingFpsCounter.AddToClassList("ping-fps-counter");
+                
+                pingFpsLabel = new Label("FPS: -- | Ping: -- ms");
+                pingFpsLabel.AddToClassList("ping-fps-text");
+                pingFpsCounter.Add(pingFpsLabel);
+                
+                root.Add(pingFpsCounter);
+            }
+
+            if (pingFpsCounter != null)
+            {
+                pingFpsCounter.style.display = DisplayStyle.Flex;
+
+                // Calculate FPS
+                fpsTimer += Time.unscaledDeltaTime;
+                fpsCount++;
+                if (fpsTimer >= 0.5f)
+                {
+                    lastFps = fpsCount / fpsTimer;
+                    fpsTimer = 0f;
+                    fpsCount = 0;
+                }
+
+                // Get RTT (Ping)
+                int pingVal = 0;
+                if (Unity.Netcode.NetworkManager.Singleton != null && 
+                    Unity.Netcode.NetworkManager.Singleton.IsClient && 
+                    Unity.Netcode.NetworkManager.Singleton.IsConnectedClient)
+                {
+                    var transport = Unity.Netcode.NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+                    if (transport is Unity.Netcode.Transports.UTP.UnityTransport utp)
+                    {
+                        pingVal = (int)utp.GetCurrentRtt(Unity.Netcode.NetworkManager.ServerClientId);
+                    }
+                }
+
+                if (pingFpsLabel != null)
+                {
+                    string pingText = pingVal > 0 ? $"{pingVal} ms" : "-- ms";
+                    pingFpsLabel.text = $"FPS: {Mathf.RoundToInt(lastFps)} | Ping: {pingText}";
+                }
+            }
+        }
+        else
+        {
+            if (pingFpsCounter != null)
+            {
+                pingFpsCounter.style.display = DisplayStyle.None;
+            }
         }
     }
 
@@ -236,18 +258,19 @@ public class HUDController : MonoBehaviour
         Debug.Log("Toggle Sound: " + (isSoundOn ? "ON" : "OFF"));
     }
 
+    private void SyncCursorOnOpen() => SetCursorState(true);
+    private void SyncCursorOnClose() => SetCursorState(false);
+
     private void OpenSettings()
     {
         EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
-        if (settingsPanel != null)
+        if (settingsMenu != null)
+        {
+            settingsMenu.OpenSettings();
+        }
+        else if (settingsPanel != null)
         {
             settingsPanel.style.display = DisplayStyle.Flex;
-
-            float musicVol = PlayerPrefs.GetFloat("MusicVolume", 1f);
-            float sfxVol = PlayerPrefs.GetFloat("SFXVolume", 1f);
-            InitSliderVisuals(musicFill, musicThumb, musicVol);
-            InitSliderVisuals(sfxFill, sfxThumb, sfxVol);
-
             SetCursorState(true);
         }
     }
@@ -255,7 +278,11 @@ public class HUDController : MonoBehaviour
     private void CloseSettings()
     {
         EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
-        if (settingsPanel != null)
+        if (settingsMenu != null)
+        {
+            settingsMenu.CloseSettings();
+        }
+        else if (settingsPanel != null)
         {
             settingsPanel.style.display = DisplayStyle.None;
             SetCursorState(false);

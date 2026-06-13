@@ -21,6 +21,7 @@ namespace EdgeParty.UI
         [SerializeField] private VisualTreeAsset shopVisualTree;
         [SerializeField] private VisualTreeAsset matchmakingVisualTree;
         [SerializeField] private VisualTreeAsset lockerVisualTree;
+        [SerializeField] private VisualTreeAsset settingsVisualTree;
 
         [Header("Customization Data")]
         [SerializeField] private CustomizationData customizationData;
@@ -54,6 +55,7 @@ namespace EdgeParty.UI
             if (shopVisualTree == null) shopVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/ShopMenu.uxml");
             if (matchmakingVisualTree == null) matchmakingVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/MatchmakingMenu.uxml");
             if (lockerVisualTree == null) lockerVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/StitchUI/UXML/LockerMenu.uxml");
+            if (settingsVisualTree == null) settingsVisualTree = UnityEditor.AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Settings/SettingsMenu.uxml");
 
             if (lockerPrefab == null) lockerPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Scripts/UI/Menus/CharacterCustomization.prefab");
             if (customizationData == null) customizationData = UnityEditor.AssetDatabase.LoadAssetAtPath<CustomizationData>("Assets/UI/Resources/CustomizationData.asset");
@@ -103,12 +105,21 @@ namespace EdgeParty.UI
                 FriendLobbyService.Instance.OnLobbyLeft += HandleLobbyLeft;
             }
 
+            // Ensure MatchmakingManager exists in the scene
+            var matchmakingMgr = FindObjectOfType<EdgeParty.ConnectionManagement.MatchmakingManager>();
+            if (matchmakingMgr == null)
+            {
+                var go = new GameObject("MatchmakingManager");
+                matchmakingMgr = go.AddComponent<EdgeParty.ConnectionManagement.MatchmakingManager>();
+            }
+
             // Register Matchmaking Events
             if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
             {
                 EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingStarted += HandleMatchmakingStarted;
                 EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingCancelled += HandleMatchmakingCancelled;
                 EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingSucceeded += HandleMatchmakingSucceeded;
+                EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingFailed += HandleMatchmakingFailed;
             }
 
             // Start by showing the Login Menu by default
@@ -147,6 +158,7 @@ namespace EdgeParty.UI
                 EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingStarted -= HandleMatchmakingStarted;
                 EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingCancelled -= HandleMatchmakingCancelled;
                 EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingSucceeded -= HandleMatchmakingSucceeded;
+                EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingFailed -= HandleMatchmakingFailed;
             }
         }
 
@@ -374,10 +386,39 @@ namespace EdgeParty.UI
                 _lockerInstance.SetActive(false);
         }
 
+        public void ShowSettings()
+        {
+            if (_lockerInstance != null) _lockerInstance.SetActive(false);
+            if (settingsVisualTree == null) return;
+            SetNewScreen(settingsVisualTree.CloneTree());
+
+            // Get or Add SettingsMenu component
+            var settingsMenu = GetComponent<SettingsMenu>();
+            if (settingsMenu == null)
+            {
+                settingsMenu = gameObject.AddComponent<SettingsMenu>();
+            }
+
+            settingsMenu.OnCloseSettingsEvent = () =>
+            {
+                // Return to home screen when Settings Back button is pressed
+                ShowHome();
+            };
+
+            settingsMenu.InitializeWithRoot(_root);
+            BindSharedSidebarEvents("tab-settings");
+            BindSharedHeaderEvents("tab-settings");
+            ApplyDataBindings();
+        }
+
         // Helper to replace root visual content
         private void SetNewScreen(VisualElement newScreenContent)
         {
             _root = _uiDocument.rootVisualElement;
+            if (_root != null)
+            {
+                _root.style.display = DisplayStyle.Flex;
+            }
             _root.Clear();
             newScreenContent.style.flexGrow = 1;
             newScreenContent.style.width = Length.Percent(100);
@@ -646,8 +687,8 @@ namespace EdgeParty.UI
 #if UNITY_EDITOR
                     if (networkManager == null)
                     {
-                        Debug.Log("[StitchUIController] NetworkManager.Singleton is null. Attempting to auto-load Assets/NetworkManager.prefab in Editor...");
-                        var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/NetworkManager.prefab");
+                        Debug.Log("[StitchUIController] NetworkManager.Singleton is null. Attempting to auto-load Assets/Resources/NetworkManager.prefab in Editor...");
+                        var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/NetworkManager.prefab");
                         if (prefab != null)
                         {
                             var go = Instantiate(prefab);
@@ -1111,6 +1152,67 @@ namespace EdgeParty.UI
             }
         }
 
+        private void HandleMatchmakingFailed(string message)
+        {
+            var statusBanner = _root.Q<VisualElement>("status-banner");
+            if (statusBanner != null)
+            {
+                statusBanner.style.display = DisplayStyle.None;
+            }
+
+            var matchmakingFooter = _root.Q<VisualElement>("matchmaking-footer");
+            if (matchmakingFooter != null)
+            {
+                matchmakingFooter.style.display = DisplayStyle.Flex;
+            }
+
+            if (_matchmakingTimerCoroutine != null)
+            {
+                StopCoroutine(_matchmakingTimerCoroutine);
+                _matchmakingTimerCoroutine = null;
+            }
+
+            ShowMatchmakingErrorPopup(message);
+        }
+
+        private void ShowMatchmakingErrorPopup(string message)
+        {
+            var card = CreateModalOverlay("Lỗi Kết Nối", null);
+
+            Label infoText = new Label(message);
+            infoText.AddToClassList("font-body");
+            infoText.style.fontSize = 20;
+            infoText.style.color = new StyleColor(new Color(0.61f, 0.11f, 0.11f));
+            infoText.style.whiteSpace = WhiteSpace.Normal;
+            infoText.style.marginBottom = 24;
+            infoText.style.unityTextAlign = TextAnchor.MiddleCenter;
+            card.Add(infoText);
+
+            Button okBtn = new Button();
+            okBtn.text = "Đóng";
+            okBtn.AddToClassList("bouncy-btn");
+            okBtn.AddToClassList("btn-primary-3d");
+            okBtn.style.height = 56;
+            okBtn.style.fontSize = 20;
+            okBtn.style.paddingTop = 0;
+            okBtn.style.paddingBottom = 0;
+            okBtn.style.borderTopLeftRadius = 20;
+            okBtn.style.borderTopRightRadius = 20;
+            okBtn.style.borderBottomLeftRadius = 20;
+            okBtn.style.borderBottomRightRadius = 20;
+
+            okBtn.clicked += () => {
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                var overlay = _root.Q<VisualElement>("modal-overlay");
+                if (overlay != null)
+                {
+                    _root.Remove(overlay);
+                }
+            };
+
+            card.Add(okBtn);
+        }
+
         private System.Collections.IEnumerator UpdateMatchmakingTimerRoutine()
         {
             var elapsedLabel = _root.Q<Label>("matchmaking-elapsed");
@@ -1142,7 +1244,7 @@ namespace EdgeParty.UI
             if (btnHome != null) SetupSidebarTabState(btnHome, activeTabName == "tab-home", ShowHome);
             if (btnLocker != null) SetupSidebarTabState(btnLocker, activeTabName == "tab-locker", ShowLocker);
             if (btnShop != null) SetupSidebarTabState(btnShop, activeTabName == "tab-shop", ShowShop);
-            if (btnSettings != null) SetupSidebarTabState(btnSettings, activeTabName == "tab-settings", null);
+            if (btnSettings != null) SetupSidebarTabState(btnSettings, activeTabName == "tab-settings", ShowSettings);
 
             if (btnAddFriend != null)
             {
@@ -1170,6 +1272,15 @@ namespace EdgeParty.UI
             else
             {
                 tabButton.RemoveFromClassList("active-tab");
+            }
+
+            // Update icon tint color dynamically to match code.html
+            var icon = tabButton.Q<VisualElement>(className: "sidebar-tab-icon");
+            if (icon != null)
+            {
+                icon.style.unityBackgroundImageTintColor = isActive
+                    ? new StyleColor(new Color(0.31f, 0.21f, 0f)) // #4e3500 (active)
+                    : new StyleColor(new Color(0.56f, 0.30f, 0f, 0.7f)); // rgba(144, 77, 0, 0.7) (inactive)
             }
 
             RegisterHoverAndClick(tabButton, onClickAction);
@@ -1275,7 +1386,28 @@ namespace EdgeParty.UI
 
             // Profile Title on Sidebar showing current username
             var profileTitle = _root.Q<Label>("profile-title");
-            if (profileTitle != null) profileTitle.text = _username;
+            var profileDisc = _root.Q<Label>("profile-discriminator");
+            if (profileTitle != null)
+            {
+                if (!string.IsNullOrEmpty(_username) && _username.Contains("#"))
+                {
+                    var parts = _username.Split('#');
+                    profileTitle.text = parts[0];
+                    if (profileDisc != null)
+                    {
+                        profileDisc.text = "#" + parts[1];
+                        profileDisc.style.display = DisplayStyle.Flex;
+                    }
+                }
+                else
+                {
+                    profileTitle.text = _username;
+                    if (profileDisc != null)
+                    {
+                        profileDisc.style.display = DisplayStyle.None;
+                    }
+                }
+            }
 
             // Update friend requests badge if present on sidebar
             var badge = _root.Q<VisualElement>("request-badge");

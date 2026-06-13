@@ -32,6 +32,10 @@
     --color-error: #ba1a1a;
     --color-error-container: #ffdad6;
     --color-on-error-container: #93000a;
+    
+    /* Missing utility colors used in Settings and Panels */
+    --color-surface-variant: #dfdac7;
+    --color-primary-fixed-dim: #ffe880;
 }
 
 /* Base Fonts & Text Styles */

@@ -238,9 +238,14 @@ namespace EdgeParty.Social
                 await ForceRefreshAsync();
                 return true;
             }
+            catch (Unity.Services.Friends.Exceptions.FriendsServiceException fsEx)
+            {
+                Debug.LogError($"[FriendLobbyService] Error sending request: {fsEx.Message} | StatusCode: {fsEx.StatusCode}");
+                return false;
+            }
             catch (Exception ex)
             {
-                Debug.LogError($"[FriendLobbyService] Error sending request: {ex.Message}");
+                Debug.LogError($"[FriendLobbyService] Error sending request: {ex.GetType().Name} — {ex.Message}{(ex.InnerException != null ? " | Inner: " + ex.InnerException.Message : "")}");
                 return false;
             }
         }

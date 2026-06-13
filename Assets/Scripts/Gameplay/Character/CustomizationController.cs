@@ -244,7 +244,7 @@ namespace EdgeParty.Gameplay.Character
                 if (colTex != null)
                 {
                     card.style.backgroundImage = new StyleBackground(colTex);
-                    card.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                    card.style.backgroundSize = new StyleBackgroundSize(new BackgroundSize(BackgroundSizeType.Contain));
                 }
                 else
                 {

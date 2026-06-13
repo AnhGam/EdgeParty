@@ -57,6 +57,7 @@ namespace EdgeParty.Gameplay.Character
             {
                 cam.fieldOfView = fov;
                 cam.transform.localPosition = cameraPosition;
+                cam.aspect = 1.0f; // Force 1:1 aspect ratio
             }
         }
 
@@ -67,6 +68,7 @@ namespace EdgeParty.Gameplay.Character
             {
                 cam.fieldOfView = fov;
                 cam.transform.localPosition = cameraPosition;
+                cam.aspect = 1.0f; // Force 1:1 aspect ratio to match square render texture!
             }
 
             if (renderTexture == null)

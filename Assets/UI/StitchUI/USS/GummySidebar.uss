@@ -62,6 +62,14 @@
     -unity-font-style: bold;
 }
 
+.profile-discriminator {
+    font-size: 14px;
+    color: #8c815e;
+    -unity-font-style: bold;
+    margin-top: -2px;
+    margin-bottom: 2px;
+}
+
 .profile-sub {
     font-size: 15px;
     color: #4d4732;
@@ -131,3 +139,25 @@
     font-size: 18px;
     color: #ba1a1a;
 }
+
+/* ===================== MATERIAL SYMBOLS ICON STYLES ===================== */
+
+.icon-home {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/home.svg');
+}
+.icon-styler {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/styler.svg');
+}
+.icon-shopping-basket {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/shopping_basket.svg');
+}
+.icon-settings {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/settings.svg');
+}
+.icon-group-add {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/group_add.svg');
+}
+.icon-logout {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/logout.svg');
+}
+

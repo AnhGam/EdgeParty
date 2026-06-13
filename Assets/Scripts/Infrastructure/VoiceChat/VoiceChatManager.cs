@@ -191,6 +191,63 @@ namespace EdgeParty.Infrastructure.VoiceChat
             OnParticipantSpeaking?.Invoke(participant.PlayerId, isSpeaking);
         }
 
+        private string MapKeyCodeToKeyName(string keyName)
+        {
+            string mappedName = keyName.Trim();
+            if (mappedName.StartsWith("Alpha", System.StringComparison.OrdinalIgnoreCase) && mappedName.Length == 6 && char.IsDigit(mappedName[5]))
+            {
+                return "Digit" + mappedName[5];
+            }
+            if (mappedName.Equals("LeftControl", System.StringComparison.OrdinalIgnoreCase)) return "LeftCtrl";
+            if (mappedName.Equals("RightControl", System.StringComparison.OrdinalIgnoreCase)) return "RightCtrl";
+            if (mappedName.Equals("Space", System.StringComparison.OrdinalIgnoreCase)) return "Space";
+            return mappedName;
+        }
+
+        private void Update()
+        {
+            if (!_isInitialized || VivoxService.Instance == null) return;
+
+            bool voiceEnabled = PlayerPrefs.GetInt("VoiceChatEnabled", 1) == 1;
+            if (!voiceEnabled)
+            {
+                if (!VivoxService.Instance.IsInputDeviceMuted)
+                {
+                    VivoxService.Instance.MuteInputDevice();
+                }
+                return;
+            }
+
+            bool usePTT = PlayerPrefs.GetInt("TransmissionModePTT", 1) == 1;
+            if (usePTT)
+            {
+                string pttKeyName = PlayerPrefs.GetString("KeybindPTT", "V");
+                string mappedPTTKey = MapKeyCodeToKeyName(pttKeyName);
+                if (UnityEngine.InputSystem.Keyboard.current != null && 
+                    System.Enum.TryParse(mappedPTTKey, true, out UnityEngine.InputSystem.Key pttKey))
+                {
+                    bool isPressed = UnityEngine.InputSystem.Keyboard.current[pttKey].isPressed;
+                    if (isPressed)
+                    {
+                        if (VivoxService.Instance.IsInputDeviceMuted)
+                            VivoxService.Instance.UnmuteInputDevice();
+                    }
+                    else
+                    {
+                        if (!VivoxService.Instance.IsInputDeviceMuted)
+                            VivoxService.Instance.MuteInputDevice();
+                    }
+                }
+            }
+            else
+            {
+                if (VivoxService.Instance.IsInputDeviceMuted)
+                {
+                    VivoxService.Instance.UnmuteInputDevice();
+                }
+            }
+        }
+
         #endregion
     }
 }

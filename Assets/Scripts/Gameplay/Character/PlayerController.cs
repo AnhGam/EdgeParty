@@ -278,6 +278,16 @@ namespace EdgeParty.Gameplay.Character
 
         private void Update()
         {
+            // Real-time show/hide nameplate based on settings
+            if (nameplateInstance != null)
+            {
+                bool showNames = PlayerPrefs.GetInt("ShowPlayerNames", 1) == 1;
+                if (nameplateInstance.gameObject.activeSelf != showNames)
+                {
+                    nameplateInstance.gameObject.SetActive(showNames);
+                }
+            }
+
             if (!IsServerActive()) return;
             UpdateAnimatorState();
             UpdateTugOfWar();

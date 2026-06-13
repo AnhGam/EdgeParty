@@ -47,7 +47,7 @@
 .soft-button:hover {
     scale: 1.25;
     background-color: rgba(0, 0, 0, 0);
-    unity-background-image-tint-color: rgb(255, 255, 200); /* Brighten */
+    -unity-background-image-tint-color: rgb(255, 255, 200); /* Brighten */
 }
 
 .soft-button:active {
@@ -257,4 +257,25 @@
     color: rgba(255, 220, 60, 0.95);
     font-size: 24px;
     -unity-font-style: bold;
+}
+
+/* Dynamic Ping & FPS counter styles */
+.ping-fps-counter {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    background-color: rgba(15, 15, 15, 0.85);
+    border-radius: 10px;
+    padding: 6px 12px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    flex-direction: row;
+    align-items: center;
+}
+
+.ping-fps-text {
+    color: #FFFFFF;
+    font-size: 14px;
+    -unity-font-style: bold;
+    margin-right: 8px;
 }

@@ -31,10 +31,10 @@ namespace EdgeParty.Auth
         public event Action OnSignUpSuccess;
         public event Action<string> OnSignUpFailed;
 
-        [Header("Google API Config")]
-        [SerializeField] private string googleClientId = "";
-        [SerializeField] private string googleClientSecret = "";
-        [SerializeField] private int googleRedirectPort = 5000;
+        // Google OAuth Client ID — public by design, same value as configured on UGS Dashboard.
+        // No secret needed: uses PKCE flow (RFC 7636) for desktop apps.
+        private const string GoogleClientId = "513426504151-3mgit1uk0b9omj1bm9umvaug1mhnqv4o.apps.googleusercontent.com";
+        private const int GoogleRedirectPort = 5000;
 
         public bool IsInitialized => UnityServices.State == ServicesInitializationState.Initialized;
         public bool IsSignedIn => IsInitialized && AuthenticationService.Instance.IsSignedIn;
@@ -88,7 +88,7 @@ namespace EdgeParty.Auth
 
                     AuthenticationService.Instance.SignInFailed += (err) =>
                     {
-                        Debug.LogError($"UGS Sign In Failed: {err.Message}");
+                        Debug.LogWarning($"UGS Sign In Failed: {err.Message}");
                     };
                 }
             }
@@ -125,7 +125,9 @@ namespace EdgeParty.Auth
                     Debug.LogWarning($"Failed to update player name on signup: {e.Message}");
                 }
 
-                CachedUsername = username;
+                CachedUsername = !string.IsNullOrEmpty(AuthenticationService.Instance.PlayerName) 
+                    ? AuthenticationService.Instance.PlayerName 
+                    : username;
                 Debug.Log($"Signed up successfully. Player ID: {AuthenticationService.Instance.PlayerId}");
                 
                 // Sign out immediately so they can log in manually on the Login page
@@ -135,13 +137,29 @@ namespace EdgeParty.Auth
             }
             catch (AuthenticationException ex)
             {
-                Debug.LogError($"Sign up failed: {ex.Message}");
+                Debug.LogWarning($"Sign up failed: {ex.Message}");
                 OnSignUpFailed?.Invoke(ex.Message);
             }
             catch (Exception ex)
             {
                 Debug.LogError($"Sign up failed with unexpected error: {ex.Message}");
                 OnSignUpFailed?.Invoke(ex.Message);
+            }
+        }
+
+        private async Task EnsurePlayerNameIsSetAsync(string fallbackName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(AuthenticationService.Instance.PlayerName))
+                {
+                    Debug.Log($"[AuthService] PlayerName is empty in UGS. Updating to: {fallbackName}");
+                    await AuthenticationService.Instance.UpdatePlayerNameAsync(fallbackName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[AuthService] Failed to ensure player name: {ex.Message}");
             }
         }
 
@@ -155,14 +173,26 @@ namespace EdgeParty.Auth
                 // In production, we'd map emails to usernames in a DB, but here we sign in directly.
                 await AuthenticationService.Instance.SignInWithUsernamePasswordAsync(usernameOrEmail, password);
                 
-                CachedUsername = usernameOrEmail;
+                string displayName = usernameOrEmail;
+                if (displayName.Contains("@"))
+                {
+                    displayName = displayName.Split('@')[0];
+                }
+                await EnsurePlayerNameIsSetAsync(displayName);
+
+                CachedUsername = !string.IsNullOrEmpty(AuthenticationService.Instance.PlayerName)
+                    ? AuthenticationService.Instance.PlayerName
+                    : usernameOrEmail;
+
+                string fullPlayerName = AuthenticationService.Instance.PlayerName;
                 Debug.Log($"Signed in successfully. Player ID: {AuthenticationService.Instance.PlayerId}");
+                Debug.Log($"[AuthService] *** Full UGS Player Name (dùng để kết bạn): '{fullPlayerName}' ***");
                 await CloudSaveManager.Instance.LoadAllAsync();
                 OnSignInSuccess?.Invoke();
             }
             catch (AuthenticationException ex)
             {
-                Debug.LogError($"Sign in failed: {ex.Message}");
+                Debug.LogWarning($"Sign in failed: {ex.Message}");
                 OnSignInFailed?.Invoke(ex.Message);
             }
             catch (Exception ex)
@@ -174,24 +204,25 @@ namespace EdgeParty.Auth
 
         public void SignInWithGoogle()
         {
-            if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret))
-            {
-                Debug.LogWarning("Google Sign-In parameters are not configured in the Unity Inspector.");
-                OnSignInFailed?.Invoke("Google Sign-In has not been configured in the Unity Inspector yet. Please fill Client ID and Client Secret on the AuthService component.");
-                return;
-            }
-
+            // Uses PKCE flow — opens system browser, exchanges code without client_secret
             GoogleAuthHelper.StartLogin(
-                googleClientId,
-                googleClientSecret,
-                googleRedirectPort,
+                GoogleClientId,
+                GoogleRedirectPort,
                 async (idToken) =>
                 {
                     try
                     {
                         await EnsureInitializedAsync();
                         await AuthenticationService.Instance.SignInWithGoogleAsync(idToken);
-                        CachedUsername = "GoogleGamer";
+                        
+                        await EnsurePlayerNameIsSetAsync("GoogleGamer");
+                        CachedUsername = !string.IsNullOrEmpty(AuthenticationService.Instance.PlayerName)
+                            ? AuthenticationService.Instance.PlayerName
+                            : "GoogleGamer";
+
+                        Debug.Log($"Google sign in successful. Player ID: {AuthenticationService.Instance.PlayerId}");
+                        Debug.Log($"[AuthService] *** Full UGS Player Name (dùng để kết bạn): '{AuthenticationService.Instance.PlayerName}' ***");
+
                         await CloudSaveManager.Instance.LoadAllAsync();
                         OnSignInSuccess?.Invoke();
                     }
@@ -211,7 +242,7 @@ namespace EdgeParty.Auth
         {
             if (IsSignedIn)
             {
-                AuthenticationService.Instance.SignOut();
+                AuthenticationService.Instance.SignOut(true);
             }
         }
 
@@ -223,7 +254,12 @@ namespace EdgeParty.Auth
 
                 if (AuthenticationService.Instance.IsSignedIn)
                 {
-                    Debug.Log($"Already signed in. Player ID: {AuthenticationService.Instance.PlayerId}");
+                    await EnsurePlayerNameIsSetAsync("Player");
+                    CachedUsername = !string.IsNullOrEmpty(AuthenticationService.Instance.PlayerName)
+                        ? AuthenticationService.Instance.PlayerName
+                        : "Player";
+
+                    Debug.Log($"Already signed in. Player ID: {AuthenticationService.Instance.PlayerId}, Name: {CachedUsername}");
                     await CloudSaveManager.Instance.LoadAllAsync();
                     return true;
                 }
@@ -232,7 +268,13 @@ namespace EdgeParty.Auth
                 {
                     // UGS will automatically reuse session token if we call SignInAnonymouslyAsync()
                     await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                    Debug.Log($"Auto-login successful. Player ID: {AuthenticationService.Instance.PlayerId}");
+                    
+                    await EnsurePlayerNameIsSetAsync("Player");
+                    CachedUsername = !string.IsNullOrEmpty(AuthenticationService.Instance.PlayerName)
+                        ? AuthenticationService.Instance.PlayerName
+                        : "Player";
+
+                    Debug.Log($"Auto-login successful. Player ID: {AuthenticationService.Instance.PlayerId}, Name: {CachedUsername}");
                     await CloudSaveManager.Instance.LoadAllAsync();
                     return true;
                 }

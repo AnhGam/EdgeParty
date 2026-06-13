@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PauseMenu : MonoBehaviour
@@ -7,9 +7,11 @@ public class PauseMenu : MonoBehaviour
     // Kéo SettingsMenu component vào đây
     public SettingsMenu settingsMenu;
 
-    private bool _isPaused = false;
+    private void Start()
+    {
+    }
 
-    void Update()
+    private void Update()
     {
         if (Keyboard.current == null) return;
 
@@ -21,23 +23,27 @@ public class PauseMenu : MonoBehaviour
 
     public void TogglePause()
     {
-        _isPaused = !_isPaused;
-
-        if (_isPaused)
-            OpenPause();
-        else
-            ClosePause();
+        if (settingsMenu != null)
+        {
+            if (settingsMenu.IsOpen)
+            {
+                // Trigger check for unsaved changes
+                settingsMenu.HandleBackButton();
+            }
+            else
+            {
+                settingsMenu.OpenSettings();
+            }
+        }
     }
 
     public void OpenPause()
     {
-        _isPaused = true;
         settingsMenu?.OpenSettings();
     }
 
     public void ClosePause()
     {
-        _isPaused = false;
         settingsMenu?.CloseSettings();
     }
 }
