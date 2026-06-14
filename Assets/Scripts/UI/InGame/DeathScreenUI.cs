@@ -7,7 +7,7 @@ public class DeathScreenUI : MonoBehaviour
 {
     [Header("Settings")]
     [Tooltip("Phải khớp với PlayerController.autoRespawnDelay để hiển thị đúng")]
-    public float respawnCountdown = 5f;
+    public float respawnCountdown = 10f;
 
     private UIDocument _uiDoc;
     private VisualElement _deathOverlay;
@@ -92,7 +92,7 @@ public class DeathScreenUI : MonoBehaviour
     private void SetOverlayVisible(bool visible)
     {
         if (_deathOverlay == null) return;
-        _deathOverlay.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+        _deathOverlay.style.display = DisplayStyle.None;
     }
 
     private void OnDestroy()

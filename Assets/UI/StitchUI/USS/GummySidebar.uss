@@ -161,3 +161,9 @@
     background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/logout.svg');
 }
 
+.sidebar-invite-box {
+    box-shadow: 0 6px 12px rgba(139, 93, 0, 0.15);
+    transition-property: scale, opacity;
+    transition-duration: 0.15s;
+}
+

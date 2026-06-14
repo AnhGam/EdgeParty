@@ -303,6 +303,7 @@ public class HUDController : MonoBehaviour
             networkManager.Shutdown();
         }
 
+        EdgeParty.UI.StitchUIController.ReturnedFromGame = true;
         UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
     }
 

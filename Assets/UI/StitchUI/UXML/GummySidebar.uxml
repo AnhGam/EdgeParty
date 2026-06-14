@@ -48,10 +48,17 @@
                     <ui:Label name="request-badge-count" text="0" style="color: white; font-size: 11px; -unity-font-style: bold; margin: 0; padding: 0;" />
                 </ui:VisualElement>
             </ui:Button>
-            <ui:Button name="btn-logout" class="bouncy-btn btn-surface-3d logout-btn" style="flex-direction: row; align-items: center; justify-content: center; padding: 12px;">
+            <ui:Button name="btn-logout" class="bouncy-btn btn-surface-3d logout-btn" style="flex-direction: row; align-items: center; justify-content: center; padding: 12px; margin-bottom: 12px;">
                 <ui:VisualElement class="icon-logout" style="width: 20px; height: 20px; margin-right: 8px; -unity-background-image-tint-color: #ba1a1a;" />
                 <ui:Label text="Logout" style="font-size: 16px; -unity-font-style: bold; color: #ba1a1a;" />
             </ui:Button>
+            <ui:VisualElement name="sidebar-lobby-invite" class="sidebar-invite-box tactile-panel" style="display: none; padding: 12px; background-color: #ffeeb3; border-radius: 16px; border-width: 3px; border-color: #ffd700;">
+                <ui:Label name="sidebar-invite-text" text="Lobby Invite from Player" class="font-body" style="font-size: 14px; color: #4e3500; -unity-font-style: bold; margin-bottom: 8px; -unity-text-align: middle-center; white-space: normal;" />
+                <ui:VisualElement name="sidebar-invite-buttons-row" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                    <ui:Button name="btn-sidebar-invite-accept" text="Accept" class="bouncy-btn btn-primary-3d" style="flex-grow: 1; height: 32px; font-size: 13px; padding: 0; margin-right: 4px; border-radius: 10px;" />
+                    <ui:Button name="btn-sidebar-invite-decline" text="Decline" class="bouncy-btn btn-surface-3d" style="flex-grow: 1; height: 32px; font-size: 13px; padding: 0; margin-left: 4px; border-radius: 10px; border-color: #ba1a1a;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

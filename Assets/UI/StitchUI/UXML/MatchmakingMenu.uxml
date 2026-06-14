@@ -12,14 +12,7 @@
         <!-- Stretched Header Top Bar -->
         <ui:Instance template="Header" name="header-instance" class="header-stretched" />
 
-        <!-- Matchmaking Status Banner (Under Header) -->
-        <ui:VisualElement name="status-banner" class="status-banner tactile-panel">
-            <ui:VisualElement class="status-text-col">
-                <ui:Label name="matchmaking-title" text="Matchmaking..." class="font-headline banner-title" />
-                <ui:Label name="matchmaking-elapsed" text="Estimated time: 0:45" class="font-body banner-sub" />
-            </ui:VisualElement>
-            <ui:Button name="btn-matchmaking-cancel" text="Cancel" class="bouncy-btn btn-error-3d banner-cancel-btn" />
-        </ui:VisualElement>
+
 
         <!-- Canvas Body (Platforms, Chat & Friends drawer) -->
         <ui:VisualElement name="matchmaking-body" class="matchmaking-body">
@@ -73,8 +66,9 @@
 
 
                 <!-- Bottom Center Play Action (Added from home!) -->
-                <ui:VisualElement name="matchmaking-footer" class="matchmaking-footer">
+                <ui:VisualElement name="matchmaking-footer" class="matchmaking-footer" style="flex-direction: row; align-items: center; justify-content: center;">
                     <ui:Button name="btn-matchmaking-play" text="PLAY" class="bouncy-btn btn-primary-3d matchmaking-play-btn" />
+                    <ui:Button name="btn-matchmaking-leave" text="LEAVE" class="bouncy-btn btn-surface-3d matchmaking-play-btn" style="margin-left: 12px; display: none;" />
                 </ui:VisualElement>
             </ui:VisualElement>
 
@@ -109,6 +103,15 @@
                 </ui:ScrollView>
             </ui:VisualElement>
             
+        </ui:VisualElement>
+
+        <!-- Matchmaking Status Banner (Under Header) -->
+        <ui:VisualElement name="status-banner" class="status-banner tactile-panel">
+            <ui:VisualElement class="status-text-col">
+                <ui:Label name="matchmaking-title" text="Matchmaking..." class="font-headline banner-title" />
+                <ui:Label name="matchmaking-elapsed" text="Estimated time: 0:45" class="font-body banner-sub" />
+            </ui:VisualElement>
+            <ui:Button name="btn-matchmaking-cancel" text="Cancel" class="bouncy-btn btn-error-3d banner-cancel-btn" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
