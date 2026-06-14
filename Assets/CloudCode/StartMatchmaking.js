@@ -23,6 +23,7 @@ module.exports = async ({ params, context, logger, secretManager }) => {
   const pings = params.pings || params.Pings || params.PINGS;
   const ticketId = params.ticketId || params.TicketId || params.TICKETID;
   const cancel = params.cancel || params.Cancel || params.CANCEL;
+  const players = params.players || params.Players || params.PLAYERS;
 
   // Print process.env keys to help debug environment variable configuration
   try {
@@ -72,18 +73,25 @@ module.exports = async ({ params, context, logger, secretManager }) => {
   if (cancel === true && ticketId) {
     logger.info(`StartMatchmaking: Cancelling ticket ${ticketId}...`);
     try {
-      await axios.delete(`${OM_BASE_URL}/tickets/${ticketId}`, {
-        headers,
-        timeout: 10000,
-      });
-      logger.info(`StartMatchmaking: Ticket ${ticketId} cancelled successfully.`);
+      const ids = ticketId.split(";");
+      for (const id of ids) {
+        if (!id) continue;
+        try {
+          await axios.delete(`${OM_BASE_URL}/tickets/${id}`, {
+            headers,
+            timeout: 10000,
+          });
+          logger.info(`StartMatchmaking: Ticket ${id} cancelled successfully.`);
+        } catch (err) {
+          if (err.response && err.response.status === 404) {
+            logger.info(`StartMatchmaking: Ticket ${id} not found (already removed).`);
+          } else {
+            logger.warn(`StartMatchmaking: Failed to cancel ticket ${id}: ${err.message}`);
+          }
+        }
+      }
       return JSON.stringify({ status: "CANCELLED" });
     } catch (error) {
-      // 404 = ticket already gone (expired/removed), treat as success
-      if (error.response && error.response.status === 404) {
-        logger.info(`StartMatchmaking: Ticket ${ticketId} not found (already removed).`);
-        return JSON.stringify({ status: "CANCELLED" });
-      }
       const errMsg = error.response ? JSON.stringify(error.response.data) : error.message;
       logger.error(`StartMatchmaking: Cancel error - ${errMsg}`);
       throw new Error(`Edgegap API error: ${error.response ? error.response.status : "N/A"} - ${errMsg}`);
@@ -94,18 +102,21 @@ module.exports = async ({ params, context, logger, secretManager }) => {
   if (ticketId && cancel !== true) {
     logger.info(`StartMatchmaking: Polling ticket ${ticketId}...`);
     try {
-      const response = await axios.get(`${OM_BASE_URL}/tickets/${ticketId}`, {
+      const ids = ticketId.split(";");
+      const primaryId = ids[0];
+      const response = await axios.get(`${OM_BASE_URL}/tickets/${primaryId}`, {
         headers,
         timeout: 10000,
       });
 
       const ticket = response.data;
       logger.info(`StartMatchmaking: Ticket status = ${ticket.status}`);
+      // Restore the combined ticket ID string so client continues to poll with it
+      ticket.id = ticketId;
       return JSON.stringify(ticket);
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        // Ticket expired/removed – signal the client to stop polling
-        logger.info(`StartMatchmaking: Ticket ${ticketId} not found (expired/removed).`);
+        logger.info(`StartMatchmaking: Primary ticket not found (expired/removed).`);
         return JSON.stringify({ status: "CANCELLED" });
       }
       const errMsg = error.response ? JSON.stringify(error.response.data) : error.message;
@@ -138,27 +149,74 @@ module.exports = async ({ params, context, logger, secretManager }) => {
     logger.info("StartMatchmaking: WARNING: No client ping data provided or empty.");
   }
 
-  const body = {
-    profile: MATCHMAKING_PROFILE,
-    attributes,
-    // player_ip: null  // null = Edgegap auto-detects from request IP (recommended)
-  };
+  // Parse players array
+  let finalPlayers = players;
+  if (finalPlayers && typeof finalPlayers === "string") {
+    try {
+      finalPlayers = JSON.parse(finalPlayers);
+      logger.info("StartMatchmaking: Parsed players from stringified JSON.");
+    } catch (e) {
+      logger.error("StartMatchmaking: Failed to parse players string: " + e.message);
+    }
+  }
 
-  try {
-    const response = await axios.post(`${OM_BASE_URL}/tickets`, body, {
-      headers,
-      timeout: 10000,
-    });
+  if (Array.isArray(finalPlayers) && finalPlayers.length > 1) {
+    // ── MULTI-PLAYER SOLO MATCHMAKING (POST /tickets for each) ──
+    logger.info(`StartMatchmaking: Creating ${finalPlayers.length} separate solo tickets...`);
+    try {
+      const tickets = [];
+      for (let i = 0; i < finalPlayers.length; i++) {
+        const p = finalPlayers[i];
+        const response = await axios.post(`${OM_BASE_URL}/tickets`, {
+          profile: MATCHMAKING_PROFILE,
+          attributes: {
+            beacons: finalBeacons || {}
+          }
+        }, {
+          headers,
+          timeout: 10000,
+        });
+        tickets.push(response.data);
+        logger.info(`StartMatchmaking: Created ticket for player ${p.username || p.id}: ${response.data.id}`);
+      }
 
-    const ticket = response.data;
-    logger.info(`StartMatchmaking: Ticket created! ID = ${ticket.id}, Status = ${ticket.status}`);
+      // Encode all ticket IDs separated by semicolon
+      const ticketIdsStr = tickets.map(t => t.id).join(";");
+      
+      const hostTicket = tickets[0];
+      hostTicket.id = ticketIdsStr;
+      
+      return JSON.stringify(hostTicket);
+    } catch (error) {
+      const status = error.response ? error.response.status : "N/A";
+      const data = error.response ? JSON.stringify(error.response.data) : error.message;
+      throw new Error(`Edgegap API multi-tickets error: ${status} - ${data}. Params received: ${JSON.stringify(params || {})}`);
+    }
+  } else {
+    // ── SOLO MATCHMAKING (POST /tickets) ──
+    logger.info("StartMatchmaking: Creating individual matchmaking ticket...");
+    const body = {
+      profile: MATCHMAKING_PROFILE,
+      attributes,
+      // player_ip: null  // null = Edgegap auto-detects from request IP (recommended)
+    };
 
-    // Return the ticket – client stores ticket.id and polls with it
-    return JSON.stringify(ticket);
-  } catch (error) {
-    const status = error.response ? error.response.status : "N/A";
-    const data = error.response ? JSON.stringify(error.response.data) : error.message;
-    throw new Error(`Edgegap API error: ${status} - ${data}. Params received: ${JSON.stringify(params || {})}. Attributes sent: ${JSON.stringify(attributes || {})}`);
+    try {
+      const response = await axios.post(`${OM_BASE_URL}/tickets`, body, {
+        headers,
+        timeout: 10000,
+      });
+
+      const ticket = response.data;
+      logger.info(`StartMatchmaking: Solo ticket created! ID = ${ticket.id}, Status = ${ticket.status}`);
+
+      // Return the ticket – client stores ticket.id and polls with it
+      return JSON.stringify(ticket);
+    } catch (error) {
+      const status = error.response ? error.response.status : "N/A";
+      const data = error.response ? JSON.stringify(error.response.data) : error.message;
+      throw new Error(`Edgegap API tickets error: ${status} - ${data}. Params received: ${JSON.stringify(params || {})}. Attributes sent: ${JSON.stringify(attributes || {})}`);
+    }
   }
 };
 
@@ -166,6 +224,7 @@ module.exports = async ({ params, context, logger, secretManager }) => {
 module.exports.params = {
   pings: "JSON",
   ticketId: "String",
-  cancel: "Boolean"
+  cancel: "Boolean",
+  players: "JSON"
 };
 

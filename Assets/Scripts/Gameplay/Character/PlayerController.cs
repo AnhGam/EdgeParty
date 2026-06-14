@@ -55,12 +55,13 @@ namespace EdgeParty.Gameplay.Character
 
         [Header("Dead State")]
         [Tooltip("Giây tự hồi sau khi chết")]
-        public float autoRespawnDelay = 5f;
+        public float autoRespawnDelay = 10f;
         [Tooltip("Giây chờ sau khi spring phục hồi trước khi nhận phím")]
         public float inputBlockAfterRespawn = 1.5f;
 
         private RagdollBoneFollower[] _followers;
         private GrabHandler[] _grabHandlers;
+        private RigidbodyConstraints _originalPelvisConstraints;
 
         // Trạng thái chết cục bộ (client-side): block input di chuyển, chỉ cho xoay camera
         private bool _isLocallyDead = false;
@@ -84,6 +85,10 @@ namespace EdgeParty.Gameplay.Character
                 foreach (var rb in root.GetComponentsInChildren<Rigidbody>())
                     if (rb.name.ToLower().Contains("pelvis")) { pelvisRigidbody = rb; break; }
             }
+            if (pelvisRigidbody != null)
+            {
+                _originalPelvisConstraints = pelvisRigidbody.constraints;
+            }
 
             SyncLegacyReferences();
             IgnoreInternalCollisions();
@@ -102,7 +107,7 @@ namespace EdgeParty.Gameplay.Character
             // Bỏ qua va chạm giữa TẤT CẢ các bộ phận trong cùng một nhân vật.
             // Điều này cực kỳ quan trọng với Active Ragdoll để tránh việc tay đấm vào chân/đầu 
             // gây ra phản lực làm nhân vật bị bắn đi hoặc xoay ngược.
-            var allColliders = transform.root.GetComponentsInChildren<Collider>();
+            var allColliders = GetComponentsInChildren<Collider>(true);
             for (int i = 0; i < allColliders.Length; i++)
             {
                 for (int j = i + 1; j < allColliders.Length; j++)
@@ -310,22 +315,33 @@ namespace EdgeParty.Gameplay.Character
 
             string prefabName = CurrentHeldItem == WeaponPickup.ItemType.Bomb ? "BombBall" : "Cosmic_Retro_Blaster_2_5";
             var prefab = Resources.Load<GameObject>(prefabName);
-            if (prefab == null) return;
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[PlayerController] Failed to load weapon prefab '{prefabName}' from Resources!");
+                return;
+            }
 
             _weaponVisualInstance = Instantiate(prefab, hand);
+
+            // Strip network, physics, and scripting components immediately
+            var netObj = _weaponVisualInstance.GetComponent<NetworkObject>();
+            if (netObj != null) DestroyImmediate(netObj);
+
+            var rb = _weaponVisualInstance.GetComponent<Rigidbody>();
+            if (rb != null) DestroyImmediate(rb);
+
+            var bombItem = _weaponVisualInstance.GetComponent<BombItem>();
+            if (bombItem != null) DestroyImmediate(bombItem);
+            var stunGun = _weaponVisualInstance.GetComponent<StunGun>();
+            if (stunGun != null) DestroyImmediate(stunGun);
+
+            foreach (var col in _weaponVisualInstance.GetComponentsInChildren<Collider>())
+            {
+                DestroyImmediate(col);
+            }
+
             _weaponVisualInstance.transform.localPosition = Vector3.zero;
             _weaponVisualInstance.transform.localRotation = Quaternion.identity;
-
-            foreach (var col in _weaponVisualInstance.GetComponentsInChildren<Collider>()) col.enabled = false;
-            var rb = _weaponVisualInstance.GetComponent<Rigidbody>();
-            if (rb != null) Destroy(rb);
-            var netObj = _weaponVisualInstance.GetComponent<NetworkObject>();
-            if (netObj != null) Destroy(netObj);
-            
-            var bombItem = _weaponVisualInstance.GetComponent<BombItem>();
-            if (bombItem != null) Destroy(bombItem);
-            var stunGun = _weaponVisualInstance.GetComponent<StunGun>();
-            if (stunGun != null) Destroy(stunGun);
 
             if (CurrentHeldItem == WeaponPickup.ItemType.Bomb)
             {
@@ -336,6 +352,8 @@ namespace EdgeParty.Gameplay.Character
                 _weaponVisualInstance.transform.localScale = Vector3.one * 0.6f;
                 _weaponVisualInstance.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
             }
+
+            _weaponVisualInstance.SetActive(true);
         }
 
         private Transform FindRightHand()
@@ -552,7 +570,10 @@ namespace EdgeParty.Gameplay.Character
                     var targetController = hit.collider.GetComponentInParent<PlayerController>();
                     if (targetController != null && targetController != this)
                     {
-                        targetController.StunPlayerClientRpc(2.5f, hit.point);
+                        if (targetController.stats != null)
+                        {
+                            targetController.stats.TakeDamage(targetController.stats.maxHealth, direction, targetController.pelvisRigidbody);
+                        }
                     }
                 }
 
@@ -692,7 +713,16 @@ namespace EdgeParty.Gameplay.Character
             _isInputBlocked = true;
 
             // Dừng movement
-            motor?.SetMovementInput(Vector3.zero, false);
+            if (motor != null)
+            {
+                motor.SetMovementInput(Vector3.zero, false);
+                motor.enabled = false;
+            }
+
+            if (pelvisRigidbody != null)
+            {
+                pelvisRigidbody.constraints = RigidbodyConstraints.None;
+            }
 
             // Toàn bộ khớp về spring = 0 → nằm xuống đất tự nhiên
             if (_followers == null || _followers.Length == 0)
@@ -706,6 +736,16 @@ namespace EdgeParty.Gameplay.Character
         private void OnPlayerRespawned_Ragdoll()
         {
             _isLocallyDead = false;
+
+            if (motor != null)
+            {
+                motor.enabled = true;
+            }
+
+            if (pelvisRigidbody != null)
+            {
+                pelvisRigidbody.constraints = _originalPelvisConstraints;
+            }
 
             // Khôi phục spring về multiplier = 1
             if (_followers == null || _followers.Length == 0)

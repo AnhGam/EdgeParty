@@ -9,6 +9,7 @@ using Unity.Netcode.Transports.UTP;
 using Unity.Services.CloudCode;
 using UnityEngine;
 using EdgeParty.Infrastructure.VoiceChat;
+using EdgeParty.Social;
 
 namespace EdgeParty.ConnectionManagement
 {
@@ -30,10 +31,27 @@ namespace EdgeParty.ConnectionManagement
 
         private string currentTicketId;
         private bool isPolling = false;
+        private Coroutine pollCoroutine = null;
+        private bool isGuestMatchmaking = false;
         private string _lastMatchId = "";  // Lưu ticket ID để dùng làm Vivox channel name
 
-        public bool IsMatchmaking => isPolling;
+        public bool IsMatchmaking => isPolling || isGuestMatchmaking;
         public float MatchmakingStartTime { get; private set; }
+
+        public void SetGuestMatchmaking(bool active)
+        {
+            if (isGuestMatchmaking == active) return;
+            isGuestMatchmaking = active;
+            if (active)
+            {
+                MatchmakingStartTime = Time.time;
+                OnMatchmakingStarted?.Invoke();
+            }
+            else
+            {
+                OnMatchmakingCancelled?.Invoke();
+            }
+        }
 
         private void Awake()
         {
@@ -175,7 +193,31 @@ namespace EdgeParty.ConnectionManagement
             {
                 FilterPingsByRegion(pings);
 
-                var args = new Dictionary<string, object> { { "pings", pings } };
+                // Set lobby status to Matchmaking if Host
+                if (FriendLobbyService.Instance != null && FriendLobbyService.Instance.IsHost)
+                {
+                    _ = FriendLobbyService.Instance.UpdateLobbyStatusAsync("Matchmaking");
+                }
+
+                // Get players list
+                var playersList = new List<FriendLobbyService.MatchmakingPlayer>();
+                if (FriendLobbyService.Instance != null)
+                {
+                    playersList = FriendLobbyService.Instance.GetMatchmakingPlayers();
+                }
+                else
+                {
+                    string myName = Auth.AuthService.Instance != null ? Auth.AuthService.Instance.CachedUsername : "Player";
+                    string myId = Unity.Services.Authentication.AuthenticationService.Instance.IsSignedIn ? Unity.Services.Authentication.AuthenticationService.Instance.PlayerId : "local_player";
+                    playersList.Add(new FriendLobbyService.MatchmakingPlayer { id = myId, username = myName });
+                }
+
+                var args = new Dictionary<string, object>
+                {
+                    { "pings", pings },
+                    { "players", playersList }
+                };
+
                 var jsonResponse = await CloudCodeService.Instance.CallEndpointAsync(
                     "StartMatchmaking", args
                 );
@@ -185,6 +227,10 @@ namespace EdgeParty.ConnectionManagement
                 if (ticket == null || string.IsNullOrEmpty(ticket.ID))
                 {
                     Debug.LogWarning("[MatchmakingManager] Failed to create matchmaking ticket: invalid response.");
+                    if (FriendLobbyService.Instance != null && FriendLobbyService.Instance.IsHost)
+                    {
+                        _ = FriendLobbyService.Instance.UpdateLobbyStatusAsync("");
+                    }
                     OnMatchmakingFailed?.Invoke("Không thể tạo ticket matchmaking, vui lòng thử lại");
                     return;
                 }
@@ -206,6 +252,10 @@ namespace EdgeParty.ConnectionManagement
                 Debug.LogWarning($"[MatchmakingManager] StartMatchmaking failed: {ex.Message}");
                 isPolling = false;
                 currentTicketId = null;
+                if (FriendLobbyService.Instance != null && FriendLobbyService.Instance.IsHost)
+                {
+                    _ = FriendLobbyService.Instance.UpdateLobbyStatusAsync("");
+                }
                 OnMatchmakingFailed?.Invoke("Lỗi kết nối mạng, vui lòng kiểm tra lại internet");
             }
         }
@@ -214,7 +264,7 @@ namespace EdgeParty.ConnectionManagement
         {
             if (isPolling) return;
             isPolling = true;
-            StartCoroutine(PollMatchmakingStatusRoutine());
+            pollCoroutine = StartCoroutine(PollMatchmakingStatusRoutine());
         }
 
         private IEnumerator PollMatchmakingStatusRoutine()
@@ -224,15 +274,27 @@ namespace EdgeParty.ConnectionManagement
             {
                 yield return new WaitForSeconds(pollingInterval);
 
+                if (!isPolling || string.IsNullOrEmpty(currentTicketId))
+                {
+                    yield break;
+                }
+
                 var args = new Dictionary<string, object>
                 {
                     { "ticketId", currentTicketId },
-                    { "cancel", false }
+                    { "cancel", false },
+                    { "pings", new Dictionary<string, float>() },
+                    { "players", new List<FriendLobbyService.MatchmakingPlayer>() }
                 };
 
                 var task = CloudCodeService.Instance.CallEndpointAsync("StartMatchmaking", args);
 
                 yield return new WaitUntil(() => task.IsCompleted);
+
+                if (!isPolling)
+                {
+                    yield break;
+                }
 
                 if (task.Status != System.Threading.Tasks.TaskStatus.RanToCompletion)
                 {
@@ -242,6 +304,7 @@ namespace EdgeParty.ConnectionManagement
                     if (consecutiveErrors >= 3)
                     {
                         isPolling = false;
+                        pollCoroutine = null;
                         OnMatchmakingFailed?.Invoke("Lỗi kết nối mạng, vui lòng kiểm tra lại internet");
                         yield break;
                     }
@@ -258,6 +321,7 @@ namespace EdgeParty.ConnectionManagement
                 {
                     Debug.LogError($"[MatchmakingManager] Failed to deserialize ticket response: {ex.Message}");
                     isPolling = false;
+                    pollCoroutine = null;
                     OnMatchmakingFailed?.Invoke("Lỗi dữ liệu phản hồi từ máy chủ");
                     yield break;
                 }
@@ -268,15 +332,18 @@ namespace EdgeParty.ConnectionManagement
                 if (ticket.Status == "HOST_ASSIGNED" && ticket.Assignment != null)
                 {
                     isPolling = false;
+                    pollCoroutine = null;
                     HandleAssignment(ticket.Assignment);
                 }
                 else if (ticket.Status == "CANCELLED")
                 {
                     Debug.LogWarning("[MatchmakingManager] Matchmaking ticket was cancelled.");
                     isPolling = false;
+                    pollCoroutine = null;
                     OnMatchmakingCancelled?.Invoke();
                 }
             }
+            pollCoroutine = null;
         }
 
         private void HandleAssignment(DeploymentDTO assignment)
@@ -317,10 +384,16 @@ namespace EdgeParty.ConnectionManagement
                 Debug.Log($"[MatchmakingManager] Joining Vivox channel for match: {_lastMatchId}");
             }
 
+            // Sync connection details to Lobby if Host
+            if (FriendLobbyService.Instance != null && FriendLobbyService.Instance.IsHost)
+            {
+                _ = FriendLobbyService.Instance.UpdateLobbyStatusAsync("Matched", host, port.ToString());
+            }
+
             ConnectToServer(host, port);
         }
 
-        private void ConnectToServer(string host, ushort port)
+        public void ConnectToServer(string host, ushort port)
         {
             var networkManager = NetworkManager.Singleton;
             if (networkManager == null)
@@ -377,7 +450,17 @@ namespace EdgeParty.ConnectionManagement
         {
             Debug.Log("[MatchmakingManager] Stopping Matchmaking.");
             isPolling = false;
+            if (pollCoroutine != null)
+            {
+                StopCoroutine(pollCoroutine);
+                pollCoroutine = null;
+            }
             OnMatchmakingCancelled?.Invoke();
+
+            if (FriendLobbyService.Instance != null && FriendLobbyService.Instance.IsHost)
+            {
+                _ = FriendLobbyService.Instance.UpdateLobbyStatusAsync("");
+            }
 
             if (string.IsNullOrEmpty(currentTicketId)) return;
 
@@ -386,7 +469,9 @@ namespace EdgeParty.ConnectionManagement
                 var args = new Dictionary<string, object>
                 {
                     { "ticketId", currentTicketId },
-                    { "cancel", true }
+                    { "cancel", true },
+                    { "pings", new Dictionary<string, float>() },
+                    { "players", new List<FriendLobbyService.MatchmakingPlayer>() }
                 };
 
                 await CloudCodeService.Instance.CallEndpointAsync("StartMatchmaking", args);

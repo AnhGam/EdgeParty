@@ -79,6 +79,13 @@ public class ItemSpawner : MonoBehaviour
         }
 
         RefreshSpawnPoints();
+
+        if (_spawnPoints.Count == 0)
+        {
+            Debug.LogWarning("[ItemSpawner] No ItemSpawnPoint tags found in scene! Generating fallback spawn points...");
+            GenerateFallbackSpawnPoints();
+        }
+
         // Delay trước khi bắt đầu spawn (cho map load xong)
         _nextSpawnTime = Time.time + spawnCheckInterval + 5f;
         _spawnEnabled = true;
@@ -88,6 +95,9 @@ public class ItemSpawner : MonoBehaviour
     private void Update()
     {
         if (!_spawnEnabled) return;
+
+        // Chỉ server mới spawn item
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
 
         // Cập nhật cooldowns
         UpdateCooldowns();
@@ -172,9 +182,42 @@ public class ItemSpawner : MonoBehaviour
     private void RefreshSpawnPoints()
     {
         _spawnPoints.Clear();
-        foreach (var go in GameObject.FindGameObjectsWithTag(itemSpawnTag))
+        
+        // Find by "ItemSpawnPoint" first (default tag)
+        foreach (var go in GameObject.FindGameObjectsWithTag("ItemSpawnPoint"))
             _spawnPoints.Add(go.transform);
-        Debug.Log($"[ItemSpawner] Found {_spawnPoints.Count} item spawn points (tag: {itemSpawnTag}).");
+
+        // Also check "ItemSpawn" if no default points were found
+        if (_spawnPoints.Count == 0)
+        {
+            foreach (var go in GameObject.FindGameObjectsWithTag("ItemSpawn"))
+                _spawnPoints.Add(go.transform);
+        }
+        
+        Debug.Log($"[ItemSpawner] Found {_spawnPoints.Count} item spawn points.");
+    }
+
+    /// <summary>
+    /// Tự generate các spawn point trên map nếu không tìm thấy tagged objects.
+    /// Tạo grid 3x3 quanh tâm map (y=1) để item có chỗ xuất hiện.
+    /// </summary>
+    private void GenerateFallbackSpawnPoints()
+    {
+        // Tạo 9 spawn points theo grid 3x3, cách nhau 10 units
+        int[] gridX = { -10, 0, 10 };
+        int[] gridZ = { -10, 0, 10 };
+        float groundY = 1f;
+
+        for (int xi = 0; xi < gridX.Length; xi++)
+        {
+            for (int zi = 0; zi < gridZ.Length; zi++)
+            {
+                var go = new GameObject($"ItemSpawnPoint_Fallback_{xi}_{zi}");
+                go.transform.position = new Vector3(gridX[xi], groundY, gridZ[zi]);
+                _spawnPoints.Add(go.transform);
+            }
+        }
+        Debug.Log($"[ItemSpawner] Generated {_spawnPoints.Count} fallback spawn points.");
     }
 }
 

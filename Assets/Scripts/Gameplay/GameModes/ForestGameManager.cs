@@ -24,7 +24,7 @@ public class ForestGameManager : NetworkBehaviour
     // ─── Config ───────────────────────────────────────────────────────────
     [Header("Match Settings")]
     [Tooltip("Thời gian mỗi trận (giây)")]
-    public float matchDuration = 180f;
+    public float matchDuration = 300f;
     [Tooltip("Điểm để thắng sớm (0 = không giới hạn điểm, chỉ tính giờ)")]
     public int scoreToWin = 0;
     [Tooltip("Đếm ngược trước khi bắt đầu (giây)")]
@@ -68,6 +68,11 @@ public class ForestGameManager : NetworkBehaviour
         if (IsServer)
         {
             StartCoroutine(MatchFlowCoroutine());
+        }
+        else
+        {
+            // Client: khi bị disconnect (server tắt sau match) → về MainMenu
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnDisconnectedFromServer;
         }
     }
 
@@ -138,15 +143,51 @@ public class ForestGameManager : NetworkBehaviour
         StartCoroutine(PostMatchCoroutine());
     }
 
+    private void OnDisconnectedFromServer(ulong clientId)
+    {
+        // Client bị disconnect (server tắt) → cleanup và về MainMenu
+        Debug.Log("[ForestGameManager] Disconnected from server after match. Returning to MainMenu...");
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnDisconnectedFromServer;
+            NetworkManager.Singleton.Shutdown();
+        }
+        EdgeParty.UI.StitchUIController.ReturnedFromGame = true;
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu", UnityEngine.SceneManagement.LoadSceneMode.Single);
+    }
+
     private IEnumerator PostMatchCoroutine()
     {
         yield return new WaitForSeconds(delayAfterEnd);
-        // TODO: Load lobby scene or restart
-        // Unity.Netcode.NetworkManager.Singleton.SceneManager.LoadScene("LobbyScene", UnityEngine.SceneManagement.LoadSceneMode.Single);
-        Debug.Log("[ForestGameManager] Post-match delay done. (Add scene reload here)");
+
+        Debug.Log("[ForestGameManager] Post-match: shutting down server and terminating container.");
+
+        // Ngắt kết nối tất cả clients trước (gửi disconnect message)
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.Shutdown();
+        }
+
+        // Đợi thêm 1 giây để Netcode flush disconnect messages
+        yield return new WaitForSecondsRealtime(1f);
+
+        // Thoát process → Edgegap auto-terminates container
+        Debug.Log("[ForestGameManager] Calling Application.Quit().");
+        Application.Quit();
+    }
+
+    // ─── Cleanup ──────────────────────────────────────────────────────────
+
+    public override void OnNetworkDespawn()
+    {
+        if (!IsServer && NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnDisconnectedFromServer;
+        }
     }
 
     // ─── Score Management ─────────────────────────────────────────────────
+
 
     public void AddScore(int teamID, int points)
     {

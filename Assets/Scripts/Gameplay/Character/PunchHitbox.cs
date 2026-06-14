@@ -24,7 +24,7 @@ namespace EdgeParty.Gameplay.Character
     {
         [Header("Damage")]
         [Tooltip("Base damage dealt per punch")]
-        public float damage = 20f;
+        public float damage = 34f;
         [Tooltip("Layer mask for valid hit targets (should include the Player layer)")]
         public LayerMask targetLayers = ~0;
 
@@ -70,8 +70,10 @@ namespace EdgeParty.Gameplay.Character
             if (!_isActive) return;
             if (_hitThisSwing.Contains(other)) return;
 
-            // Skip own body (same root)
-            if (other.transform.root == transform.root) return;
+            // Skip own body (compare PlayerController to avoid transform.root issues with common parents)
+            var otherController = other.GetComponentInParent<PlayerController>();
+            var myController = GetComponentInParent<PlayerController>();
+            if (myController != null && otherController != null && myController == otherController) return;
 
             // Find PlayerStats on target hierarchy
             var targetStats = other.GetComponentInParent<PlayerStats>();

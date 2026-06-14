@@ -71,8 +71,44 @@ namespace EdgeParty.Auth
             {
                 if (UnityServices.State == ServicesInitializationState.Uninitialized)
                 {
-                    await UnityServices.InitializeAsync();
-                    Debug.Log("Unity Services Initialized successfully.");
+                    var options = new InitializationOptions();
+                    
+                    // Separates Editor vs Standalone Build profiles to support testing on a single machine.
+                    // Also supports custom profile command-line argument (e.g. -profile Guest1).
+                    string profile = "default";
+#if UNITY_EDITOR
+                    if (Application.dataPath.Contains("_clone"))
+                    {
+                        profile = "editor_clone";
+                        int idx = Application.dataPath.IndexOf("_clone");
+                        if (idx != -1)
+                        {
+                            int slashIdx = Application.dataPath.IndexOf("/Assets", idx);
+                            if (slashIdx == -1) slashIdx = Application.dataPath.IndexOf("\\Assets", idx);
+                            if (slashIdx != -1)
+                            {
+                                profile = "editor_" + Application.dataPath.Substring(idx + 1, slashIdx - idx - 1);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        profile = "editor";
+                    }
+#else
+                    string[] args = System.Environment.GetCommandLineArgs();
+                    for (int i = 0; i < args.Length; i++)
+                    {
+                        if (args[i] == "-profile" && i + 1 < args.Length)
+                        {
+                            profile = args[i + 1];
+                            break;
+                        }
+                    }
+#endif
+                    options.SetProfile(profile);
+                    await UnityServices.InitializeAsync(options);
+                    Debug.Log($"Unity Services Initialized successfully with profile: {profile}");
                     
                     AuthenticationService.Instance.SignedIn += () =>
                     {

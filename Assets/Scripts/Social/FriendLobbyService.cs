@@ -62,11 +62,19 @@ namespace EdgeParty.Social
         public event Action<string> OnLobbyJoined;
         public event Action OnLobbyLeft;
 
+        public LobbyInvite CurrentInvite { get; set; }
+        public event Action<LobbyInvite> OnLobbyInviteReceived;
+        public event Action OnLobbyInviteCleared;
+
         private bool _useMockMode = true; // Defaults to mock mode until initialized successfully
         private float _heartbeatTimer = 0f;
         private float _presenceRefreshTimer = 0f;
         private const float PresenceRefreshInterval = 30f;  // Refresh presence mỗi 30s
         private Unity.Services.Lobbies.Models.Lobby _currentLobby;
+        private bool _isInitialized = false;
+
+        private float _lobbyPollTimer = 0f;
+        private const float LobbyPollInterval = 3f;  // Poll lobby mỗi 3s
 
         private void Awake()
         {
@@ -96,6 +104,17 @@ namespace EdgeParty.Social
                 }
             }
 
+            // Periodic lobby polling to get latest members
+            if (!_useMockMode && !string.IsNullOrEmpty(CurrentLobbyId))
+            {
+                _lobbyPollTimer += Time.deltaTime;
+                if (_lobbyPollTimer >= LobbyPollInterval)
+                {
+                    _lobbyPollTimer = 0f;
+                    _ = PollLobbyAsync();
+                }
+            }
+
             // Periodic presence refresh để đảm bảo bạn bè thấy trạng thái online
             if (!_useMockMode)
             {
@@ -105,6 +124,25 @@ namespace EdgeParty.Social
                     _presenceRefreshTimer = 0f;
                     _ = RefreshFriendsAndRequestsAsync();
                 }
+            }
+        }
+
+        private async Task PollLobbyAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentLobbyId)) return;
+            try
+            {
+                _currentLobby = await Unity.Services.Lobbies.LobbyService.Instance.GetLobbyAsync(CurrentLobbyId);
+                UpdateLobbyMembersList();
+
+                if (!IsHost)
+                {
+                    CheckMatchmakingStatusFromLobbyData();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[FriendLobbyService] Failed to poll lobby: {ex.Message}");
             }
         }
 
@@ -134,11 +172,16 @@ namespace EdgeParty.Social
             IncomingRequests.Add(new FriendRequest { Id = "req_2", Username = "SpeedyGamer" });
 
             LobbyMembers.Clear();
-            LobbyMembers.Add("You");
         }
 
         public async Task InitializeSocialAsync()
         {
+            if (_isInitialized)
+            {
+                _ = RefreshFriendsAndRequestsAsync();
+                return;
+            }
+
             try
             {
                 if (UnityServices.State == ServicesInitializationState.Uninitialized)
@@ -160,7 +203,34 @@ namespace EdgeParty.Social
 
                 await FriendsService.Instance.InitializeAsync();
                 _useMockMode = false;
+                _isInitialized = true;
                 Debug.Log("[FriendLobbyService] Real UGS Friends initialized. Running in real UGS Mode.");
+
+                // Clean up any stale lobbies the player might still be registered in on UGS side
+                try
+                {
+                    var joinedLobbyIds = await Unity.Services.Lobbies.LobbyService.Instance.GetJoinedLobbiesAsync();
+                    if (joinedLobbyIds != null && joinedLobbyIds.Count > 0)
+                    {
+                        Debug.Log($"[FriendLobbyService] Found {joinedLobbyIds.Count} stale lobbies on login. Cleaning them up...");
+                        foreach (string lobbyId in joinedLobbyIds)
+                        {
+                            try
+                            {
+                                await Unity.Services.Lobbies.LobbyService.Instance.RemovePlayerAsync(lobbyId, AuthenticationService.Instance.PlayerId);
+                                Debug.Log($"[FriendLobbyService] Successfully left stale lobby: {lobbyId}");
+                            }
+                            catch (Exception rmEx)
+                            {
+                                Debug.LogWarning($"[FriendLobbyService] Failed to leave stale lobby {lobbyId}: {rmEx.Message}");
+                            }
+                        }
+                    }
+                }
+                catch (Exception lobbyCleanEx)
+                {
+                    Debug.LogWarning($"[FriendLobbyService] Failed to query joined lobbies for cleanup: {lobbyCleanEx.Message}");
+                }
 
                 // ✅ Đặt presence = Online để bạn bè thấy mình online
                 // SetPresenceAsync<T>(Availability, T activity) — T phải là struct/class có constructor rỗng
@@ -204,6 +274,12 @@ namespace EdgeParty.Social
                 return;
             }
 
+            if (AuthenticationService.Instance == null || !AuthenticationService.Instance.IsSignedIn)
+            {
+                // Không tự chuyển sang mock mode khi không thể refresh (ví dụ: đã logout), giữ nguyên trạng thái hiện tại.
+                return;
+            }
+
             try
             {
                 // ✅ Force fetch từ server thay vì đọc local cache
@@ -220,6 +296,33 @@ namespace EdgeParty.Social
                     string name = friend.Member?.Profile?.Name ?? "Unknown";
 
                     Debug.Log($"[FriendLobbyService] Friend: {name} | Availability: {presence?.Availability} | IsOnline: {isOnline}");
+
+                    if (presence != null && isOnline)
+                    {
+                        try
+                        {
+                            var activity = presence.GetActivity<LobbyActivity>();
+                            if (activity != null && !string.IsNullOrEmpty(activity.LobbyCode) && activity.TargetFriendId == AuthenticationService.Instance.PlayerId)
+                            {
+                                string currentId = friend.Member?.Id ?? friend.Id;
+                                if (CurrentInvite == null || CurrentInvite.LobbyCode != activity.LobbyCode || CurrentInvite.InviterId != currentId)
+                                {
+                                    CurrentInvite = new LobbyInvite
+                                    {
+                                        InviterName = activity.InvitingName,
+                                        LobbyCode = activity.LobbyCode,
+                                        InviterId = currentId
+                                    };
+                                    OnLobbyInviteReceived?.Invoke(CurrentInvite);
+                                    Debug.Log($"[FriendLobbyService] Received Lobby Invite from {CurrentInvite.InviterName} ({CurrentInvite.InviterId}) for code {CurrentInvite.LobbyCode}");
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore casting errors if they are not playing/using different presence activity
+                        }
+                    }
 
                     Friends.Add(new FriendInfo
                     {
@@ -362,7 +465,6 @@ namespace EdgeParty.Social
                 IsHost = true;
 
                 LobbyMembers.Clear();
-                LobbyMembers.Add("You");
 
                 Debug.Log($"[Mock Lobby] Created lobby {lobbyName}. Code: {CurrentLobbyCode}");
                 OnLobbyJoined?.Invoke(CurrentLobbyCode);
@@ -389,7 +491,7 @@ namespace EdgeParty.Social
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[FriendLobbyService] Error creating lobby: {ex.Message}");
+                Debug.LogWarning($"[FriendLobbyService] Error creating lobby: {ex.Message}");
                 StitchUIController.Instance?.ShowErrorPopup("Lỗi Phòng", $"Không thể tạo phòng: {ex.Message}");
                 return false;
             }
@@ -407,7 +509,6 @@ namespace EdgeParty.Social
 
                 LobbyMembers.Clear();
                 LobbyMembers.Add("LobbyHost");
-                LobbyMembers.Add("You");
 
                 Debug.Log($"[Mock Lobby] Joined lobby code: {joinCode}");
                 OnLobbyJoined?.Invoke(CurrentLobbyCode);
@@ -434,7 +535,7 @@ namespace EdgeParty.Social
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[FriendLobbyService] Error joining lobby: {ex.Message}");
+                Debug.LogWarning($"[FriendLobbyService] Error joining lobby: {ex.Message}");
                 StitchUIController.Instance?.ShowErrorPopup("Lỗi Phòng", $"Không thể tham gia phòng: {ex.Message}");
                 return false;
             }
@@ -444,13 +545,17 @@ namespace EdgeParty.Social
         {
             if (string.IsNullOrEmpty(CurrentLobbyId)) return;
 
+            if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null && EdgeParty.ConnectionManagement.MatchmakingManager.Instance.IsMatchmaking)
+            {
+                EdgeParty.ConnectionManagement.MatchmakingManager.Instance.StopMatchmaking();
+            }
+
             if (_useMockMode)
             {
                 CurrentLobbyId = "";
                 CurrentLobbyCode = "";
                 IsHost = false;
                 LobbyMembers.Clear();
-                LobbyMembers.Add("You");
 
                 Debug.Log("[Mock Lobby] Left lobby.");
                 OnLobbyLeft?.Invoke();
@@ -467,14 +572,13 @@ namespace EdgeParty.Social
                 CurrentLobbyCode = "";
                 IsHost = false;
                 LobbyMembers.Clear();
-                LobbyMembers.Add("You");
 
                 OnLobbyLeft?.Invoke();
                 OnLobbyMembersUpdated?.Invoke(LobbyMembers);
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[FriendLobbyService] Error leaving lobby: {ex.Message}");
+                Debug.LogWarning($"[FriendLobbyService] Error leaving lobby: {ex.Message}");
                 StitchUIController.Instance?.ShowErrorPopup("Lỗi Phòng", $"Không thể rời phòng: {ex.Message}");
             }
         }
@@ -496,19 +600,248 @@ namespace EdgeParty.Social
             LobbyMembers.Clear();
             foreach (var player in _currentLobby.Players)
             {
-                string pName = player.Data != null && player.Data.ContainsKey("PlayerName") ? player.Data["PlayerName"].Value : player.Id;
+                // Skip the local player. LobbyMembers will only track other members in the lobby.
                 if (player.Id == AuthenticationService.Instance.PlayerId)
                 {
-                    LobbyMembers.Add("You");
+                    continue;
                 }
-                else
+
+                string pName = player.Data != null && player.Data.ContainsKey("PlayerName") ? player.Data["PlayerName"].Value : player.Id;
+                LobbyMembers.Add(pName);
+            }
+
+            if (AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn)
+            {
+                IsHost = _currentLobby.HostId == AuthenticationService.Instance.PlayerId;
+            }
+
+            OnLobbyMembersUpdated?.Invoke(LobbyMembers);
+        }
+
+        public async Task<bool> SendLobbyInviteAsync(string friendId, string friendUsername)
+        {
+            if (_useMockMode)
+            {
+                Debug.Log($"[Mock Lobby] Sending invite to mock friend {friendUsername}...");
+                _ = DelayMockAccept(friendUsername);
+                return true;
+            }
+
+            try
+            {
+                if (string.IsNullOrEmpty(CurrentLobbyCode))
                 {
-                    LobbyMembers.Add(pName);
+                    Debug.Log("[FriendLobbyService] Not in a lobby. Creating a new lobby before inviting...");
+                    bool created = await CreateLobbyAsync($"{AuthService.Instance.CachedUsername}'s Room");
+                    if (!created) return false;
+                }
+
+                string myName = AuthService.Instance != null ? AuthService.Instance.CachedUsername : "Player";
+                string myId = AuthenticationService.Instance.PlayerId;
+
+                var activity = new LobbyActivity
+                {
+                    LobbyCode = CurrentLobbyCode,
+                    InvitingName = myName,
+                    InvitingId = myId,
+                    TargetFriendId = friendId,
+                    RequestId = Guid.NewGuid().ToString()
+                };
+
+                Debug.Log($"[FriendLobbyService] Setting presence invite for friend {friendUsername} ({friendId}) to lobby {CurrentLobbyCode}");
+                await FriendsService.Instance.SetPresenceAsync(Availability.Online, activity);
+
+                _ = ResetPresenceAfterDelay(5000);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[FriendLobbyService] Error sending lobby invite: {ex.Message}");
+                return false;
+            }
+        }
+
+        private async Task DelayMockAccept(string friendUsername)
+        {
+            await Task.Delay(1500);
+            SimulateFriendAcceptingInvite(friendUsername);
+        }
+
+        private async Task ResetPresenceAfterDelay(int delayMs)
+        {
+            await Task.Delay(delayMs);
+            try
+            {
+                if (!_useMockMode && AuthenticationService.Instance.IsSignedIn)
+                {
+                    await FriendsService.Instance.SetPresenceAsync(Availability.Online, new EmptyActivity());
+                    Debug.Log("[FriendLobbyService] Reset presence activity back to EmptyActivity.");
                 }
             }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[FriendLobbyService] Failed to reset presence: {ex.Message}");
+            }
+        }
+
+        public void ClearInvite()
+        {
+            if (CurrentInvite != null)
+            {
+                CurrentInvite = null;
+                OnLobbyInviteCleared?.Invoke();
+            }
+        }
+
+        public void TriggerMockInvite(string friendName, string lobbyCode)
+        {
+            CurrentInvite = new LobbyInvite
+            {
+                InviterName = friendName,
+                LobbyCode = lobbyCode,
+                InviterId = "mock_" + friendName
+            };
+            OnLobbyInviteReceived?.Invoke(CurrentInvite);
+            Debug.Log($"[Mock Lobby] Triggered mock lobby invite from {friendName} with code {lobbyCode}");
+        }
+
+        [System.Serializable]
+        public struct MatchmakingPlayer
+        {
+            public string id;
+            public string username;
+        }
+
+        public List<MatchmakingPlayer> GetMatchmakingPlayers()
+        {
+            List<MatchmakingPlayer> list = new List<MatchmakingPlayer>();
+            
+            // Add local player
+            string myName = AuthService.Instance != null ? AuthService.Instance.CachedUsername : "Player";
+            string myId = AuthenticationService.Instance.IsSignedIn ? AuthenticationService.Instance.PlayerId : "local_player";
+            list.Add(new MatchmakingPlayer { id = myId, username = myName });
+
+            if (_useMockMode)
+            {
+                foreach (var memberName in LobbyMembers)
+                {
+                    if (memberName != "You" && memberName != myName)
+                    {
+                        list.Add(new MatchmakingPlayer { id = "mock_" + memberName, username = memberName });
+                    }
+                }
+            }
+            else if (_currentLobby != null)
+            {
+                list.Clear(); // Clear and populate from lobby
+                foreach (var player in _currentLobby.Players)
+                {
+                    string pName = player.Data != null && player.Data.ContainsKey("PlayerName") ? player.Data["PlayerName"].Value : player.Id;
+                    list.Add(new MatchmakingPlayer { id = player.Id, username = pName });
+                }
+            }
+            
+            return list;
+        }
+
+        public async Task UpdateLobbyStatusAsync(string status, string matchIP = "", string matchPort = "")
+        {
+            if (_useMockMode || string.IsNullOrEmpty(CurrentLobbyId) || !IsHost) return;
+
+            try
+            {
+                var data = new Dictionary<string, DataObject>
+                {
+                    { "MatchStatus", new DataObject(DataObject.VisibilityOptions.Member, status) },
+                    { "MatchIP", new DataObject(DataObject.VisibilityOptions.Member, matchIP) },
+                    { "MatchPort", new DataObject(DataObject.VisibilityOptions.Member, matchPort) }
+                };
+
+                var options = new Unity.Services.Lobbies.UpdateLobbyOptions { Data = data };
+                _currentLobby = await Unity.Services.Lobbies.LobbyService.Instance.UpdateLobbyAsync(CurrentLobbyId, options);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[FriendLobbyService] Failed to update lobby status: {ex.Message}");
+            }
+        }
+
+        private void CheckMatchmakingStatusFromLobbyData()
+        {
+            if (_currentLobby == null || _currentLobby.Data == null) return;
+
+            string status = _currentLobby.Data.ContainsKey("MatchStatus") ? _currentLobby.Data["MatchStatus"].Value : "";
+            string ip = _currentLobby.Data.ContainsKey("MatchIP") ? _currentLobby.Data["MatchIP"].Value : "";
+            string portStr = _currentLobby.Data.ContainsKey("MatchPort") ? _currentLobby.Data["MatchPort"].Value : "";
+
+            if (status == "Matchmaking")
+            {
+                if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
+                {
+                    EdgeParty.ConnectionManagement.MatchmakingManager.Instance.SetGuestMatchmaking(true);
+                }
+            }
+            else if (status == "Matched" && !string.IsNullOrEmpty(ip) && !string.IsNullOrEmpty(portStr))
+            {
+                if (ushort.TryParse(portStr, out ushort port))
+                {
+                    if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null && !EdgeParty.ConnectionManagement.MatchmakingManager.Instance.IsMatchmaking)
+                    {
+                        EdgeParty.ConnectionManagement.MatchmakingManager.Instance.ConnectToServer(ip, port);
+                    }
+                }
+            }
+            else
+            {
+                if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
+                {
+                    EdgeParty.ConnectionManagement.MatchmakingManager.Instance.SetGuestMatchmaking(false);
+                }
+            }
+        }
+
+        public void ClearSocialAndLobbyStateLocal()
+        {
+            CurrentLobbyId = "";
+            CurrentLobbyCode = "";
+            IsHost = false;
+            _currentLobby = null;
+            LobbyMembers.Clear();
+            Friends.Clear();
+            IncomingRequests.Clear();
+            CurrentInvite = null;
+            _isInitialized = false;
+        }
+
+        public void ClearSocialAndLobbyState()
+        {
+            ClearSocialAndLobbyStateLocal();
+            
+            OnFriendsUpdated?.Invoke();
+            OnFriendRequestsUpdated?.Invoke();
             OnLobbyMembersUpdated?.Invoke(LobbyMembers);
+            OnLobbyLeft?.Invoke();
+            OnLobbyInviteCleared?.Invoke();
         }
     }
 
     public class EmptyActivity { }
+
+    [System.Serializable]
+    public class LobbyActivity
+    {
+        public string LobbyCode;
+        public string InvitingName;
+        public string InvitingId;
+        public string TargetFriendId;
+        public string RequestId;
+    }
+
+    [System.Serializable]
+    public class LobbyInvite
+    {
+        public string InviterName;
+        public string LobbyCode;
+        public string InviterId;
+    }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using EdgeParty.Gameplay.Character;
 
 namespace EdgeParty.Gameplay.Items
 {
@@ -74,6 +75,54 @@ namespace EdgeParty.Gameplay.Items
                 // Thêm lực lên theo góc 30 độ để bay người đẹp hơn
                 Vector3 knockDir = (dir + Vector3.up * 0.5f).normalized;
                 rb.AddForce(knockDir * force, ForceMode.Impulse);
+            }
+
+            // Damage calculation — only on server
+            var processedPlayers = new System.Collections.Generic.HashSet<PlayerStats>();
+            foreach (var hit in hits)
+            {
+                var targetStats = hit.GetComponentInParent<PlayerStats>();
+                if (targetStats == null)
+                    targetStats = hit.GetComponentInChildren<PlayerStats>();
+
+                if (targetStats == null || processedPlayers.Contains(targetStats)) continue;
+                processedPlayers.Add(targetStats);
+
+                // Find the pelvis or transform to measure distance
+                Transform targetCenter = targetStats.transform;
+                var targetController = targetStats.GetComponent<PlayerController>();
+                if (targetController != null && targetController.pelvisRigidbody != null)
+                {
+                    targetCenter = targetController.pelvisRigidbody.transform;
+                }
+
+                float dist = Vector3.Distance(targetCenter.position, explosionPos);
+                float damage = 0f;
+
+                if (dist > 3f)
+                {
+                    damage = 0f;
+                }
+                else if (dist <= 0.5f)
+                {
+                    damage = targetStats.maxHealth; // Death
+                }
+                else if (dist >= 2f && dist <= 3f)
+                {
+                    damage = 34f; // 1 punch hit
+                }
+                else // between 0.5m and 2m
+                {
+                    float t = (2f - dist) / 1.5f;
+                    damage = 34f + t * (75f - 34f);
+                }
+
+                if (damage > 0f)
+                {
+                    Rigidbody targetPelvis = targetController != null ? targetController.pelvisRigidbody : null;
+                    Vector3 hitDir = (targetCenter.position - explosionPos).normalized;
+                    targetStats.TakeDamage(damage, hitDir, targetPelvis);
+                }
             }
 
             // Trigger VFX + SFX trên tất cả clients

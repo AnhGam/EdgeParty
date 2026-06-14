@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ namespace EdgeParty.UI
     public class StitchUIController : MonoBehaviour
     {
         public static StitchUIController Instance { get; private set; }
+        public static bool ReturnedFromGame = false;
 
         private void Awake()
         {
@@ -113,6 +115,8 @@ namespace EdgeParty.UI
                 FriendLobbyService.Instance.OnLobbyMembersUpdated += UpdateLobbyPodiums;
                 FriendLobbyService.Instance.OnLobbyJoined += HandleLobbyJoined;
                 FriendLobbyService.Instance.OnLobbyLeft += HandleLobbyLeft;
+                FriendLobbyService.Instance.OnLobbyInviteReceived += HandleLobbyInviteReceived;
+                FriendLobbyService.Instance.OnLobbyInviteCleared += HandleLobbyInviteCleared;
             }
 
             var matchmakingMgr = FindFirstObjectByType<EdgeParty.ConnectionManagement.MatchmakingManager>();
@@ -130,15 +134,24 @@ namespace EdgeParty.UI
                 EdgeParty.ConnectionManagement.MatchmakingManager.Instance.OnMatchmakingFailed += HandleMatchmakingFailed;
             }
 
-            // Start by showing the Login Menu by default
-            ShowLogin();
-
-            // Try Auto Sign-In (check UGS session token)
-            bool autoSignedIn = await AuthService.Instance.TryAutoSignInAsync();
-            if (autoSignedIn)
+            if (ReturnedFromGame || AuthService.Instance.IsSignedIn)
             {
+                ReturnedFromGame = false;
                 _username = AuthService.Instance.CachedUsername;
                 ShowHome();
+            }
+            else
+            {
+                // Start by showing the Login Menu by default
+                ShowLogin();
+
+                // Try Auto Sign-In (check UGS session token)
+                bool autoSignedIn = await AuthService.Instance.TryAutoSignInAsync();
+                if (autoSignedIn)
+                {
+                    _username = AuthService.Instance.CachedUsername;
+                    ShowHome();
+                }
             }
         }
 
@@ -159,6 +172,8 @@ namespace EdgeParty.UI
                 FriendLobbyService.Instance.OnLobbyMembersUpdated -= UpdateLobbyPodiums;
                 FriendLobbyService.Instance.OnLobbyJoined -= HandleLobbyJoined;
                 FriendLobbyService.Instance.OnLobbyLeft -= HandleLobbyLeft;
+                FriendLobbyService.Instance.OnLobbyInviteReceived -= HandleLobbyInviteReceived;
+                FriendLobbyService.Instance.OnLobbyInviteCleared -= HandleLobbyInviteCleared;
             }
 
             if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
@@ -429,6 +444,8 @@ namespace EdgeParty.UI
             newScreenContent.style.width = Length.Percent(100);
             newScreenContent.style.height = Length.Percent(100);
             _root.Add(newScreenContent);
+
+            RefreshLobbyInviteUI();
         }
 
         // ─── Navigation & Button Event Bindings ─────────────────────────
@@ -725,6 +742,18 @@ namespace EdgeParty.UI
                     }
                 });
             }
+
+            var btnTestInvite = _root.Q<Button>("btn-home-test-invite");
+            if (btnTestInvite != null)
+            {
+                RegisterHoverAndClick(btnTestInvite, () => {
+                    Debug.Log("[StitchUIController] Triggering mock lobby invite...");
+                    if (FriendLobbyService.Instance != null)
+                    {
+                        FriendLobbyService.Instance.TriggerMockInvite("CoolGuy99", "123456");
+                    }
+                });
+            }
         }
 
         private void BindShopEvents()
@@ -931,6 +960,21 @@ namespace EdgeParty.UI
                 });
             }
 
+            var btnLeave = _root.Q<Button>("btn-matchmaking-leave");
+            if (btnLeave != null)
+            {
+                RegisterHoverAndClick(btnLeave, async () => {
+                    Debug.Log("[StitchUIController] Leaving lobby...");
+                    if (FriendLobbyService.Instance != null)
+                    {
+                        SetButtonLoading(btnLeave, true, "Leaving...");
+                        await FriendLobbyService.Instance.LeaveLobbyAsync();
+                        ResetButtonLoading();
+                    }
+                    ShowHome();
+                });
+            }
+
             var matchmakingAddInput = _root.Q<TextField>("add-friend-input");
             if (matchmakingAddInput != null)
             {
@@ -1089,7 +1133,9 @@ namespace EdgeParty.UI
             var btnCancel = _root.Q<Button>("btn-matchmaking-cancel");
             if (btnCancel != null)
             {
-                btnCancel.style.display = DisplayStyle.Flex;
+                bool inLobby = FriendLobbyService.Instance != null && !string.IsNullOrEmpty(FriendLobbyService.Instance.CurrentLobbyId);
+                bool isHost = !inLobby || (FriendLobbyService.Instance != null && FriendLobbyService.Instance.IsHost);
+                btnCancel.style.display = isHost ? DisplayStyle.Flex : DisplayStyle.None;
             }
 
             var titleLabel = _root.Q<Label>("matchmaking-title");
@@ -1270,7 +1316,12 @@ namespace EdgeParty.UI
             }
             if (btnLogout != null)
             {
-                RegisterHoverAndClick(btnLogout, () => {
+                RegisterHoverAndClick(btnLogout, async () => {
+                    if (FriendLobbyService.Instance != null)
+                    {
+                        await FriendLobbyService.Instance.LeaveLobbyAsync();
+                        FriendLobbyService.Instance.ClearSocialAndLobbyState();
+                    }
                     AuthService.Instance.SignOut();
                     ShowLogin();
                 });
@@ -1885,19 +1936,51 @@ namespace EdgeParty.UI
                     if (friend.IsOnline)
                     {
                         Button inviteBtn = new Button();
-                        inviteBtn.text = "+";
                         inviteBtn.AddToClassList("bouncy-btn");
-                        inviteBtn.AddToClassList("btn-primary-3d");
-                        inviteBtn.AddToClassList("friend-add-btn");
-                        inviteBtn.style.width = 32;
                         inviteBtn.style.height = 32;
-                        
-                        inviteBtn.clicked += () =>
+
+                        var activeInvite = FriendLobbyService.Instance != null ? FriendLobbyService.Instance.CurrentInvite : null;
+                        bool hasInviteFromThisFriend = activeInvite != null && 
+                            (activeInvite.InviterId == friend.Id || activeInvite.InviterName == friend.Username);
+
+                        if (hasInviteFromThisFriend)
                         {
-                            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
-                            // Invite friend
-                            FriendLobbyService.Instance.SimulateFriendAcceptingInvite(friend.Username);
-                        };
+                            inviteBtn.text = "Join";
+                            inviteBtn.AddToClassList("btn-primary-3d");
+                            inviteBtn.style.backgroundColor = new StyleColor(new Color(0.15f, 0.62f, 0.18f)); // green
+                            inviteBtn.style.width = 48;
+                            inviteBtn.style.fontSize = 11;
+                            
+                            inviteBtn.clicked += async () =>
+                            {
+                                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                                if (FriendLobbyService.Instance != null)
+                                {
+                                    bool ok = await FriendLobbyService.Instance.JoinLobbyByCodeAsync(activeInvite.LobbyCode);
+                                    if (ok)
+                                    {
+                                        FriendLobbyService.Instance.ClearInvite();
+                                        ShowMatchmaking();
+                                    }
+                                }
+                            };
+                        }
+                        else
+                        {
+                            inviteBtn.text = "+";
+                            inviteBtn.AddToClassList("btn-primary-3d");
+                            inviteBtn.AddToClassList("friend-add-btn");
+                            inviteBtn.style.width = 32;
+                            
+                            inviteBtn.clicked += async () =>
+                            {
+                                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                                if (FriendLobbyService.Instance != null)
+                                {
+                                    await FriendLobbyService.Instance.SendLobbyInviteAsync(friend.Id, friend.Username);
+                                }
+                            };
+                        }
                         row.Add(inviteBtn);
                     }
                     scroll.Add(row);
@@ -1988,7 +2071,7 @@ namespace EdgeParty.UI
         private void UpdateLobbyPodiums(List<string> members)
         {
             // ── Slot 1 = always the local player ──────────────────────────────
-            var slot1Btn = _root.Q<Button>("btn-invite-slot-1");
+            var slot1Btn = _root.Q<VisualElement>("podium-player-1");
             if (slot1Btn != null)
             {
                 var tagText1 = slot1Btn.Q<Label>(className: "podium-tag-text");
@@ -2001,10 +2084,10 @@ namespace EdgeParty.UI
                 var slotBtn = _root.Q<Button>($"btn-invite-slot-{i}");
                 if (slotBtn == null) continue;
 
-                int memberIndex = i - 1; // You is index 0
+                int memberIndex = i - 2; // OTHER members start at index 0 (slot 2) since local player is skipped
                 if (memberIndex < members.Count)
                 {
-                    string memberName = members[memberIndex];
+                    string memberName = members[memberIndex] ?? "Unknown";
                     
                     // Occupied State
                     slotBtn.RemoveFromClassList("empty-podium");
@@ -2049,6 +2132,48 @@ namespace EdgeParty.UI
                     
                     var avatarImg = slotBtn.Q<VisualElement>(className: "podium-avatar-img");
                     if (avatarImg != null) avatarImg.style.display = DisplayStyle.None;
+                }
+            }
+
+            // ── Matchmaking Play Button State based on Host Authority & Lobby Size ──
+            var btnPlay = _root.Q<Button>("btn-matchmaking-play");
+            var btnLeave = _root.Q<Button>("btn-matchmaking-leave");
+            if (FriendLobbyService.Instance != null)
+            {
+                bool inLobby = !string.IsNullOrEmpty(FriendLobbyService.Instance.CurrentLobbyId);
+                bool isHost = !inLobby || FriendLobbyService.Instance.IsHost;
+                int playerCount = members.Count + 1; // local player + other members
+                
+                if (btnLeave != null)
+                {
+                    btnLeave.style.display = inLobby ? DisplayStyle.Flex : DisplayStyle.None;
+                }
+
+                if (btnPlay != null)
+                {
+                    if (!isHost)
+                    {
+                        btnPlay.text = "WAITING FOR HOST";
+                        btnPlay.SetEnabled(false);
+                    }
+                    else
+                    {
+                        if (playerCount == 1 || playerCount == 2)
+                        {
+                            btnPlay.text = "PLAY";
+                            btnPlay.SetEnabled(true);
+                        }
+                        else if (playerCount == 3)
+                        {
+                            btnPlay.text = "3 PLAYERS NOT SUPPORTED";
+                            btnPlay.SetEnabled(false);
+                        }
+                        else // 4 players
+                        {
+                            btnPlay.text = "ROOM FULL";
+                            btnPlay.SetEnabled(false);
+                        }
+                    }
                 }
             }
         }
@@ -2484,6 +2609,269 @@ namespace EdgeParty.UI
         private void HandleLobbyLeft()
         {
             Debug.Log("Lobby left.");
+        }
+
+        private void HandleLobbyInviteReceived(LobbyInvite invite)
+        {
+            RefreshLobbyInviteUI();
+        }
+
+        private void HandleLobbyInviteCleared()
+        {
+            RefreshLobbyInviteUI();
+        }
+
+        private void RefreshLobbyInviteUI()
+        {
+            if (_root == null) return;
+
+            var activeInvite = FriendLobbyService.Instance != null ? FriendLobbyService.Instance.CurrentInvite : null;
+            bool isInLobby = _root != null && _root.Q("matchmaking-layout") != null;
+
+            // 1. Refresh Sidebar Invitation Box
+            var sidebarInvite = _root.Q<VisualElement>("sidebar-lobby-invite");
+            if (sidebarInvite != null)
+            {
+                if (activeInvite != null && !isInLobby)
+                {
+                    var inviteText = sidebarInvite.Q<Label>("sidebar-invite-text");
+                    if (inviteText != null)
+                    {
+                        inviteText.text = $"Invite from {activeInvite.InviterName}";
+                    }
+
+                    var buttonsRow = sidebarInvite.Q<VisualElement>("sidebar-invite-buttons-row");
+                    if (buttonsRow != null)
+                    {
+                        buttonsRow.Clear();
+
+                        var acceptBtn = new Button();
+                        acceptBtn.name = "btn-sidebar-invite-accept";
+                        acceptBtn.text = "Accept";
+                        acceptBtn.AddToClassList("bouncy-btn");
+                        acceptBtn.AddToClassList("btn-primary-3d");
+                        acceptBtn.style.flexGrow = 1;
+                         bool isJoining = false;
+                        acceptBtn.clicked += async () => {
+                            if (isJoining) return;
+                            isJoining = true;
+                            acceptBtn.SetEnabled(false);
+                            try
+                            {
+                                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                                if (FriendLobbyService.Instance != null)
+                                {
+                                    bool ok = await FriendLobbyService.Instance.JoinLobbyByCodeAsync(activeInvite.LobbyCode);
+                                    if (ok)
+                                    {
+                                        FriendLobbyService.Instance.ClearInvite();
+                                        ShowMatchmaking();
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.LogWarning($"[StitchUIController] Error accepting sidebar invite: {ex.Message}");
+                            }
+                            finally
+                            {
+                                isJoining = false;
+                                acceptBtn.SetEnabled(true);
+                            }
+                        };
+                        buttonsRow.Add(acceptBtn);
+ 
+                        var declineBtn = new Button();
+                        declineBtn.name = "btn-sidebar-invite-decline";
+                        declineBtn.text = "Decline";
+                        declineBtn.AddToClassList("bouncy-btn");
+                        declineBtn.AddToClassList("btn-surface-3d");
+                        declineBtn.style.flexGrow = 1;
+                        declineBtn.style.height = 32;
+                        declineBtn.style.fontSize = 13;
+                        declineBtn.style.paddingLeft = 0;
+                        declineBtn.style.paddingRight = 0;
+                        declineBtn.style.borderTopLeftRadius = 10;
+                        declineBtn.style.borderTopRightRadius = 10;
+                        declineBtn.style.borderBottomLeftRadius = 10;
+                        declineBtn.style.borderBottomRightRadius = 10;
+                        declineBtn.style.marginLeft = 4;
+                        declineBtn.style.borderTopColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                        declineBtn.style.borderBottomColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                        declineBtn.style.borderLeftColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                        declineBtn.style.borderRightColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                        declineBtn.style.color = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                        declineBtn.clicked += () => {
+                            try
+                            {
+                                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                                if (FriendLobbyService.Instance != null)
+                                {
+                                    FriendLobbyService.Instance.ClearInvite();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.LogWarning($"[StitchUIController] Error declining sidebar invite: {ex.Message}");
+                            }
+                        };
+                        buttonsRow.Add(declineBtn);
+                    }
+
+                    sidebarInvite.style.display = DisplayStyle.Flex;
+                }
+                else
+                {
+                    sidebarInvite.style.display = DisplayStyle.None;
+                }
+            }
+
+            // 2. Refresh Bottom-Right Floating Popup
+            var popupInvite = _root.Q<VisualElement>("bottom-right-invite-popup");
+            if (activeInvite != null && !isInLobby)
+            {
+                if (popupInvite == null)
+                {
+                    popupInvite = new VisualElement();
+                    popupInvite.name = "bottom-right-invite-popup";
+                    popupInvite.AddToClassList("tactile-panel");
+                    popupInvite.style.position = Position.Absolute;
+                    popupInvite.style.bottom = 40;
+                    popupInvite.style.right = 40;
+                    popupInvite.style.width = 300;
+                    popupInvite.style.paddingTop = 16;
+                    popupInvite.style.paddingBottom = 16;
+                    popupInvite.style.paddingLeft = 20;
+                    popupInvite.style.paddingRight = 20;
+                    popupInvite.style.backgroundColor = new StyleColor(new Color(1f, 0.98f, 0.9f));
+                    popupInvite.style.borderTopLeftRadius = 24;
+                    popupInvite.style.borderTopRightRadius = 24;
+                    popupInvite.style.borderBottomLeftRadius = 24;
+                    popupInvite.style.borderBottomRightRadius = 24;
+                    popupInvite.style.borderTopWidth = 3;
+                    popupInvite.style.borderBottomWidth = 3;
+                    popupInvite.style.borderLeftWidth = 3;
+                    popupInvite.style.borderRightWidth = 3;
+                    popupInvite.style.borderTopColor = new StyleColor(new Color(1f, 0.84f, 0f)); // Gold
+                    popupInvite.style.borderBottomColor = new StyleColor(new Color(1f, 0.84f, 0f));
+                    popupInvite.style.borderLeftColor = new StyleColor(new Color(1f, 0.84f, 0f));
+                    popupInvite.style.borderRightColor = new StyleColor(new Color(1f, 0.84f, 0f));
+                    
+                    popupInvite.style.transitionProperty = new List<StylePropertyName> { "opacity", "scale" };
+                    popupInvite.style.transitionDuration = new List<TimeValue> { 0.15f };
+                    
+                    _root.Add(popupInvite);
+                }
+
+                popupInvite.Clear();
+
+                var titleLabel = new Label("LOBBY INVITATION");
+                titleLabel.AddToClassList("font-headline");
+                titleLabel.style.fontSize = 16;
+                titleLabel.style.color = new StyleColor(new Color(0.31f, 0.21f, 0f));
+                titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+                titleLabel.style.marginBottom = 6;
+                titleLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+                popupInvite.Add(titleLabel);
+
+                var descLabel = new Label($"{activeInvite.InviterName} has invited you to join their lobby!");
+                descLabel.AddToClassList("font-body");
+                descLabel.style.fontSize = 14;
+                descLabel.style.color = new StyleColor(new Color(0.2f, 0.15f, 0.05f));
+                descLabel.style.marginBottom = 14;
+                descLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+                descLabel.style.whiteSpace = WhiteSpace.Normal;
+                popupInvite.Add(descLabel);
+
+                var pButtonsRow = new VisualElement();
+                pButtonsRow.style.flexDirection = FlexDirection.Row;
+                pButtonsRow.style.justifyContent = Justify.SpaceBetween;
+                pButtonsRow.style.alignItems = Align.Center;
+
+                var acceptBtn = new Button();
+                acceptBtn.text = "Accept";
+                acceptBtn.AddToClassList("bouncy-btn");
+                acceptBtn.AddToClassList("btn-primary-3d");
+                acceptBtn.style.flexGrow = 1;
+                acceptBtn.style.height = 36;
+                acceptBtn.style.fontSize = 14;
+                acceptBtn.style.borderTopLeftRadius = 12;
+                acceptBtn.style.borderTopRightRadius = 12;
+                acceptBtn.style.borderBottomLeftRadius = 12;
+                acceptBtn.style.borderBottomRightRadius = 12;
+                acceptBtn.style.marginRight = 6;
+                bool isJoiningPopup = false;
+                acceptBtn.clicked += async () => {
+                    if (isJoiningPopup) return;
+                    isJoiningPopup = true;
+                    acceptBtn.SetEnabled(false);
+                    try
+                    {
+                        EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                        if (FriendLobbyService.Instance != null)
+                        {
+                            bool ok = await FriendLobbyService.Instance.JoinLobbyByCodeAsync(activeInvite.LobbyCode);
+                            if (ok)
+                            {
+                                FriendLobbyService.Instance.ClearInvite();
+                                ShowMatchmaking();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[StitchUIController] Error accepting bottom invite: {ex.Message}");
+                    }
+                    finally
+                    {
+                        isJoiningPopup = false;
+                        acceptBtn.SetEnabled(true);
+                    }
+                };
+                pButtonsRow.Add(acceptBtn);
+ 
+                var declineBtn = new Button();
+                declineBtn.text = "Decline";
+                declineBtn.AddToClassList("bouncy-btn");
+                declineBtn.AddToClassList("btn-surface-3d");
+                declineBtn.style.flexGrow = 1;
+                declineBtn.style.height = 36;
+                declineBtn.style.fontSize = 14;
+                declineBtn.style.borderTopLeftRadius = 12;
+                declineBtn.style.borderTopRightRadius = 12;
+                declineBtn.style.borderBottomLeftRadius = 12;
+                declineBtn.style.borderBottomRightRadius = 12;
+                declineBtn.style.marginLeft = 6;
+                declineBtn.style.borderTopColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                declineBtn.style.borderBottomColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                declineBtn.style.borderLeftColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                declineBtn.style.borderRightColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                declineBtn.style.color = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
+                declineBtn.clicked += () => {
+                    try
+                    {
+                        EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                        if (FriendLobbyService.Instance != null)
+                        {
+                            FriendLobbyService.Instance.ClearInvite();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[StitchUIController] Error declining bottom invite: {ex.Message}");
+                    }
+                };
+                pButtonsRow.Add(declineBtn);
+
+                popupInvite.Add(pButtonsRow);
+            }
+            else
+            {
+                if (popupInvite != null)
+                {
+                    _root.Remove(popupInvite);
+                }
+            }
         }
     }
 }
