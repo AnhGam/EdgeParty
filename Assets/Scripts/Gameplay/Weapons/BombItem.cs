@@ -8,8 +8,8 @@ namespace EdgeParty.Gameplay.Items
     {
         [Header("Explosion Settings")]
         public float explosionRadius = 5f;
-        public float knockbackForce = 800f;
-        public float fuseTime = 2f;       // Thời gian nổ sau khi ném
+        public float knockbackForce = 100f;
+        public float fuseTime = 3f;       // Thời gian nổ sau khi ném (default to 3s)
 
         [Header("VFX / SFX")]
         [Tooltip("Kéo Explosion VFX Prefab vào — hoặc để trống để dùng built-in particle")]
@@ -17,7 +17,10 @@ namespace EdgeParty.Gameplay.Items
         [Tooltip("Kéo Assets/Scripts/Audio/Audios/EXPLOSION_sfx.wav vào đây")]
         public AudioClip explosionSFX;
 
+        public NetworkVariable<bool> isPickup = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
         private bool _hasExploded = false;
+        private bool _isThrown = false;
         private float _timer = 0f;
         private Rigidbody _rb;
 
@@ -30,16 +33,103 @@ namespace EdgeParty.Gameplay.Items
                 explosionSFX = Resources.Load<AudioClip>("Audios/EXPLOSION_sfx");
         }
 
-        public void ThrowBomb(Vector3 throwDirection, float throwForce)
+        public override void OnNetworkSpawn()
+        {
+            isPickup.OnValueChanged += OnPickupStateChanged;
+            if (isPickup.Value) SetupAsPickup();
+            else SetupAsProjectile();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            isPickup.OnValueChanged -= OnPickupStateChanged;
+        }
+
+        private void OnPickupStateChanged(bool oldVal, bool newVal)
+        {
+            if (newVal) SetupAsPickup();
+            else SetupAsProjectile();
+        }
+
+        private void SetupAsPickup()
+        {
+            var pickup = GetComponent<WeaponPickup>();
+            if (pickup != null)
+            {
+                pickup.enabled = true;
+            }
+            enabled = false;
+
+            transform.localScale = Vector3.one;
+
+            if (_rb == null) _rb = GetComponent<Rigidbody>();
+            if (_rb != null)
+            {
+                _rb.isKinematic = true;
+                _rb.useGravity = false;
+            }
+            var col = GetComponent<Collider>();
+            if (col != null) col.isTrigger = true;
+        }
+
+        private void SetupAsProjectile()
+        {
+            var pickup = GetComponent<WeaponPickup>();
+            if (pickup != null)
+            {
+                pickup.enabled = false;
+            }
+            enabled = true;
+
+            transform.localScale = Vector3.one;
+
+            // Hide the networked bomb completely! 
+            // The visual representation is handled by PlayerController.SpawnVisualBombClientRpc
+            foreach (var r in GetComponentsInChildren<Renderer>())
+            {
+                r.enabled = false;
+            }
+
+            if (_rb == null) _rb = GetComponent<Rigidbody>();
+            if (_rb != null)
+            {
+                _rb.isKinematic = !IsServer;
+                _rb.useGravity = IsServer;
+            }
+            var col = GetComponent<Collider>();
+            if (col != null) col.isTrigger = !IsServer;
+        }
+
+        public void ThrowBomb(Vector3 throwDirection, float throwForce, PlayerController thrower = null)
         {
             if (!IsServer) return;
+            isPickup.Value = false;
+            _isThrown = true;
+
+            // Ignore collision with the thrower to prevent immediate explosion in hand
+            if (thrower != null)
+            {
+                var bombCollider = GetComponent<Collider>();
+                if (bombCollider != null)
+                {
+                    var throwerColliders = thrower.GetComponentsInChildren<Collider>();
+                    foreach (var c in throwerColliders)
+                    {
+                        Physics.IgnoreCollision(bombCollider, c, true);
+                    }
+                }
+            }
+
             if (_rb != null)
+            {
+                _rb.isKinematic = false;
                 _rb.AddForce(throwDirection * throwForce, ForceMode.Impulse);
+            }
         }
 
         private void Update()
         {
-            if (!IsServer || _hasExploded) return;
+            if (!IsServer || _hasExploded || !_isThrown) return;
 
             _timer += Time.deltaTime;
             if (_timer >= fuseTime)
@@ -48,9 +138,7 @@ namespace EdgeParty.Gameplay.Items
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (!IsServer || _hasExploded) return;
-            if (collision.relativeVelocity.magnitude > 8f)
-                Explode();
+            // Do not explode on impact. Only explode when fuseTime timer expires.
         }
 
         private void Explode()
@@ -72,8 +160,8 @@ namespace EdgeParty.Gameplay.Items
                 float falloff = 1f - Mathf.Clamp01(dist / explosionRadius);
                 float force = knockbackForce * falloff;
 
-                // Thêm lực lên theo góc 30 độ để bay người đẹp hơn
-                Vector3 knockDir = (dir + Vector3.up * 0.5f).normalized;
+                // Thêm lực lên theo góc nhỏ để bay người đẹp hơn
+                Vector3 knockDir = (dir + Vector3.up * 0.1f).normalized;
                 rb.AddForce(knockDir * force, ForceMode.Impulse);
             }
 
@@ -161,6 +249,8 @@ namespace EdgeParty.Gameplay.Items
             var fireGO = new GameObject("Fire");
             fireGO.transform.SetParent(root.transform, false);
             var fireSys = fireGO.AddComponent<ParticleSystem>();
+            fireSys.Stop(); // Ngừng chạy trước khi setup để tránh lỗi
+
             var fireMain = fireSys.main;
             fireMain.duration = 0.4f;
             fireMain.loop = false;
@@ -170,18 +260,25 @@ namespace EdgeParty.Gameplay.Items
             fireMain.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(1f, 0.5f, 0f), new Color(1f, 0.2f, 0f));
             fireMain.gravityModifier = -0.3f;
-            var fireBurst = fireSys.emission;
-            fireBurst.SetBurst(0, new ParticleSystem.Burst(0f, 40));
-            fireBurst.rateOverTime = 0;
+            
+            var fireEmission = fireSys.emission;
+            fireEmission.rateOverTime = 0;
+            fireEmission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 40) });
+            
             var fireShape = fireSys.shape;
             fireShape.shapeType = ParticleSystemShapeType.Sphere;
             fireShape.radius = 0.3f;
+
+            var fireRenderer = fireGO.GetComponent<ParticleSystemRenderer>();
+
             fireSys.Play();
 
             // 2. Khói — burst xám
             var smokeGO = new GameObject("Smoke");
             smokeGO.transform.SetParent(root.transform, false);
             var smokeSys = smokeGO.AddComponent<ParticleSystem>();
+            smokeSys.Stop(); // Ngừng chạy trước khi setup để tránh lỗi
+
             var smokeMain = smokeSys.main;
             smokeMain.duration = 0.5f;
             smokeMain.loop = false;
@@ -191,9 +288,13 @@ namespace EdgeParty.Gameplay.Items
             smokeMain.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(0.3f, 0.3f, 0.3f, 0.8f), new Color(0.6f, 0.6f, 0.6f, 0.4f));
             smokeMain.gravityModifier = -0.15f;
-            var smokeBurst = smokeSys.emission;
-            smokeBurst.SetBurst(0, new ParticleSystem.Burst(0f, 20));
-            smokeBurst.rateOverTime = 0;
+            
+            var smokeEmission = smokeSys.emission;
+            smokeEmission.rateOverTime = 0;
+            smokeEmission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 20) });
+
+            var smokeRenderer = smokeGO.GetComponent<ParticleSystemRenderer>();
+            
             smokeSys.Play();
 
             Destroy(root, 3f);

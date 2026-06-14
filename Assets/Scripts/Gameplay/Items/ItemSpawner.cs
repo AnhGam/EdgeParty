@@ -78,18 +78,10 @@ public class ItemSpawner : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
         }
 
-        RefreshSpawnPoints();
-
-        if (_spawnPoints.Count == 0)
-        {
-            Debug.LogWarning("[ItemSpawner] No ItemSpawnPoint tags found in scene! Generating fallback spawn points...");
-            GenerateFallbackSpawnPoints();
-        }
-
         // Delay trước khi bắt đầu spawn (cho map load xong)
         _nextSpawnTime = Time.time + spawnCheckInterval + 5f;
         _spawnEnabled = true;
-        Debug.Log($"[ItemSpawner] Ready with {_spawnPoints.Count} spawn points. First check at t={_nextSpawnTime:F1}s");
+        Debug.Log($"[ItemSpawner] Server ready. First spawn check at t={_nextSpawnTime:F1}s");
     }
 
     private void Update()
@@ -119,6 +111,16 @@ public class ItemSpawner : MonoBehaviour
 
     private void TrySpawnItem()
     {
+        if (_spawnPoints == null || _spawnPoints.Count == 0)
+        {
+            RefreshSpawnPoints();
+            if (_spawnPoints == null || _spawnPoints.Count == 0)
+            {
+                Debug.LogWarning("[ItemSpawner] No ItemSpawnPoint tags found in scene! Generating fallback spawn points...");
+                GenerateFallbackSpawnPoints();
+            }
+        }
+
         if (_activeItemCount >= maxItemsOnMap)
         {
             Debug.Log($"[ItemSpawner] Skipped spawn — max items on map ({maxItemsOnMap}) reached.");
@@ -183,15 +185,31 @@ public class ItemSpawner : MonoBehaviour
     {
         _spawnPoints.Clear();
         
-        // Find by "ItemSpawnPoint" first (default tag)
-        foreach (var go in GameObject.FindGameObjectsWithTag("ItemSpawnPoint"))
-            _spawnPoints.Add(go.transform);
+        try {
+            foreach (var go in GameObject.FindGameObjectsWithTag("ItemSpawnPoint"))
+                _spawnPoints.Add(go.transform);
+        } catch (System.Exception e) {
+            Debug.LogError($"[ItemSpawner] Tag ItemSpawnPoint error: {e.Message}");
+        }
 
-        // Also check "ItemSpawn" if no default points were found
         if (_spawnPoints.Count == 0)
         {
-            foreach (var go in GameObject.FindGameObjectsWithTag("ItemSpawn"))
-                _spawnPoints.Add(go.transform);
+            try {
+                foreach (var go in GameObject.FindGameObjectsWithTag("ItemSpawn"))
+                    _spawnPoints.Add(go.transform);
+            } catch {}
+        }
+        
+        if (_spawnPoints.Count == 0)
+        {
+            // Fallback: Find by object name just in case the tag was not defined but the object was named correctly
+            foreach (var obj in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            {
+                if (obj.name.Contains("ItemSpawnPoint") || obj.name.Contains("ItemSpawn"))
+                {
+                    _spawnPoints.Add(obj.transform);
+                }
+            }
         }
         
         Debug.Log($"[ItemSpawner] Found {_spawnPoints.Count} item spawn points.");

@@ -25,6 +25,8 @@ namespace EdgeParty.Gameplay.Character
         [Header("Damage")]
         [Tooltip("Base damage dealt per punch")]
         public float damage = 34f;
+        [Tooltip("Radius for hit detection")]
+        public float hitRadius = 0.25f;
         [Tooltip("Layer mask for valid hit targets (should include the Player layer)")]
         public LayerMask targetLayers = ~0;
 
@@ -43,9 +45,12 @@ namespace EdgeParty.Gameplay.Character
         private void Awake()
         {
             _col = GetComponent<Collider>();
-            _col.isTrigger = true;
+            if (_col != null)
+            {
+                _col.isTrigger = true;
+                _col.enabled = false;
+            }
             _isActive = false;
-            _col.enabled = false;
         }
 
         /// <summary>Called by CharacterAnimationController when punch swing begins.</summary>
@@ -55,67 +60,70 @@ namespace EdgeParty.Gameplay.Character
             _ownerStats  = ownerStats;
             _hitThisSwing.Clear();
             _isActive    = true;
-            _col.enabled = true;
         }
 
         /// <summary>Called by CharacterAnimationController when punch swing ends.</summary>
         public void Deactivate()
         {
             _isActive    = false;
-            _col.enabled = false;
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void FixedUpdate()
         {
             if (!_isActive) return;
-            if (_hitThisSwing.Contains(other)) return;
 
-            // Skip own body (compare PlayerController to avoid transform.root issues with common parents)
-            var otherController = other.GetComponentInParent<PlayerController>();
-            var myController = GetComponentInParent<PlayerController>();
-            if (myController != null && otherController != null && myController == otherController) return;
-
-            // Find PlayerStats on target hierarchy
-            var targetStats = other.GetComponentInParent<PlayerStats>();
-            if (targetStats == null)
-                targetStats = other.GetComponentInChildren<PlayerStats>();
-            if (targetStats == null) return;
-
-            // Don't hit self
-            if (targetStats == _ownerStats) return;
-
-            _hitThisSwing.Add(other);
-
-            // Direction from attacker pelvis toward target
-            Vector3 hitDir = Vector3.forward;
-            if (_ownerPelvis != null)
-                hitDir = (other.transform.position - _ownerPelvis.position).normalized;
-
-            // Find target pelvis Rigidbody for knockback
-            Rigidbody targetPelvis = null;
-            var allRbs = targetStats.GetComponentsInChildren<Rigidbody>();
-            foreach (var rb in allRbs)
-                if (rb.name.ToLower().Contains("pelvis")) { targetPelvis = rb; break; }
-
-            // Damage is server-side
-            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            Collider[] hits = Physics.OverlapSphere(transform.position, hitRadius, targetLayers);
+            foreach (var other in hits)
             {
-                // Offline / solo test
-                targetStats.TakeDamage(damage, hitDir, targetPelvis);
-            }
-            else
-            {
-                // Already running on server because PunchHitbox lives on the physics ragdoll
-                // which is server-simulated. Safe to call directly.
-                if (NetworkManager.Singleton.IsServer)
+                if (_hitThisSwing.Contains(other)) continue;
+
+                // Skip own body
+                var otherController = other.GetComponentInParent<PlayerController>();
+                var myController = GetComponentInParent<PlayerController>();
+                if (myController != null && otherController != null && myController == otherController) continue;
+
+                // Find PlayerStats on target hierarchy
+                var targetStats = other.GetComponentInParent<PlayerStats>();
+                if (targetStats == null)
+                    targetStats = other.GetComponentInChildren<PlayerStats>();
+                if (targetStats == null) continue;
+
+                // Don't hit self
+                if (targetStats == _ownerStats) continue;
+
+                _hitThisSwing.Add(other);
+
+                // Direction from attacker pelvis toward target
+                Vector3 hitDir = Vector3.forward;
+                if (_ownerPelvis != null)
+                    hitDir = (other.transform.position - _ownerPelvis.position).normalized;
+
+                // Find target pelvis Rigidbody for knockback
+                Rigidbody targetPelvis = null;
+                var allRbs = targetStats.GetComponentsInChildren<Rigidbody>();
+                foreach (var rb in allRbs)
+                    if (rb.name.ToLower().Contains("pelvis")) { targetPelvis = rb; break; }
+
+                // Damage is server-side
+                if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+                {
+                    // Offline / solo test
                     targetStats.TakeDamage(damage, hitDir, targetPelvis);
-            }
+                }
+                else
+                {
+                    // Already running on server because PunchHitbox lives on the physics ragdoll
+                    // which is server-simulated. Safe to call directly.
+                    if (NetworkManager.Singleton.IsServer)
+                        targetStats.TakeDamage(damage, hitDir, targetPelvis);
+                }
 
-            // Spawn hit VFX at contact point (local, cosmetic)
-            if (hitVFXPrefab != null)
-            {
-                var closest = other.ClosestPoint(transform.position);
-                Instantiate(hitVFXPrefab, closest, Quaternion.LookRotation(-hitDir));
+                // Spawn hit VFX at contact point (local, cosmetic)
+                if (hitVFXPrefab != null)
+                {
+                    var closest = other.ClosestPoint(transform.position);
+                    Instantiate(hitVFXPrefab, closest, Quaternion.LookRotation(-hitDir));
+                }
             }
         }
     }

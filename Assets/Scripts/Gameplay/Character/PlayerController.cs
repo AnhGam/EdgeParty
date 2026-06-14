@@ -36,6 +36,14 @@ namespace EdgeParty.Gameplay.Character
         // Item hiện tại player đang cầm (null = tay trống)
         public WeaponPickup.ItemType? CurrentHeldItem { get; private set; } = null;
         public int heldItemCharges = 0;
+
+        [Header("Weapon Hand Offsets")]
+        public Vector3 bombHandOffset = Vector3.zero;
+        public Vector3 bombHandRotation = Vector3.zero;
+        public Vector3 gunHandOffset = new Vector3(-0.05f, 0.08f, 0.15f);
+        public Vector3 gunHandRotation = new Vector3(0f, 90f, 0f);
+
+        private float _lastStunGunFireTime = -99f;
         
         // Player display name – synced once at spawn, read by all clients for nameplates
         public NetworkVariable<FixedString64Bytes> playerNameSync = new NetworkVariable<FixedString64Bytes>(
@@ -55,7 +63,7 @@ namespace EdgeParty.Gameplay.Character
 
         [Header("Dead State")]
         [Tooltip("Giây tự hồi sau khi chết")]
-        public float autoRespawnDelay = 10f;
+        public float autoRespawnDelay = 15f;
         [Tooltip("Giây chờ sau khi spring phục hồi trước khi nhận phím")]
         public float inputBlockAfterRespawn = 1.5f;
 
@@ -245,6 +253,13 @@ namespace EdgeParty.Gameplay.Character
             var type = (WeaponPickup.ItemType)itemTypeInt;
             CurrentHeldItem = type;
             UpdateWeaponVisuals();
+
+            // Play pickup sound on all clients
+            var pickupSFX = Resources.Load<AudioClip>("Audios/gun_hit_sfx");
+            if (pickupSFX != null && AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySFX(pickupSFX);
+            }
         }
 
         public void ConsumeHeldItem()
@@ -262,6 +277,17 @@ namespace EdgeParty.Gameplay.Character
             UpdateWeaponVisuals();
         }
 
+        private static Material _particleMat;
+        private static Material GetParticleMaterial()
+        {
+            if (_particleMat == null)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+                if (shader != null) _particleMat = new Material(shader);
+            }
+            return _particleMat;
+        }
+
         private void SpawnWeaponDisappearVFX()
         {
             Transform hand = FindRightHand();
@@ -270,6 +296,7 @@ namespace EdgeParty.Gameplay.Character
             var vfx = new GameObject("WeaponDisappearVFX");
             vfx.transform.position = hand.position;
             var ps = vfx.AddComponent<ParticleSystem>();
+            ps.Stop();
             var main = ps.main;
             main.duration = 0.5f;
             main.loop = false;
@@ -285,7 +312,7 @@ namespace EdgeParty.Gameplay.Character
 
             var emission = ps.emission;
             emission.rateOverTime = 0f;
-            emission.SetBurst(0, new ParticleSystem.Burst(0f, 20));
+            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 20) });
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
@@ -293,6 +320,7 @@ namespace EdgeParty.Gameplay.Character
 
             var renderer = vfx.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            if (GetParticleMaterial() != null) renderer.material = GetParticleMaterial();
 
             ps.Play();
             Destroy(vfx, 1f);
@@ -323,34 +351,36 @@ namespace EdgeParty.Gameplay.Character
 
             _weaponVisualInstance = Instantiate(prefab, hand);
 
-            // Strip network, physics, and scripting components immediately
-            var netObj = _weaponVisualInstance.GetComponent<NetworkObject>();
-            if (netObj != null) DestroyImmediate(netObj);
+            // Strip all MonoBehaviours (including NetworkObject, WeaponPickup, etc) to make it a dumb visual
+            foreach (var mono in _weaponVisualInstance.GetComponentsInChildren<MonoBehaviour>())
+            {
+                Destroy(mono);
+            }
 
-            var rb = _weaponVisualInstance.GetComponent<Rigidbody>();
-            if (rb != null) DestroyImmediate(rb);
-
-            var bombItem = _weaponVisualInstance.GetComponent<BombItem>();
-            if (bombItem != null) DestroyImmediate(bombItem);
-            var stunGun = _weaponVisualInstance.GetComponent<StunGun>();
-            if (stunGun != null) DestroyImmediate(stunGun);
+            // STOP PHYSICS from simulating before destruction
+            foreach (var rbChild in _weaponVisualInstance.GetComponentsInChildren<Rigidbody>())
+            {
+                rbChild.isKinematic = true;
+                rbChild.detectCollisions = false;
+                Destroy(rbChild);
+            }
 
             foreach (var col in _weaponVisualInstance.GetComponentsInChildren<Collider>())
             {
-                DestroyImmediate(col);
+                Destroy(col);
             }
-
-            _weaponVisualInstance.transform.localPosition = Vector3.zero;
-            _weaponVisualInstance.transform.localRotation = Quaternion.identity;
 
             if (CurrentHeldItem == WeaponPickup.ItemType.Bomb)
             {
+                _weaponVisualInstance.transform.localPosition = bombHandOffset;
+                _weaponVisualInstance.transform.localRotation = Quaternion.Euler(bombHandRotation);
                 _weaponVisualInstance.transform.localScale = Vector3.one * 0.4f;
             }
             else
             {
-                _weaponVisualInstance.transform.localScale = Vector3.one * 0.6f;
-                _weaponVisualInstance.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+                _weaponVisualInstance.transform.localPosition = gunHandOffset;
+                _weaponVisualInstance.transform.localRotation = Quaternion.Euler(gunHandRotation);
+                _weaponVisualInstance.transform.localScale = Vector3.one * 1.2f;
             }
 
             _weaponVisualInstance.SetActive(true);
@@ -400,6 +430,7 @@ namespace EdgeParty.Gameplay.Character
 
         void SpawnByTeam()
         {
+            if (GetComponent<TestDummy>() != null) return;
             if (SpawnManager.Instance == null) return;
 
             Vector3 pos = SpawnManager.Instance.GetSpawnPosition(TeamID.Value);
@@ -543,6 +574,12 @@ namespace EdgeParty.Gameplay.Character
             if (CurrentHeldItem == WeaponPickup.ItemType.Bomb)
             {
                 Vector3 spawnPos = transform.position + Vector3.up * 1.5f + transform.forward * 0.8f;
+                Vector3 throwDir = (transform.forward + Vector3.up * 0.3f).normalized;
+                
+                // Show visual bomb on all clients instantly!
+                SpawnVisualBombClientRpc(spawnPos, throwDir * 12f);
+
+                // Server logical bomb (networked but completely invisible)
                 var bombGo = Instantiate(Resources.Load<GameObject>("BombBall"), spawnPos, Quaternion.identity);
                 var netObj = bombGo.GetComponent<NetworkObject>();
                 netObj.Spawn();
@@ -550,8 +587,7 @@ namespace EdgeParty.Gameplay.Character
                 var bombItem = bombGo.GetComponent<BombItem>();
                 if (bombItem != null)
                 {
-                    Vector3 throwDir = (transform.forward + Vector3.up * 0.3f).normalized;
-                    bombItem.ThrowBomb(throwDir, 12f);
+                    bombItem.ThrowBomb(throwDir, 12f, this);
                 }
 
                 ConsumeHeldItem();
@@ -559,6 +595,13 @@ namespace EdgeParty.Gameplay.Character
             }
             else if (CurrentHeldItem == WeaponPickup.ItemType.StunGun)
             {
+                // 5s cooldown check
+                if (Time.time - _lastStunGunFireTime < 5f)
+                {
+                    return;
+                }
+                _lastStunGunFireTime = Time.time;
+
                 Vector3 origin = transform.position + Vector3.up * 1.2f;
                 Vector3 direction = transform.forward;
                 float stunRange = 6f;
@@ -589,25 +632,127 @@ namespace EdgeParty.Gameplay.Character
         }
 
         [Rpc(SendTo.ClientsAndHost)]
-        private void PlayStunGunShotEffectsClientRpc(Vector3 origin, Vector3 direction)
+        private void SpawnVisualBombClientRpc(Vector3 position, Vector3 velocity)
         {
+            var bombGo = Instantiate(Resources.Load<GameObject>("BombBall"), position, Quaternion.identity);
+            
+            // Strip network components
+            var netObj = bombGo.GetComponent<NetworkObject>();
+            if (netObj != null) Destroy(netObj);
+            
+            var bombItem = bombGo.GetComponent<BombItem>();
+            if (bombItem != null) Destroy(bombItem);
+            
+            var pickup = bombGo.GetComponent<WeaponPickup>();
+            if (pickup != null) Destroy(pickup);
+            
+            // Setup physics
+            var rb = bombGo.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.isKinematic = false;
+                rb.useGravity = true;
+                rb.linearVelocity = velocity;
+                rb.angularVelocity = new Vector3(Random.Range(-10f, 10f), Random.Range(-10f, 10f), Random.Range(-10f, 10f));
+            }
+            
+            // Destroy visual bomb slightly after the real explosion happens
+            Destroy(bombGo, 3.1f);
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PlayStunGunShotEffectsClientRpc(Vector3 serverOrigin, Vector3 direction)
+        {
+            Transform hand = FindRightHand();
+            Vector3 visualOrigin = hand != null ? hand.position : serverOrigin;
+
+            // Draw a beam
             var beam = new GameObject("StunGunBeam");
             var lr = beam.AddComponent<LineRenderer>();
-            lr.startWidth = 0.08f;
-            lr.endWidth = 0.02f;
+            lr.startWidth = 0.12f;
+            lr.endWidth = 0.04f;
             lr.positionCount = 2;
-            lr.SetPositions(new Vector3[] { origin, origin + direction * 6f });
-            
-            lr.startColor = new Color(0.3f, 0.9f, 1f, 0.8f);
-            lr.endColor = new Color(0.3f, 0.9f, 1f, 0.1f);
-            lr.material = new Material(Shader.Find("Sprites/Default"));
-            
-            Destroy(beam, 0.15f);
 
-            var shotSFX = Resources.Load<AudioClip>("Audios/gun_hit_sfx");
-            if (shotSFX == null) shotSFX = Resources.Load<AudioClip>("Audios/electricShock_sfx");
+            Vector3 hitPoint = visualOrigin + direction * 6f;
+            if (Physics.Raycast(visualOrigin, direction, out RaycastHit hit, 6f))
+            {
+                hitPoint = hit.point;
+                SpawnStunHitVFX(hitPoint);
+            }
+
+            lr.SetPositions(new Vector3[] { visualOrigin, hitPoint });
+
+            lr.startColor = new Color(0.3f, 0.9f, 1f, 1.0f);
+            lr.endColor = new Color(0.3f, 0.9f, 1f, 0.2f);
+
+            Destroy(beam, 0.2f);
+
+            // Muzzle flash
+            SpawnMuzzleFlashVFX(visualOrigin);
+
+            // SFX
+            var shotSFX = Resources.Load<AudioClip>("Audios/electricShock_sfx");
+            if (shotSFX == null) shotSFX = Resources.Load<AudioClip>("Audios/gun_hit_sfx");
             if (shotSFX != null && AudioManager.Instance != null)
                 AudioManager.Instance.PlaySFX(shotSFX);
+        }
+
+        private void SpawnMuzzleFlashVFX(Vector3 position)
+        {
+            var flashVFX = new GameObject("MuzzleFlashVFX");
+            flashVFX.transform.position = position;
+            var ps = flashVFX.AddComponent<ParticleSystem>();
+            ps.Stop();
+            var main = ps.main;
+            main.duration = 0.15f;
+            main.loop = false;
+            main.startLifetime = 0.1f;
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.5f, 1.5f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.18f);
+            main.startColor = new Color(0.3f, 0.9f, 1f, 0.9f);
+
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 8) });
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.05f;
+
+            var renderer = flashVFX.GetComponent<ParticleSystemRenderer>();
+            if (GetParticleMaterial() != null) renderer.material = GetParticleMaterial();
+
+            ps.Play();
+            Destroy(flashVFX, 0.4f);
+        }
+
+        private void SpawnStunHitVFX(Vector3 position)
+        {
+            var hitVFX = new GameObject("StunHitVFX");
+            hitVFX.transform.position = position;
+            var ps = hitVFX.AddComponent<ParticleSystem>();
+            ps.Stop();
+            var main = ps.main;
+            main.duration = 0.2f;
+            main.loop = false;
+            main.startLifetime = 0.15f;
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1f, 3f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.12f);
+            main.startColor = new Color(0.3f, 0.9f, 1f, 0.9f);
+
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 10) });
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.1f;
+
+            var renderer = hitVFX.GetComponent<ParticleSystemRenderer>();
+            if (GetParticleMaterial() != null) renderer.material = GetParticleMaterial();
+
+            ps.Play();
+            Destroy(hitVFX, 0.5f);
         }
 
         public void OnGrabTriggered_Server()
@@ -724,13 +869,17 @@ namespace EdgeParty.Gameplay.Character
                 pelvisRigidbody.constraints = RigidbodyConstraints.None;
             }
 
-            // Toàn bộ khớp về spring = 0 → nằm xuống đất tự nhiên
+            // Toàn bộ khớp về spring = 0 và mở khoá limit → gục tự nhiên theo hướng bị đánh
             if (_followers == null || _followers.Length == 0)
                 _followers = GetComponentsInChildren<RagdollBoneFollower>();
+            
             foreach (var f in _followers)
+            {
                 f.SetSpringMultiplier(0f);
+                f.UnlockAllLimits();
+            }
 
-            Debug.Log($"[PlayerController] {playerNameSync.Value} died — ragdoll limp.");
+            Debug.Log($"[PlayerController] {playerNameSync.Value} died — ragdoll limp and limits freed.");
         }
 
         private void OnPlayerRespawned_Ragdoll()
@@ -823,6 +972,7 @@ namespace EdgeParty.Gameplay.Character
             root.transform.localPosition = Vector3.up * 0.8f;
 
             var sparkSys = root.AddComponent<ParticleSystem>();
+            sparkSys.Stop();
             var main = sparkSys.main;
             main.duration = 3f;
             main.loop = true;
@@ -844,6 +994,7 @@ namespace EdgeParty.Gameplay.Character
             var renderer = root.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Stretch;
             renderer.lengthScale = 4f;
+            if (GetParticleMaterial() != null) renderer.material = GetParticleMaterial();
 
             sparkSys.Play();
             return root;

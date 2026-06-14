@@ -73,6 +73,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cosmic_Retro_Blaster_2_5
       objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -85,6 +100,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: -2219377670244011171}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96f78cc8f4714694db873632c6694f36,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4567890123456789}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 96f78cc8f4714694db873632c6694f36,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3456789012345678}
   m_SourcePrefab: {fileID: 100100000, guid: 96f78cc8f4714694db873632c6694f36, type: 3}
 --- !u!1 &4300475061299410079 stripped
 GameObject:
@@ -131,8 +154,45 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Items.StunGun
   ShowTopMostFoldoutHeaderGroup: 1
   stunDuration: 2.5
-  stunRange: 3
-  electricVFXPrefab: {fileID: 1936488993998635378, guid: 88b14fae91f3b5345abdc3e7a5f29793,
-    type: 3}
+  stunRange: 1.5
+  electricVFXPrefab: {fileID: 7856649774641617467, guid: 5eeaa49a26f1bb7468d756408c7434a4, type: 3}
   stunHitSFX: {fileID: 8300000, guid: 921546675187e0b4598042a87463a2b6, type: 3}
   stunLoopSFX: {fileID: 8300000, guid: 2139cd8108eaece4f9409f55f88f8a6c, type: 3}
+--- !u!135 &4567890123456789
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 3994467029059914190}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4300475061299410079}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3456789012345678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 3994467029059914190}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4300475061299410079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbd0d50d53f2d6343bbf0398d0d8a176, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Items.WeaponPickup
+  itemType: 1
+  bobSpeed: 1
+  bobHeight: 0.03
+  rotateSpeed: 30
+  pickupSFX: {fileID: 0}

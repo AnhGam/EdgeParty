@@ -2,6 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using System;
 using System.Collections;
+using EdgeParty.Gameplay.Character;
 
 public class ForestGameManager : NetworkBehaviour
 {
@@ -39,6 +40,7 @@ public class ForestGameManager : NetworkBehaviour
     public event Action OnScoreChanged;
 
     // ─── State ───────────────────────────────────────────────────────────
+    public static bool SpawnTestDummiesOnStart = false;
     private bool _matchRunning = false;
     public float MatchStartTime { get; private set; }
 
@@ -68,6 +70,10 @@ public class ForestGameManager : NetworkBehaviour
         if (IsServer)
         {
             StartCoroutine(MatchFlowCoroutine());
+            if (SpawnTestDummiesOnStart)
+            {
+                SpawnTestDummies();
+            }
         }
         else
         {
@@ -212,6 +218,45 @@ public class ForestGameManager : NetworkBehaviour
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────
+
+    private void SpawnTestDummies()
+    {
+        if (NetworkManager.Singleton == null || !IsServer) return;
+
+        var playerPrefab = NetworkManager.Singleton.NetworkConfig.PlayerPrefab;
+        if (playerPrefab == null)
+        {
+            Debug.LogWarning("[ForestGameManager] Player prefab not found in NetworkConfig!");
+            return;
+        }
+
+        // Spawn Dummy 1: Stand Still
+        Vector3 pos1 = new Vector3(3f, 1.5f, 3f);
+        var dummyGo1 = Instantiate(playerPrefab, pos1, Quaternion.identity);
+        var dummy1 = dummyGo1.AddComponent<TestDummy>();
+        dummy1.behavior = TestDummy.DummyBehavior.StandStill;
+        
+        var netObj1 = dummyGo1.GetComponent<NetworkObject>();
+        if (netObj1 != null)
+        {
+            netObj1.Spawn();
+        }
+
+        // Spawn Dummy 2: Attack and Lock
+        Vector3 pos2 = new Vector3(-3f, 1.5f, -3f);
+        var dummyGo2 = Instantiate(playerPrefab, pos2, Quaternion.identity);
+        var dummy2 = dummyGo2.AddComponent<TestDummy>();
+        dummy2.behavior = TestDummy.DummyBehavior.AttackAndLock;
+        dummy2.attackInterval = 1.8f; // Slightly longer than standard strike cooldown
+        
+        var netObj2 = dummyGo2.GetComponent<NetworkObject>();
+        if (netObj2 != null)
+        {
+            netObj2.Spawn();
+        }
+
+        Debug.Log("[ForestGameManager] Spawned 2 test dummies successfully.");
+    }
 
     public int GetScore(int teamID) => teamID == 1 ? Team1Score.Value : Team2Score.Value;
 
