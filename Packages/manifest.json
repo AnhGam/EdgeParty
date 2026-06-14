@@ -23,6 +23,7 @@
     "com.unity.services.friends": "1.1.1",
     "com.unity.services.multiplayer": "2.2.3",
     "com.unity.services.vivox": "16.10.0",
+    "com.unity.shadergraph": "17.3.0",
     "com.unity.test-framework": "1.6.0",
     "com.unity.timeline": "1.8.12",
     "com.unity.toolchain.win-x86_64-linux": "1.1.0",

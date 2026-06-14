@@ -726,6 +726,7 @@ namespace EdgeParty.UI
                         {
                             utp.SetConnectionData("127.0.0.1", 7777);
                         }
+                        global::ForestGameManager.SpawnTestDummiesOnStart = true;
                         if (networkManager.StartHost())
                         {
                             Debug.Log("[StitchUIController] Host started successfully. Loading Forest scene...");

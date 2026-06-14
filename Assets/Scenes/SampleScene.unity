@@ -1095,6 +1095,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8684084185487689833, guid: f89c951400c61a24da00212d043b4e8d,
+        type: 3}
+      propertyPath: NetworkConfig.Prefabs.NetworkPrefabsLists.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8684084185487689833, guid: f89c951400c61a24da00212d043b4e8d,
+        type: 3}
+      propertyPath: 'NetworkConfig.Prefabs.NetworkPrefabsLists.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 3f01fd29fa0f88d4eb216fdeaae956ab,
+        type: 2}
+    - target: {fileID: 8684084185487689833, guid: f89c951400c61a24da00212d043b4e8d,
+        type: 3}
+      propertyPath: 'NetworkConfig.Prefabs.NetworkPrefabsLists.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 725b22a8e822ece4f9920e12add33eb3,
+        type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -20,6 +20,9 @@ namespace EdgeParty.Gameplay.Character
         private float _originalYZSpring;
         private float _originalYZDamper;
 
+        private float _originalSlerpSpring;
+        private float _originalSlerpDamper;
+
         private bool _isRootBone;
         private ConfigurableJointMotion _originalAngularXMotion;
 
@@ -35,6 +38,9 @@ namespace EdgeParty.Gameplay.Character
             _originalXDamper = _joint.angularXDrive.positionDamper;
             _originalYZSpring = _joint.angularYZDrive.positionSpring;
             _originalYZDamper = _joint.angularYZDrive.positionDamper;
+
+            _originalSlerpSpring = _joint.slerpDrive.positionSpring;
+            _originalSlerpDamper = _joint.slerpDrive.positionDamper;
 
             // Joint space calculation (mstevenson/ConfigurableJointExtensions)
             Vector3 forward = Vector3.Cross(_joint.axis, _joint.secondaryAxis).normalized;
@@ -68,6 +74,11 @@ namespace EdgeParty.Gameplay.Character
             yzDrive.positionSpring = _originalYZSpring * multiplier;
             yzDrive.positionDamper = _originalYZDamper * multiplier;
             _joint.angularYZDrive = yzDrive;
+
+            var slerpDrive = _joint.slerpDrive;
+            slerpDrive.positionSpring = _originalSlerpSpring * multiplier;
+            slerpDrive.positionDamper = _originalSlerpDamper * multiplier;
+            _joint.slerpDrive = slerpDrive;
         }
 
         /// <summary>
@@ -86,8 +97,23 @@ namespace EdgeParty.Gameplay.Character
             yzDrive.positionSpring = 0.5f;
             yzDrive.positionDamper = 0f;
             _joint.angularYZDrive = yzDrive;
+
+            var slerpDrive = _joint.slerpDrive;
+            slerpDrive.positionSpring = 0.5f;
+            slerpDrive.positionDamper = 0f;
+            _joint.slerpDrive = slerpDrive;
         }
 
+        /// <summary>
+        /// Mở khoá toàn bộ giới hạn góc quay để ragdoll gục tự do theo mọi hướng.
+        /// </summary>
+        public void UnlockAllLimits()
+        {
+            if (_joint == null) return;
+            _joint.angularXMotion = ConfigurableJointMotion.Free;
+            _joint.angularYMotion = ConfigurableJointMotion.Free;
+            _joint.angularZMotion = ConfigurableJointMotion.Free;
+        }
 
         private CharacterAnimationController _animController;
 

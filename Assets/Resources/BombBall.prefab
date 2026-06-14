@@ -44,6 +44,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: -7283164190695924507}
+    - targetCorrespondingSourceObject: {fileID: 100000, guid: 38972d9a807375f4fbdbf2e076aa183f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3456789012345678}
   m_SourcePrefab: {fileID: 100100000, guid: 38972d9a807375f4fbdbf2e076aa183f, type: 3}
 --- !u!1 &4244544703068471477 stripped
 GameObject:
@@ -138,8 +142,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Items.BombItem
   ShowTopMostFoldoutHeaderGroup: 1
   explosionRadius: 5
-  knockbackForce: 800
-  fuseTime: 2
-  explosionVFXPrefab: {fileID: 1620140131458704099, guid: 57e5b83dfee152a47aedf7d83c83e9f5,
-    type: 3}
+  knockbackForce: 100
+  fuseTime: 3
+  explosionVFXPrefab: {fileID: 8301548480434407513, guid: df2527528f389ce428023349503d76bf, type: 3}
   explosionSFX: {fileID: 8300000, guid: 3443ddb7be9757a4abb12475cc0d4a60, type: 3}
+--- !u!114 &3456789012345678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4244544703068471477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbd0d50d53f2d6343bbf0398d0d8a176, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Items.WeaponPickup
+  itemType: 0
+  bobSpeed: 1
+  bobHeight: 0.03
+  rotateSpeed: 30
+  pickupSFX: {fileID: 0}
