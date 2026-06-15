@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0448f7e6d6502e632065815a393809d08346453210bebfa3fff1780c94de6e29
-size 395
+fileFormatVersion: 2
+guid: 836caa110b05b6345b085073821948bb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226721
+  packageName: Pspsps Monkey
+  packageVersion: 3.4
+  assetPath: Assets/Suriyun/Pspsps/Materials/Environment/T_Environment_Floor.mat
+  uploadId: 834512

@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:cbbf09f961edde0af0669b11e636dc15e3fe18e5f38502ca207deb63e13ea46b
-size 350
+fileFormatVersion: 2
+guid: 1a00176822507c64b97db94941106f03
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226721
+  packageName: Pspsps Monkey
+  packageVersion: 3.4
+  assetPath: Assets/Suriyun/Pspsps/Prefab/Environment/Flower_A.prefab
+  uploadId: 834512
