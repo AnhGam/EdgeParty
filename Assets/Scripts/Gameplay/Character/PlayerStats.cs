@@ -69,7 +69,7 @@ namespace EdgeParty.Gameplay.Character
 
         private void Awake()
         {
-            fallDeathY = -11.5f; // Force fallDeathY to be just below the map
+            fallDeathY = 0f; // Force fallDeathY to be just below the map
             _motor = transform.root.GetComponentInChildren<CharacterMotor>();
             if (_motor == null) _motor = GetComponentInParent<CharacterMotor>();
             if (_motor == null) _motor = GetComponentInChildren<CharacterMotor>();
