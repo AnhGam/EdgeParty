@@ -25,6 +25,8 @@ namespace EdgeParty.Gameplay.Character
 
         private bool _isRootBone;
         private ConfigurableJointMotion _originalAngularXMotion;
+        private ConfigurableJointMotion _originalAngularYMotion;
+        private ConfigurableJointMotion _originalAngularZMotion;
 
         private void Awake()
         {
@@ -32,6 +34,8 @@ namespace EdgeParty.Gameplay.Character
             _isRootBone = (_joint.connectedBody == null);
             _startingLocalRotation = transform.localRotation;
             _originalAngularXMotion = _joint.angularXMotion;
+            _originalAngularYMotion = _joint.angularYMotion;
+            _originalAngularZMotion = _joint.angularZMotion;
 
             // Cache the hand-tuned spring and damper values from the Joint Inspector
             _originalXSpring = _joint.angularXDrive.positionSpring;
@@ -113,6 +117,17 @@ namespace EdgeParty.Gameplay.Character
             _joint.angularXMotion = ConfigurableJointMotion.Free;
             _joint.angularYMotion = ConfigurableJointMotion.Free;
             _joint.angularZMotion = ConfigurableJointMotion.Free;
+        }
+
+        /// <summary>
+        /// Khôi phục các giới hạn góc quay ban đầu được thiết lập trong Inspector.
+        /// </summary>
+        public void RestoreLimits()
+        {
+            if (_joint == null) return;
+            _joint.angularXMotion = _originalAngularXMotion;
+            _joint.angularYMotion = _originalAngularYMotion;
+            _joint.angularZMotion = _originalAngularZMotion;
         }
 
         private CharacterAnimationController _animController;

@@ -47,10 +47,10 @@ MonoBehaviour:
   pelvisRigidbody: {fileID: 834940518401243486}
   ghostRoot: {fileID: 7833220074001554887}
   ghostPelvis: {fileID: 4327099786958990279}
-  walkForce: 15
-  runForce: 25
+  walkForce: 20
+  runForce: 30
   rotationSpeed: 10
-  jumpImpulse: 40
+  jumpImpulse: 55
   dashImpulse: 0
   airControlFactor: 0.5
   groundLayer:
@@ -276,6 +276,7 @@ MonoBehaviour:
   staminaRegenRate: 12
   staminaRegenDelay: 1.2
   speedMultiplier: 1
+  fallDeathY: -20
   knockbackForce: 18
   knockbackUpRatio: 0.4
   CurrentHealth:
