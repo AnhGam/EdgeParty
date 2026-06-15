@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 2586299b974564f428d47ccd3c198026
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 297318
-  packageName: Elemental Spells Full Pack VFX
-  packageVersion: 1.0.1
-  assetPath: Assets/PixPlays/ElementalBeams/WaterBeam/Version_BuiltIn/WaterBeam.prefab
-  uploadId: 840846
+version https://git-lfs.github.com/spec/v1
+oid sha256:462931161765c20884e99b7a16739153ab5293dab09d76ed38f89c5a3b7a4724
+size 400

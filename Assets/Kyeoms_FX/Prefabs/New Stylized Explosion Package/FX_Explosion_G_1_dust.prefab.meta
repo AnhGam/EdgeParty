@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 4f0ba567c89dc0a4faa7f6c3c9059f1f
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 260177
-  packageName: New Stylized Explosion Package
-  packageVersion: 1.0
-  assetPath: Assets/Kyeoms_FX/Prefabs/New Stylized Explosion Package/FX_Explosion_G_1_dust.prefab
-  uploadId: 613735
+version https://git-lfs.github.com/spec/v1
+oid sha256:770e1eb4572a2241f0df3b4ec864053a3a5853b27ab48ba2196550cba490df85
+size 409

@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 49d0e1a0411092349ab46bb76dd7e5b5
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 191533
-  packageName: Playground Low Poly
-  packageVersion: 1.0
-  assetPath: Assets/Playground Low Poly/Prefabs/SM_Flowers_02.prefab
-  uploadId: 427093
+version https://git-lfs.github.com/spec/v1
+oid sha256:b8c28c32cdc687f3c965ad7a821a7376a6a6c9144367992832e9e4fc2a99517a
+size 369

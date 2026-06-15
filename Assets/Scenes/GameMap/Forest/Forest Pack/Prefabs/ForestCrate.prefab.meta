@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: 1b5d1a6deebd81e4bba2448d18378844
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 100100000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 100080
-  packageName: Forest - Low Poly Toon Battle Arena / Tower Defense Pack
-  packageVersion: 1.1
-  assetPath: Assets/AurynSky/Forest Pack/Prefabs/ForestCrate.prefab
-  uploadId: 326328
+version https://git-lfs.github.com/spec/v1
+oid sha256:9acff5253dac12b696311a90d299de950e2ba755550b3b50d8676cfa852ad31f
+size 442

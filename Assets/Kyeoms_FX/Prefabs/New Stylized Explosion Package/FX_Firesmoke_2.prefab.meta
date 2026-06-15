@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: d9ef565bff9a8514ab8dc69897987bdf
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 260177
-  packageName: New Stylized Explosion Package
-  packageVersion: 1.0
-  assetPath: Assets/Kyeoms_FX/Prefabs/New Stylized Explosion Package/FX_Firesmoke_2.prefab
-  uploadId: 613735
+version https://git-lfs.github.com/spec/v1
+oid sha256:9a58b6c2366f1a668109f17b6d45657714b52f7171ccba07ac9b2156500ddcbe
+size 402

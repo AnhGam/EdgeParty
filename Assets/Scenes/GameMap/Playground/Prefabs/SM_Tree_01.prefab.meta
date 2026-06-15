@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 6a3bea1dd0263bf43861bde07f3af72f
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 191533
-  packageName: Playground Low Poly
-  packageVersion: 1.0
-  assetPath: Assets/Playground Low Poly/Prefabs/SM_Tree_01.prefab
-  uploadId: 427093
+version https://git-lfs.github.com/spec/v1
+oid sha256:009c89f2e7fbd7f70f2f0e28e1b8b093563972c161ca1e43c48c053798fec924
+size 366

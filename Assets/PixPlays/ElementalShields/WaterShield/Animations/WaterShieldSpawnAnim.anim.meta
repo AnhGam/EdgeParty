@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: da824001892eda540b155ac099f39f39
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 7400000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 297318
-  packageName: Elemental Spells Full Pack VFX
-  packageVersion: 1.0.1
-  assetPath: Assets/PixPlays/ElementalShields/WaterShield/Animations/WaterShieldSpawnAnim.anim
-  uploadId: 840846
+version https://git-lfs.github.com/spec/v1
+oid sha256:40ab562dbf1e5df6ca69007885ace4795c183a565664daef8eba97683c5cca85
+size 443

@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 44239bcf89012c540843eb92d48b4351
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 191533
-  packageName: Playground Low Poly
-  packageVersion: 1.0
-  assetPath: Assets/Playground Low Poly/Prefabs/SM_Swings_02.prefab
-  uploadId: 427093
+version https://git-lfs.github.com/spec/v1
+oid sha256:ff59357cf9196e8604ad3a206bf7a110352b4b56d79923cc50e86131e81fecc3
+size 368

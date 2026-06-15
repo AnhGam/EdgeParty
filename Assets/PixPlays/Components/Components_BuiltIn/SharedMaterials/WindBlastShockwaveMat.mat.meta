@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: bb13386870d4b9c4181450866b7129c5
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 2100000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 297318
-  packageName: Elemental Spells Full Pack VFX
-  packageVersion: 1.0.1
-  assetPath: Assets/PixPlays/Components/Components_BuiltIn/SharedMaterials/WindBlastShockwaveMat.mat
-  uploadId: 840846
+version https://git-lfs.github.com/spec/v1
+oid sha256:0273cf30947884643eaa7f57326f687516d8bdf6854789d59f1d8d6ba2d35a6d
+size 449
