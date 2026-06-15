@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:92df98ceef99dbc7a08342ce827160dd735ef001d235bb1c8ba586c3db2d97a5
-size 466
+fileFormatVersion: 2
+guid: dcbdac72f171da241abd88df31a61142
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 100080
+  packageName: Forest - Low Poly Toon Battle Arena / Tower Defense Pack
+  packageVersion: 1.1
+  assetPath: Assets/AurynSky/Forest Pack/Prefabs/Prefabs_Blue/ForestCastleDoorL_Blue.prefab
+  uploadId: 326328

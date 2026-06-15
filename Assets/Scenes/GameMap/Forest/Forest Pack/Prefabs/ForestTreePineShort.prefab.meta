@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:419a12b1ada17577dcf418a2684334be7c20aaa23c5dcacf56c7399364520a21
-size 450
+fileFormatVersion: 2
+guid: 45fe3ec28eac2064d985117cf812ef9d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 100080
+  packageName: Forest - Low Poly Toon Battle Arena / Tower Defense Pack
+  packageVersion: 1.1
+  assetPath: Assets/AurynSky/Forest Pack/Prefabs/ForestTreePineShort.prefab
+  uploadId: 326328

@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:730c4032099a2c528c1dc1bb48bd52c352eab8a479c049b39b839ee0f0c548a8
-size 462
+fileFormatVersion: 2
+guid: a29d452ee24577e46b40bd1b5396acc5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 100080
+  packageName: Forest - Low Poly Toon Battle Arena / Tower Defense Pack
+  packageVersion: 1.1
+  assetPath: Assets/AurynSky/Forest Pack/Prefabs/Prefabs_Blue/ForestBrazzierBlue.prefab
+  uploadId: 326328

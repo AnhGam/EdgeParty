@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c7a7eef95a4669f4cca85d9705e900525ef62577cf6f6ca2b976fba246c4180b
-size 381
+fileFormatVersion: 2
+guid: e42cc545d9b8f6847b2f778e7f7a1a04
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226721
+  packageName: Pspsps Monkey
+  packageVersion: 3.4
+  assetPath: Assets/Suriyun/Pspsps/Materials/Emotions/M_Chibi_Emo_07.mat
+  uploadId: 834512

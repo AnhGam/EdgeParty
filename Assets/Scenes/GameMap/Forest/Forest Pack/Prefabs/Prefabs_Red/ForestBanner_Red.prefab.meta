@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:05fbdd843def1858382e020521eb354432dfbd807ff8efe04127da1d2a9584a5
-size 459
+fileFormatVersion: 2
+guid: 6ed1034f9492a344ebd1650ecbc20030
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 100080
+  packageName: Forest - Low Poly Toon Battle Arena / Tower Defense Pack
+  packageVersion: 1.1
+  assetPath: Assets/AurynSky/Forest Pack/Prefabs/Prefabs_Red/ForestBanner_Red.prefab
+  uploadId: 326328

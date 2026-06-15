@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:efbfddc5fdfe064d9b3d76b89c9115a470e27c49a7a845bdd2f54cd7ef281ca9
-size 344
+fileFormatVersion: 2
+guid: 19c0fed2dd3c3d5438d50e1456c7c2c5
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226721
+  packageName: Pspsps Monkey
+  packageVersion: 3.4
+  assetPath: Assets/Suriyun/Pspsps/Prefab/Accessory/Knot.prefab
+  uploadId: 834512

@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:2d24c16ecf30dd349b654be4804d6124e6ad143c5c74f93f32a885260a05d0e5
-size 383
+fileFormatVersion: 2
+guid: 2c279af0ef520a648bbd212fdf58d600
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226721
+  packageName: Pspsps Monkey
+  packageVersion: 3.4
+  assetPath: Assets/Suriyun/Animations/Environment/Tree_A.controller
+  uploadId: 834512

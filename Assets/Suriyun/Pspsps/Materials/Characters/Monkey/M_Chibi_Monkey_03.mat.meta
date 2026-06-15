@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:8a8cb4f827f210ab0adc7df1370a1d2b0cdfb35c54e399910c023fc21a63f70d
-size 399
+fileFormatVersion: 2
+guid: 304d8b3cf6b3f1c47924abef7c057d61
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226721
+  packageName: Pspsps Monkey
+  packageVersion: 3.4
+  assetPath: Assets/Suriyun/Pspsps/Materials/Characters/Monkey/M_Chibi_Monkey_03.mat
+  uploadId: 834512
