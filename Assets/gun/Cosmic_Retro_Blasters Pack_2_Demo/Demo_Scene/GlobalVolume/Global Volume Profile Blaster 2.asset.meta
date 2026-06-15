@@ -1,3 +1,16 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:75b4c72aa01fa4330080c9ae3530fd97bc4f05173d05a10d4fc0d93779587de2
-size 492
+fileFormatVersion: 2
+guid: f3a8317304a7339448ce55735885d575
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 343272
+  packageName: 'FREE: Sci-Fi Low Poly Energy Blasters Sector Beta | Cosmic Retro'
+  packageVersion: 1.0
+  assetPath: Assets/gun/Cosmic_Retro_Blasters Pack_2_Demo/Demo_Scene/GlobalVolume/Global
+    Volume Profile Blaster 2.asset
+  uploadId: 901414

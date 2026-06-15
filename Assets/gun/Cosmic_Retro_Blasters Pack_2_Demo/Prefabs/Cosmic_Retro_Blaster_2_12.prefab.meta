@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d4d1a40aed13723868f82b29a2c8117604f79447a9472b9239f1dc1ab31b3cdd
-size 432
+fileFormatVersion: 2
+guid: 376554a807351f341956cfc0782ecf01
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 343272
+  packageName: 'FREE: Sci-Fi Low Poly Energy Blasters Sector Beta | Cosmic Retro'
+  packageVersion: 1.0
+  assetPath: Assets/gun/Cosmic_Retro_Blasters Pack_2_Demo/Prefabs/Cosmic_Retro_Blaster_2_12.prefab
+  uploadId: 901414
