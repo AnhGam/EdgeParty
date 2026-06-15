@@ -1,11 +1,3 @@
-fileFormatVersion: 2
-guid: 7717d08fdcc532b449044fc4b21a7b5a
-NativeFormatImporter:
-  userData: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 446
-  packageName: Ball Pack
-  packageVersion: 2.0
-  assetPath: Assets/Ball Pack/Models/Bomb Ball/Materials/Bomb Ball.mat
-  uploadId: 738768
+version https://git-lfs.github.com/spec/v1
+oid sha256:5aa7c5931cd0a71a845dcc17d63fa068a1def70a7bee0cd55cd61409cabfc4b0
+size 296

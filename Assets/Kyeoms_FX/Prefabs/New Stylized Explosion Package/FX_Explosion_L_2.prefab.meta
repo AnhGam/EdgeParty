@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 5d606aa00ebbd6d48852ff55ae466995
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 260177
-  packageName: New Stylized Explosion Package
-  packageVersion: 1.0
-  assetPath: Assets/Kyeoms_FX/Prefabs/New Stylized Explosion Package/FX_Explosion_L_2.prefab
-  uploadId: 613735
+version https://git-lfs.github.com/spec/v1
+oid sha256:0f3d662f7f734919d6f60f04784eeef1cd597de37adcd1e5ce329d6736df723f
+size 404

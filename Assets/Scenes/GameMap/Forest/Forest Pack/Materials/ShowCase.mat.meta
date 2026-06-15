@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: ce6846b6b5ba77f4e83630cc67fcd60d
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 2100000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 100080
-  packageName: Forest - Low Poly Toon Battle Arena / Tower Defense Pack
-  packageVersion: 1.1
-  assetPath: Assets/AurynSky/Forest Pack/Materials/ShowCase.mat
-  uploadId: 326328
+version https://git-lfs.github.com/spec/v1
+oid sha256:27df6725ec2e0cdaf8a1ba80fc673f35b428227fbcf5a0c24218a3521cb37bfc
+size 436

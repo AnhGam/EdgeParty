@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: d76604d888e1f2e4a9ea00687d223934
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 191533
-  packageName: Playground Low Poly
-  packageVersion: 1.0
-  assetPath: Assets/Playground Low Poly/Prefabs/SM_Toy_02.prefab
-  uploadId: 427093
+version https://git-lfs.github.com/spec/v1
+oid sha256:6b69bd9183487e00bd78843112dc43527f408728575e9248a08c743a83c5ef4e
+size 365

@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 2e045b07ba0f74947bd82b767b57b5fa
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 191533
-  packageName: Playground Low Poly
-  packageVersion: 1.0
-  assetPath: Assets/Playground Low Poly/Prefabs/SM_Stand_01.prefab
-  uploadId: 427093
+version https://git-lfs.github.com/spec/v1
+oid sha256:bd4c7dd4b499800554d299e3af8e720f3c6f9b34d96ce5650209d76ebc6ae0e7
+size 367

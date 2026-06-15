@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 30311f0e7d5b3e04f9d1d9b728e6642c
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 297318
-  packageName: Elemental Spells Full Pack VFX
-  packageVersion: 1.0.1
-  assetPath: Assets/PixPlays/ElementalAuras/WaterAura/Version_BuiltIn/WaterAura.prefab
-  uploadId: 840846
+version https://git-lfs.github.com/spec/v1
+oid sha256:f46cf21cd800baeb101af99343a51201898821c50d38c89c753045c701acd34e
+size 400

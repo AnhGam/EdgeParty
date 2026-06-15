@@ -1,18 +1,3 @@
-fileFormatVersion: 2
-guid: 36c0437b056074a4fa083c93ffe4027d
-MonoImporter:
-  externalObjects: {}
-  serializedVersion: 2
-  defaultReferences: []
-  executionOrder: 0
-  icon: {instanceID: 0}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 100080
-  packageName: Forest - Low Poly Toon Battle Arena / Tower Defense Pack
-  packageVersion: 1.1
-  assetPath: Assets/AurynSky/Forest Pack/Scripts/WheelController.cs
-  uploadId: 326328
+version https://git-lfs.github.com/spec/v1
+oid sha256:aee5d7acef4fc0b6d9a85beef4c2eb8244a8b7b9fbabee4f048dda6b8c82b62a
+size 498

@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 2e2b7266756a8b9469b91e73b3b707fc
-DefaultImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 260177
-  packageName: New Stylized Explosion Package
-  packageVersion: 1.0
-  assetPath: Assets/Kyeoms_FX/Scenes/Kyeoms_Testscene_New Stylized Explosion Package.unity
-  uploadId: 613735
+version https://git-lfs.github.com/spec/v1
+oid sha256:2de2e832f1ac32f93f3fd59574685068dc169e05ddf473052635ad7aa4c26528
+size 403

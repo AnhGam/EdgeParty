@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: 4522e92a7bc8d6241a6f321373a33cb5
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 2100000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 297318
-  packageName: Elemental Spells Full Pack VFX
-  packageVersion: 1.0.1
-  assetPath: Assets/PixPlays/ElementalBeams/EarthBeam/Version_BuiltIn/Materials/EarthBeamMat.mat
-  uploadId: 840846
+version https://git-lfs.github.com/spec/v1
+oid sha256:233cd874984da18ae19d2582f665528308708d95a64ed7009f79ee957696ba83
+size 445

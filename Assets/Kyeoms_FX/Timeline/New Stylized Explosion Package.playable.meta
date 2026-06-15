@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: e1559383e35fd2641beddb0502424b69
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 11400000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 260177
-  packageName: New Stylized Explosion Package
-  packageVersion: 1.0
-  assetPath: Assets/Kyeoms_FX/Timeline/New Stylized Explosion Package.playable
-  uploadId: 613735
+version https://git-lfs.github.com/spec/v1
+oid sha256:f9f53681fd2dc83f4ec2db67d5d3ac45bb99fc5c8b87c8930ca22a4263992831
+size 426
