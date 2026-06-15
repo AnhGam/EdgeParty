@@ -69,6 +69,7 @@ namespace EdgeParty.Gameplay.Character
 
         private void Awake()
         {
+            fallDeathY = 11.5f; // Force fallDeathY to be just below the map
             _motor = transform.root.GetComponentInChildren<CharacterMotor>();
             if (_motor == null) _motor = GetComponentInParent<CharacterMotor>();
             if (_motor == null) _motor = GetComponentInChildren<CharacterMotor>();
@@ -95,8 +96,6 @@ namespace EdgeParty.Gameplay.Character
         private void Update()
         {
             if (!IsServer) return;
-            if (IsDead.Value) return;
-
             float dt = Time.deltaTime;
 
             if (_motor == null)
@@ -108,7 +107,7 @@ namespace EdgeParty.Gameplay.Character
             Rigidbody pelvisRb = (_motor != null) ? _motor.pelvisRigidbody : null;
             if (pelvisRb == null)
             {
-                foreach (var rb in transform.root.GetComponentsInChildren<Rigidbody>())
+                foreach (var rb in transform.root.GetComponentsInChildren<Rigidbody>(true))
                 {
                     if (rb.name.ToLower().Contains("pelvis"))
                     {
@@ -119,11 +118,14 @@ namespace EdgeParty.Gameplay.Character
             }
 
             float currentY = (pelvisRb != null) ? pelvisRb.position.y : transform.position.y;
-            if (currentY < fallDeathY)
+            if (currentY < fallDeathY && !fellOffMap)
             {
                 FallOffMap();
-                return;
             }
+
+            if (IsDead.Value) return;
+
+
 
             if (healthRegenRate > 0f)
             {
@@ -211,14 +213,38 @@ namespace EdgeParty.Gameplay.Character
         /// <summary>Instantly kills the player and marks them as fallen off the map.</summary>
         public void FallOffMap()
         {
-            if (!IsServer || IsDead.Value) return;
+            if (!IsServer) return;
             fellOffMap = true;
-            IsDead.Value = true;
-            if (_motor != null && _motor.pelvisRigidbody != null)
+            if (!IsDead.Value)
+            {
+                IsDead.Value = true;
+            }
+            
+            var pc = GetComponent<PlayerController>();
+            if (pc == null) pc = GetComponentInParent<PlayerController>();
+            if (pc == null) pc = GetComponentInChildren<PlayerController>();
+            
+            if (pc != null && SpawnManager.Instance != null)
+            {
+                StartCoroutine(DelayedFallTeleport(pc));
+            }
+            else if (_motor != null && _motor.pelvisRigidbody != null)
             {
                 var rb = _motor.pelvisRigidbody;
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
+            }
+        }
+
+        private System.Collections.IEnumerator DelayedFallTeleport(PlayerController pc)
+        {
+            // Chờ 1.5s để người chơi thấy nhân vật ragdoll rơi xuống vực
+            yield return new WaitForSeconds(1.5f);
+            
+            if (pc != null && SpawnManager.Instance != null && IsDead.Value)
+            {
+                Vector3 pos = SpawnManager.Instance.GetSpawnPosition(pc.TeamID.Value);
+                pc.Teleport(pos);
             }
         }
 

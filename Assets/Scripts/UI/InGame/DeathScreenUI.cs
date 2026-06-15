@@ -75,6 +75,10 @@ public class DeathScreenUI : MonoBehaviour
     private IEnumerator RunDisplayCountdown()
     {
         float remaining = respawnCountdown;
+        if (_localPlayer != null)
+        {
+            remaining = _localPlayer.autoRespawnDelay;
+        }
 
         while (remaining > 0f)
         {
