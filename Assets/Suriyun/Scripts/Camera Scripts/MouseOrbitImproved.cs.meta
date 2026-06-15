@@ -1,18 +1,3 @@
-fileFormatVersion: 2
-guid: 910c94d472b153f41b52c47affc32478
-MonoImporter:
-  externalObjects: {}
-  serializedVersion: 2
-  defaultReferences: []
-  executionOrder: 0
-  icon: {instanceID: 0}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Scripts/Camera Scripts/MouseOrbitImproved.cs
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:be9a0049140f490ece9362fc5231d8ba6a9e6bace2c1f42582bf5e9e7006b4cb
+size 442

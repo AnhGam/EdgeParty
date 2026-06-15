@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: e2947d46bde79124c82b000f57bf9ca1
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 191533
-  packageName: Playground Low Poly
-  packageVersion: 1.0
-  assetPath: Assets/Playground Low Poly/Prefabs/SM_Grass_02.prefab
-  uploadId: 427093
+version https://git-lfs.github.com/spec/v1
+oid sha256:99850d2714c45fcc66d79585e593550f184ee092204a245662cb5504f6065f8c
+size 367

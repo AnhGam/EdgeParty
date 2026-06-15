@@ -1,20 +1,3 @@
-fileFormatVersion: 2
-guid: 373ffa2c950091d47990a3706da202ab
-timeCreated: 1516567538
-licenseType: Store
-MonoImporter:
-  externalObjects: {}
-  serializedVersion: 2
-  defaultReferences: []
-  executionOrder: 0
-  icon: {instanceID: 0}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 100080
-  packageName: Forest - Low Poly Toon Battle Arena / Tower Defense Pack
-  packageVersion: 1.1
-  assetPath: Assets/AurynSky/Forest Pack/Scripts/ChestDemo.cs
-  uploadId: 326328
+version https://git-lfs.github.com/spec/v1
+oid sha256:5ec965888bec5f72be68acf549c93020da4e4a198e56e407dea5fd7b56e27a29
+size 537

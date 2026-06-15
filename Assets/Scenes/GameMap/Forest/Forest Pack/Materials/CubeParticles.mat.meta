@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: 55d3cd30aa20d634f8c2388d479742d1
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 2100000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 100080
-  packageName: Forest - Low Poly Toon Battle Arena / Tower Defense Pack
-  packageVersion: 1.1
-  assetPath: Assets/AurynSky/Forest Pack/Materials/CubeParticles.mat
-  uploadId: 326328
+version https://git-lfs.github.com/spec/v1
+oid sha256:0a1eebd6b2a936b1228f1b40cd9c630a0ac30571e2ce65f653fc81fe170e2d49
+size 441

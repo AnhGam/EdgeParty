@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/TactileBase.uss" />
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/GummyHeader.uss" />
+
+    <ui:VisualElement name="header-container" class="header">
+        <!-- Brand Title -->
+        <ui:VisualElement name="brand-wrapper" class="brand-wrapper">
+            <ui:Label name="brand-title" text="Party Rumble" class="font-headline brand-title" />
+            
+            <!-- Center Nav Tabs -->
+            <ui:VisualElement name="header-tabs" class="header-tabs">
+                <ui:Button name="tab-home-header" text="Home" class="header-tab-link" />
+                <ui:Button name="tab-matchmaking" text="Matchmaking" class="header-tab-link active-header-tab" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Right Side Indicators -->
+        <ui:VisualElement name="header-stats" class="header-stats">
+            
+            <!-- Coin Counter -->
+            <ui:VisualElement name="coin-counter" class="coin-counter tactile-shadow cursor-pointer">
+                <ui:VisualElement name="coin-icon" class="coin-icon" />
+                <ui:Label name="coin-value" text="1,240" class="coin-value" />
+            </ui:VisualElement>
+
+            <!-- Profile Avatar -->
+            <ui:Image name="header-avatar" class="header-avatar cursor-pointer" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

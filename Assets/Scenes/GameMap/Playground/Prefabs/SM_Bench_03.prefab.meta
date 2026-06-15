@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: 7771c02e50845c148830a38f099c87ce
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 191533
-  packageName: Playground Low Poly
-  packageVersion: 1.0
-  assetPath: Assets/Playground Low Poly/Prefabs/SM_Bench_03.prefab
-  uploadId: 427093
+version https://git-lfs.github.com/spec/v1
+oid sha256:d0331ea4f1df566900489bda20aaecb0c91bebf6b2d2896508c11e334ea2264b
+size 367

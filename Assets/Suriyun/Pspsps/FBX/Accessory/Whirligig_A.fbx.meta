@@ -15,8 +15,8 @@ ModelImporter:
   materials:
     materialImportMode: 1
     materialName: 0
-    materialSearch: 2
-    materialLocation: 0
+    materialSearch: 1
+    materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
@@ -149,3 +149,4 @@ AssetOrigin:
   packageVersion: 3.4
   assetPath: Assets/Suriyun/Pspsps/FBX/Accessory/Whirligig_A.fbx
   uploadId: 834512
+

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/TactileBase.uss" />
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/GummySidebar.uss" />
+
+    <ui:VisualElement name="sidebar-container" class="sidebar">
+        <!-- Top Profile Card -->
+        <ui:VisualElement name="profile-card" class="profile-card tactile-shadow">
+            <ui:VisualElement name="avatar-container" class="avatar-container">
+                <ui:Image name="avatar-image" class="avatar-image" />
+                <ui:VisualElement name="status-dot" class="status-dot" />
+            </ui:VisualElement>
+            <ui:VisualElement name="profile-text" class="profile-text">
+                <ui:Label name="profile-title" text="Friends" class="font-headline profile-title" />
+                <ui:Label name="profile-discriminator" text="" class="font-body profile-discriminator" />
+                <ui:Label name="friends-online-text" text="5 Online" class="font-body profile-sub" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Navigation Tabs -->
+        <ui:VisualElement name="nav-tabs" class="nav-tabs">
+            <ui:Button name="tab-home" class="nav-tab active-tab bouncy-btn" style="flex-direction: row; align-items: center;">
+                <ui:VisualElement name="icon-home" class="icon-home sidebar-tab-icon" style="width: 24px; height: 24px; margin-right: 12px; -unity-background-image-tint-color: #4e3500;" />
+                <ui:Label text="Home" style="font-size: 22px; -unity-font-style: bold;" />
+            </ui:Button>
+            <ui:Button name="tab-locker" class="nav-tab bouncy-btn" style="flex-direction: row; align-items: center;">
+                <ui:VisualElement name="icon-locker" class="icon-styler sidebar-tab-icon" style="width: 24px; height: 24px; margin-right: 12px; -unity-background-image-tint-color: rgba(144, 77, 0, 0.7);" />
+                <ui:Label text="Locker" style="font-size: 22px; -unity-font-style: bold;" />
+            </ui:Button>
+            <ui:Button name="tab-shop" class="nav-tab bouncy-btn" style="flex-direction: row; align-items: center;">
+                <ui:VisualElement name="icon-shop" class="icon-shopping-basket sidebar-tab-icon" style="width: 24px; height: 24px; margin-right: 12px; -unity-background-image-tint-color: rgba(144, 77, 0, 0.7);" />
+                <ui:Label text="Shop" style="font-size: 22px; -unity-font-style: bold;" />
+            </ui:Button>
+            <ui:Button name="tab-settings" class="nav-tab bouncy-btn" style="flex-direction: row; align-items: center;">
+                <ui:VisualElement name="icon-settings" class="icon-settings sidebar-tab-icon" style="width: 24px; height: 24px; margin-right: 12px; -unity-background-image-tint-color: rgba(144, 77, 0, 0.7);" />
+                <ui:Label text="Settings" style="font-size: 22px; -unity-font-style: bold;" />
+            </ui:Button>
+        </ui:VisualElement>
+
+        <!-- Footer Actions -->
+        <ui:VisualElement name="sidebar-footer" class="sidebar-footer">
+            <ui:Button name="btn-add-friend" class="bouncy-btn btn-primary-3d invite-btn" style="flex-direction: row; align-items: center; justify-content: center; padding: 12px;">
+                <ui:VisualElement class="icon-group-add" style="width: 20px; height: 20px; margin-right: 8px; -unity-background-image-tint-color: #4e3500;" />
+                <ui:Label text="Invite Friends" style="font-size: 16px; -unity-font-style: bold; color: #4e3500;" />
+            </ui:Button>
+            <ui:Button name="btn-friend-requests" text="Requests" class="bouncy-btn btn-surface-3d requests-btn" style="margin-bottom: 12px; position: relative;">
+                <ui:VisualElement name="request-badge" class="request-badge" style="position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background-color: #ff3b30; border-radius: 9999px; display: none; align-items: center; justify-content: center;">
+                    <ui:Label name="request-badge-count" text="0" style="color: white; font-size: 11px; -unity-font-style: bold; margin: 0; padding: 0;" />
+                </ui:VisualElement>
+            </ui:Button>
+            <ui:Button name="btn-logout" class="bouncy-btn btn-surface-3d logout-btn" style="flex-direction: row; align-items: center; justify-content: center; padding: 12px; margin-bottom: 12px;">
+                <ui:VisualElement class="icon-logout" style="width: 20px; height: 20px; margin-right: 8px; -unity-background-image-tint-color: #ba1a1a;" />
+                <ui:Label text="Logout" style="font-size: 16px; -unity-font-style: bold; color: #ba1a1a;" />
+            </ui:Button>
+            <ui:VisualElement name="sidebar-lobby-invite" class="sidebar-invite-box tactile-panel" style="display: none; padding: 12px; background-color: #ffeeb3; border-radius: 16px; border-width: 3px; border-color: #ffd700;">
+                <ui:Label name="sidebar-invite-text" text="Lobby Invite from Player" class="font-body" style="font-size: 14px; color: #4e3500; -unity-font-style: bold; margin-bottom: 8px; -unity-text-align: middle-center; white-space: normal;" />
+                <ui:VisualElement name="sidebar-invite-buttons-row" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                    <ui:Button name="btn-sidebar-invite-accept" text="Accept" class="bouncy-btn btn-primary-3d" style="flex-grow: 1; height: 32px; font-size: 13px; padding: 0; margin-right: 4px; border-radius: 10px;" />
+                    <ui:Button name="btn-sidebar-invite-decline" text="Decline" class="bouncy-btn btn-surface-3d" style="flex-grow: 1; height: 32px; font-size: 13px; padding: 0; margin-left: 4px; border-radius: 10px; border-color: #ba1a1a;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
