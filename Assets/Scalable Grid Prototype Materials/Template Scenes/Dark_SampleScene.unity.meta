@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:de8062577feec9c90d7dbcf7b1c10b13b244a96d3b5a660d0e7d671f8961a0a7
-size 405
+fileFormatVersion: 2
+guid: 0fd4f3e2cb674b24c83110141b9316bf
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 214264
+  packageName: Minimalist Scalable Grid Prototype Materials
+  packageVersion: 1.2
+  assetPath: Assets/Scalable Grid Prototype Materials/Template Scenes/Dark_SampleScene.unity
+  uploadId: 640529

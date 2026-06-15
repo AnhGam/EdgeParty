@@ -8,7 +8,7 @@ ModelImporter:
     materialImportMode: 1
     materialName: 0
     materialSearch: 1
-    materialLocation: 0
+    materialLocation: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
@@ -102,3 +102,4 @@ AssetOrigin:
   packageVersion: 1.0
   assetPath: Assets/Playground Low Poly/Meshes/SM_Toy_06.fbx
   uploadId: 427093
+

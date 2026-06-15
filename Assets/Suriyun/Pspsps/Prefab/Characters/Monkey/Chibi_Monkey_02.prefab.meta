@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:96999d2e9dbb1384dfecc7adef920a7dbeed983d4f56b15a5b0c58e7b862b27a
-size 363
+fileFormatVersion: 2
+guid: 37e6c48943f389d4bb7264be0344ee77
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 226721
+  packageName: Pspsps Monkey
+  packageVersion: 3.4
+  assetPath: Assets/Suriyun/Pspsps/Prefab/Characters/Monkey/Chibi_Monkey_02.prefab
+  uploadId: 834512
