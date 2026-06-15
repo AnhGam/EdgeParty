@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="Sidebar" src="project://database/Assets/UI/StitchUI/UXML/GummySidebar.uxml" />
+    <ui:Template name="Header" src="project://database/Assets/UI/StitchUI/UXML/GummyHeader.uxml" />
+    
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/TactileBase.uss" />
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/MainUI.uss" />
+    <ui:Style src="project://database/Assets/UI/USS/CustomizationStyle.uss" />
+
+    <!-- Full-screen out-of-game main layout container -->
+    <ui:VisualElement name="main-layout" class="main-layout-container">
+        <!-- Sidebar Navigation Drawer Left -->
+        <ui:Instance template="Sidebar" name="sidebar-instance" />
+
+        <!-- Screen Content Container (Header + Canvas) -->
+        <ui:VisualElement name="content-wrapper" class="content-wrapper">
+            <!-- Header Top Bar -->
+            <ui:Instance template="Header" name="header-instance" />
+
+            <!-- Core Page Canvas (Locker View) -->
+            <ui:VisualElement name="canvas-area" class="canvas-area row-layout flex-1">
+                
+                <!-- Left Section: 3D Character Preview Card -->
+                <ui:VisualElement name="locker-character-preview" class="shop-preview-card tactile-panel">
+                    <ui:VisualElement class="preview-badge shadow-sm">
+                        <ui:Label text="👚 Customize" class="font-headline" />
+                    </ui:VisualElement>
+                    
+                    <ui:Image name="locker-preview-avatar" class="shop-preview-image animate-float" />
+                    <ui:VisualElement name="locker-preview-shadow" class="podium-floor shadow-oval mt-[-10px]" />
+                </ui:VisualElement>
+
+                <!-- Right Section: Customization Panel Container -->
+                <ui:VisualElement name="locker-items-board" class="shop-items-board tactile-panel-container flex-1">
+                    <ui:VisualElement class="shop-board-header row-between" style="margin-bottom: 16px;">
+                        <ui:VisualElement class="shop-header-texts">
+                            <ui:Label text="Locker Room" class="font-headline main-card-heading" />
+                            <ui:Label text="Customize your character's look!" class="font-body card-subtitle mt-2" />
+                        </ui:VisualElement>
+                        
+                        <!-- Categories Column -->
+                        <ui:VisualElement class="shop-filters-row">
+                            <ui:Button name="BtnHats" text="Hats" class="bouncy-btn btn-primary-3d filter-chip category-button" />
+                            <ui:Button name="BtnGlasses" text="Glasses" class="bouncy-btn btn-surface-3d filter-chip category-button" />
+                            <ui:Button name="BtnNeck" text="Neck" class="bouncy-btn btn-surface-3d filter-chip category-button" />
+                            <ui:Button name="BtnFaces" text="Faces" class="bouncy-btn btn-surface-3d filter-chip category-button" />
+                            <ui:Button name="BtnColors" text="Colors" class="bouncy-btn btn-surface-3d filter-chip category-button" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <!-- Item Selection Grid -->
+                    <ui:VisualElement class="item-selection-area" style="flex-grow: 1; height: auto;">
+                        <ui:ScrollView name="ItemScroll" class="item-scroll" mode="Vertical" style="flex-grow: 1;">
+                            <ui:VisualElement name="ItemGrid" class="item-grid" style="flex-wrap: wrap; flex-direction: row; justify-content: flex-start;" />
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

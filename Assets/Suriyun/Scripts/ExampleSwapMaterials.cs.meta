@@ -1,19 +1,3 @@
-fileFormatVersion: 2
-guid: b750e9fd7aa8f8544b953c5b8f1109c1
-timeCreated: 1492223839
-licenseType: Store
-MonoImporter:
-  serializedVersion: 2
-  defaultReferences: []
-  executionOrder: 0
-  icon: {instanceID: 0}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 226721
-  packageName: Pspsps Monkey
-  packageVersion: 3.4
-  assetPath: Assets/Suriyun/Scripts/ExampleSwapMaterials.cs
-  uploadId: 834512
+version https://git-lfs.github.com/spec/v1
+oid sha256:39e60ba9f6efdea333b66135c1c36e4d249c8d3965c3e23d85ceb2515642b9b9
+size 450

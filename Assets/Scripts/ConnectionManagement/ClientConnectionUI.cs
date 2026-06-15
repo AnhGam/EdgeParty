@@ -10,7 +10,7 @@ namespace EdgeParty.ConnectionManagement
     /// </summary>
     public class ClientConnectionUI : MonoBehaviour
     {
-        private string _statusMsg = "";
+
 
         private void Start()
         {
@@ -62,103 +62,6 @@ namespace EdgeParty.ConnectionManagement
             }
         }
 
-#if !UNITY_SERVER || UNITY_EDITOR
-        private void OnGUI()
-        {
-            var networkManager = NetworkManager.Singleton;
-            if (networkManager == null) return;
 
-            var utp = (UnityTransport)networkManager.NetworkConfig.NetworkTransport;
-            if (utp == null) return;
-
-            GUILayout.BeginArea(new Rect(10, 10, 300, 300));
-
-            if (!networkManager.IsClient && !networkManager.IsServer)
-            {
-                GUILayout.Label("--- EDGE PARTY CLIENT HUD ---");
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("IP:", GUILayout.Width(50));
-                string dummyIp = "127.0.0.1";
-                GUILayout.TextField(dummyIp);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Port:", GUILayout.Width(50));
-                string dummyPort = "7777";
-                GUILayout.TextField(dummyPort);
-                GUILayout.EndHorizontal();
-
-                if (GUILayout.Button("CONNECT TO LOCALHOST (TEST)"))
-                {
-                    utp.SetConnectionData("127.0.0.1", 7777);
-                    _statusMsg = "Connecting to localhost...";
-                    
-                    if (!networkManager.StartClient())
-                    {
-                        _statusMsg = "Failed to start client!";
-                        Debug.LogError("[ClientConnectionUI] StartClient() returned false.");
-                    }
-                }
-
-                if (GUILayout.Button("FIND MATCH (EDGEGAP)"))
-                {
-                    if (MatchmakingManager.Instance != null)
-                    {
-                        MatchmakingManager.Instance.StartMatchmakingFlow();
-                        _statusMsg = "Matchmaking...";
-                    }
-                    else
-                    {
-                        _statusMsg = "MatchmakingManager not found!";
-                    }
-                }
-
-                if (GUILayout.Button("START HOST (FOR LOCAL TEST)"))
-                {
-                    // BIỆN PHÁP AN TOÀN: Nếu đang chạy dở cái gì đó, ép Shutdown trước khi mở Port mới
-                    if (networkManager.IsListening) networkManager.Shutdown();
-
-                    utp.SetConnectionData("127.0.0.1", 7777);
-                    if (networkManager.StartHost())
-                    {
-                        _statusMsg = "Hosting on localhost...";
-                    }
-                    else
-                    {
-                        _statusMsg = "Failed to start host!";
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(_statusMsg))
-                {
-                    GUILayout.Label($"Status: {_statusMsg}");
-                }
-            }
-            else
-            {
-                string mode = networkManager.IsHost ? "Host" : (networkManager.IsServer ? "Server" : "Client");
-                GUILayout.Label($"Mode: {mode}");
-                GUILayout.Label($"Target: {utp.ConnectionData.Address}:{utp.ConnectionData.Port}");
-                
-                if (networkManager.IsConnectedClient)
-                {
-                     GUILayout.Label("Status: Connected!");
-                }
-                else if (networkManager.IsClient)
-                {
-                     GUILayout.Label("Status: Connecting/Waiting for Approval...");
-                }
-
-                if (GUILayout.Button("DISCONNECT"))
-                {
-                    networkManager.Shutdown();
-                    _statusMsg = "Disconnected.";
-                }
-            }
-
-            GUILayout.EndArea();
-        }
-#endif
     }
 }

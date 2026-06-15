@@ -1,0 +1,353 @@
+/* Matchmaking.uss - Styling for the matchmaking lobby and friends drawer */
+
+.matchmaking-layout-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: var(--color-background);
+}
+
+.header-stretched {
+    width: 100%;
+}
+
+.status-banner {
+    position: absolute;
+    top: 140px;
+    left: 50%;
+    translate: -50% 0;
+    width: 600px;
+    height: 90px;
+    background-color: #eee8d5;
+    border-radius: 20px;
+    padding: 12px 24px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-width: 4px;
+    border-color: #705d00;
+    z-index: 99;
+}
+
+.status-text-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.banner-title {
+    font-size: 24px;
+    color: #1e1c10;
+    -unity-font-style: bold;
+}
+
+.banner-sub {
+    font-size: 16px;
+    color: #795741;
+}
+
+.banner-cancel-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+/* Canvas Body */
+.matchmaking-body {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    margin-top: 0;
+}
+
+/* Platforms Section */
+.platforms-area {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    position: relative;
+    flex-direction: column;
+}
+
+.platforms-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 1600px;
+    margin-top: -60px;
+}
+
+.platforms-area-drawer-open .platforms-grid {
+    max-width: 800px;
+}
+
+.platform-column {
+    width: 350px;
+    height: 350px;
+    margin: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.player-podium {
+    width: 310px;
+    height: 310px;
+    border-radius: 9999px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition-property: scale;
+    transition-duration: 0.1s;
+}
+
+.player-podium:hover {
+    scale: 1.05 1.05;
+}
+
+.occupied-podium {
+    background-color: #ffd700;
+    border-width: 4px;
+    border-color: #705d00;
+    border-bottom-width: 12px;
+}
+
+.podium-avatar-img {
+    width: 154px;
+    height: 154px;
+    border-radius: 9999px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_2.png');
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.empty-podium {
+    background-color: rgba(244, 238, 218, 0.6);
+    border-width: 4px;
+    border-style: dashed;
+    border-color: #d0c6ab;
+    border-bottom-width: 8px;
+    padding: 0;
+    opacity: 0.8;
+}
+
+.empty-podium-plus {
+    font-size: 76px;
+    color: #d0c6ab;
+    -unity-text-align: middle-center;
+    margin-top: -10px;
+}
+
+.podium-tag {
+    position: absolute;
+    bottom: -20px;
+    background-color: #fff9e7;
+    border-radius: 9999px;
+    padding: 6px 20px;
+    border-width: 2px;
+    border-color: #d0c6ab;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.podium-tag-text {
+    font-size: 18px;
+    color: #1e1c10;
+}
+
+/* Chat Window Container */
+.chat-window {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    width: 450px;
+    height: 400px;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background-color: #fff9e7;
+}
+
+.chat-header-title {
+    font-size: 20px;
+    color: #1e1c10;
+}
+
+.chat-close-btn {
+    background-color: transparent;
+    border-width: 0;
+    color: #7e775f;
+    font-size: 24px;
+    padding: 0;
+}
+
+.chat-messages-scroll {
+    flex-grow: 1;
+    margin: 8px 0;
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    padding: 8px;
+}
+
+.chat-msg-system {
+    font-size: 14px;
+    color: #7e775f;
+    -unity-font-style: italic;
+    -unity-text-align: middle-center;
+}
+
+.chat-input-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.chat-input-field {
+    flex-grow: 1;
+    height: 44px;
+    font-size: 16px;
+    padding: 8px 12px;
+}
+
+.chat-send-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 16px;
+    margin-left: 8px;
+}
+
+/* Bottom Center Play Action */
+.matchmaking-footer {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    translate: -50% 0;
+}
+
+.matchmaking-play-btn {
+    width: 300px;
+    height: 80px;
+    font-size: 28px;
+    border-bottom-width: 6px;
+}
+
+/* Right-Drawer Friends Sidebar Drawer (Cabinet Slider) */
+.friends-drawer {
+    position: relative;
+    width: 0;
+    background-color: #ffe16d;
+    border-left-width: 0;
+    border-left-color: #e9c400;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -8px 0 24px rgba(112, 93, 0, 0.15);
+    overflow: hidden;
+    
+    /* CSS slide transition in UI Toolkit */
+    transition-property: width, padding, border-left-width;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+}
+
+/* Slide in active open state class */
+.friends-drawer-open {
+    width: 400px;
+    padding: 24px;
+    border-left-width: 4px;
+}
+
+.drawer-title {
+    font-size: 26px;
+    color: #221b00;
+    -unity-font-style: bold;
+}
+
+.drawer-sub {
+    font-size: 16px;
+    color: #544600;
+}
+
+.drawer-invite-btn {
+    padding: 8px 20px;
+    font-size: 16px;
+}
+
+.drawer-friends-scroll {
+    flex-grow: 1;
+    margin-top: 24px;
+}
+
+.friend-row-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-width: 2px;
+    border-color: #d0c6ab;
+}
+
+.friend-info-block {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.friend-avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 9999px;
+    background-color: #ffd0b4;
+    position: relative;
+    border-width: 2px;
+    border-color: #795741;
+}
+
+.offline-avatar {
+    background-color: #e8e2cf;
+    border-color: #7e775f;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background-color: #4caf50;
+    border-radius: 9999px;
+    border-width: 2px;
+    border-color: #ffffff;
+}
+
+.friend-name {
+    font-size: 17px;
+    color: #1e1c10;
+    margin-left: 12px;
+    -unity-font-style: bold;
+}
+
+.offline-name {
+    color: #7e775f;
+    -unity-font-style: normal;
+}
+
+.friend-add-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

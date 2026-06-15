@@ -18,7 +18,7 @@ namespace EdgeParty.Gameplay.Character
     {
         public string name;
         public GameObject prefab;
-        public Sprite icon;
+        public Texture2D icon;
     }
 
     [System.Serializable]
@@ -34,6 +34,6 @@ namespace EdgeParty.Gameplay.Character
     {
         public string name;
         public Material material;
-        public Sprite icon;
+        public Texture2D icon;
     }
 }

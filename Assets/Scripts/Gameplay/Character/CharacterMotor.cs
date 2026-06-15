@@ -29,7 +29,7 @@ namespace EdgeParty.Gameplay.Character
 
         public bool IsGrounded { get; private set; }
         public Vector3 GroundNormal { get; private set; } = Vector3.up;
-
+        public float movementForceMultiplier { get; set; } = 1f;
         private Vector3 _moveDir;
         private bool _isRunning;
         private bool _isOneShotActive;
@@ -39,8 +39,7 @@ namespace EdgeParty.Gameplay.Character
         {
             if (pelvisRigidbody == null)
             {
-                // Deep search in the entire player hierarchy
-                var allRbs = transform.root.GetComponentsInChildren<Rigidbody>();
+                var allRbs = transform.root.GetComponentsInChildren<Rigidbody>(true);
                 foreach (var rb in allRbs)
                 {
                     if (rb.name.ToLower().Contains("pelvis"))
@@ -62,7 +61,7 @@ namespace EdgeParty.Gameplay.Character
         {
             if (pelvisRigidbody == null) return;
             
-            // SphereCast downwards from the pelvis
+            // SphereCast downwards from the pelvis to detect ground contact
             Ray ray = new Ray(pelvisRigidbody.position, Vector3.down);
             if (Physics.SphereCast(ray, groundCheckRadius, out RaycastHit hit, groundCheckDistance, groundLayer))
             {
@@ -107,7 +106,8 @@ namespace EdgeParty.Gameplay.Character
         public void ApplyDash()
         {
             if (pelvisRigidbody == null || ghostRoot == null) return;
-            pelvisRigidbody.AddForce(ghostRoot.forward * dashImpulse, ForceMode.Impulse);
+            Vector3 dashDir = ghostRoot.forward;
+            pelvisRigidbody.AddForce(dashDir * dashImpulse, ForceMode.Impulse);
         }
 
         private void ApplyMovementForces()
@@ -128,20 +128,19 @@ namespace EdgeParty.Gameplay.Character
                 pelvisRigidbody.AddForce(-GroundNormal * 10f, ForceMode.Acceleration);
             }
 
-            pelvisRigidbody.AddForce(finalMoveDir * force, ForceMode.Acceleration);
+            pelvisRigidbody.AddForce(finalMoveDir * (force * movementForceMultiplier), ForceMode.Acceleration);
         }
 
         private void ApplyRotation()
         {
             if (pelvisRigidbody == null || ghostPelvis == null || ghostRoot == null) return;
 
-            // Rotate visual root to face direction
             if (_facingDir.sqrMagnitude > 0.001f)
             {
-                ghostRoot.rotation = Quaternion.Slerp(ghostRoot.rotation, Quaternion.LookRotation(_facingDir, Vector3.up), Time.fixedDeltaTime * 10f);
+                ghostRoot.rotation = Quaternion.LookRotation(_facingDir, Vector3.up);
             }
 
-            // 1. Torque-based rotation matching (Core upright logic)
+            // Align physical pelvis to ghost pelvis rotation using simple, clean torque (exactly like Clean!)
             Quaternion targetRot = ghostPelvis.rotation;
             Quaternion deltaRot = targetRot * Quaternion.Inverse(pelvisRigidbody.rotation);
 
@@ -153,22 +152,6 @@ namespace EdgeParty.Gameplay.Character
                 Vector3 torque = axis.normalized * (angle * rotationSpeed);
                 pelvisRigidbody.AddTorque(torque, ForceMode.Acceleration);
             }
-
-            // 2. Velocity-based matching (Combat snappiness & "Blender feel")
-            // This forces the physical pelvis to match the ANIMATED velocity of the ghost.
-            if (Mathf.Abs(angle) > 0.01f)
-            {
-                Vector3 worldAngularVel = axis.normalized * (angle * Mathf.Deg2Rad / Time.fixedDeltaTime);
-                // We use a lerp to avoid infinite jitter, but with a high enough value to feel "meaty"
-                pelvisRigidbody.angularVelocity = Vector3.Lerp(pelvisRigidbody.angularVelocity, worldAngularVel, 0.4f);
-            }
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            if (pelvisRigidbody == null) return;
-            Gizmos.color = IsGrounded ? Color.green : Color.red;
-            Gizmos.DrawWireSphere(pelvisRigidbody.position + Vector3.down * groundCheckDistance, groundCheckRadius);
         }
     }
 }

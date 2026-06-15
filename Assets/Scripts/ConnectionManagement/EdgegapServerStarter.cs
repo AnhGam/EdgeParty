@@ -21,6 +21,24 @@ namespace EdgeParty.ConnectionManagement
                     return;
                 }
 
+                // Log all Arbitrium env variables to help troubleshoot port configurations
+                try
+                {
+                    foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
+                    {
+                        string key = de.Key.ToString();
+                        if (key.StartsWith("ARBITRIUM_"))
+                        {
+                            Debug.Log($"[EdgegapServerStarter] Env Var: {key} = {de.Value}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[EdgegapServerStarter] Failed to log environment variables: {ex.Message}");
+                }
+
+
                 networkManager.OnServerStarted += () => Debug.Log("[EdgegapServerStarter] OnServerStarted: Server is running & listening!");
                 networkManager.OnServerStopped += (obj) => Debug.Log("[EdgegapServerStarter] OnServerStopped: Server shut down.");
                 networkManager.OnClientConnectedCallback += (id) => Debug.Log($"[EdgegapServerStarter] OnClientConnected: Client {id} joined!");
@@ -48,7 +66,12 @@ namespace EdgeParty.ConnectionManagement
                 
                 if (networkManager.StartServer())
                 {
+                    Debug.Log("[EdgegapServerStarter] Server started successfully.");
                     NetworkManager.Singleton.SceneManager.LoadScene("DemoScene_Forest", LoadSceneMode.Single);
+                }
+                else
+                {
+                    Debug.LogError("[EdgegapServerStarter] Failed to start server.");
                 }
             }
         }

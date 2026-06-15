@@ -18,13 +18,40 @@ namespace EdgeParty.Gameplay.Camera
 
         private float _yaw;
         private float _pitch;
+        private Transform _prevTarget;
 
         private void Start()
         {
-            // Initialize yaw and pitch based on current rotation
-            Vector3 angles = transform.eulerAngles;
-            _yaw = angles.y;
-            _pitch = angles.x;
+            if (target != null)
+            {
+                InitializeRotationFromPosition();
+                _prevTarget = target;
+            }
+            else
+            {
+                // Initialize yaw and pitch based on current rotation
+                Vector3 angles = transform.eulerAngles;
+                _yaw = angles.y;
+                _pitch = angles.x;
+                if (_pitch > 180f) _pitch -= 360f;
+                _pitch = Mathf.Clamp(_pitch, minPitch, maxPitch);
+            }
+        }
+
+        private void InitializeRotationFromPosition()
+        {
+            if (target == null) return;
+            Vector3 targetPos = target.position + lookAtOffset;
+            Vector3 dir = transform.position - targetPos;
+            if (dir.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(-dir.normalized, Vector3.up);
+                Vector3 angles = targetRot.eulerAngles;
+                _yaw = angles.y;
+                _pitch = angles.x;
+                if (_pitch > 180f) _pitch -= 360f;
+                _pitch = Mathf.Clamp(_pitch, minPitch, maxPitch);
+            }
         }
 
         private void Update()
@@ -52,11 +79,17 @@ namespace EdgeParty.Gameplay.Camera
 
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
             {
+                Vector2 mousePos = Mouse.current.position.ReadValue();
+                // Check if clicking inside the top-left corner HUD area (approx 320x320)
+                // In Unity, mouse position y is 0 at the bottom, but GUI is 0 at the top.
+                bool inHUDArea = mousePos.x < 320 && (Screen.height - mousePos.y) < 320;
+
+                // Safety check: EventSystem might be null if not added to the scene
                 var eventSystem = UnityEngine.EventSystems.EventSystem.current;
                 bool overUI = eventSystem != null && eventSystem.IsPointerOverGameObject();
 
-                // Only lock if NOT clicking on UI
-                if (Cursor.lockState == CursorLockMode.None && !overUI)
+                // Only lock if NOT clicking on the HUD or any other UI
+                if (Cursor.lockState == CursorLockMode.None && !overUI && !inHUDArea)
                 {
                     Cursor.lockState = CursorLockMode.Locked;
                     Cursor.visible = false;
@@ -66,7 +99,17 @@ namespace EdgeParty.Gameplay.Camera
 
         private void LateUpdate()
         {
-            if (target == null) return;
+            if (target == null)
+            {
+                _prevTarget = null;
+                return;
+            }
+
+            if (target != _prevTarget)
+            {
+                _prevTarget = target;
+                InitializeRotationFromPosition();
+            }
 
             // Only rotate if the cursor is locked
             if (Cursor.lockState == CursorLockMode.Locked)
@@ -74,8 +117,16 @@ namespace EdgeParty.Gameplay.Camera
                 // 1. Read Mouse Input (Input System)
                 Vector2 mouseDelta = Mouse.current != null ? Mouse.current.delta.ReadValue() : Vector2.zero;
 
-                _yaw += mouseDelta.x * sensitivity;
-                _pitch -= mouseDelta.y * sensitivity;
+                float sensX = PlayerPrefs.GetFloat("CameraSensitivityX", 50f);
+                float sensY = PlayerPrefs.GetFloat("CameraSensitivityY", 50f);
+                bool invertX = PlayerPrefs.GetInt("InvertCameraX", 0) == 1;
+                bool invertY = PlayerPrefs.GetInt("InvertCameraY", 0) == 1;
+
+                float sensMultiplierX = sensX / 50f;
+                float sensMultiplierY = sensY / 50f;
+
+                _yaw += mouseDelta.x * sensitivity * sensMultiplierX * (invertX ? -1f : 1f);
+                _pitch -= mouseDelta.y * sensitivity * sensMultiplierY * (invertY ? -1f : 1f);
                 _pitch = Mathf.Clamp(_pitch, minPitch, maxPitch);
             }
 

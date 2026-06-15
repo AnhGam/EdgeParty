@@ -33,20 +33,26 @@ public class SpawnManager : MonoBehaviour
 
     Vector3 GetRandomPointInZone(BoxCollider box)
     {
-        Vector3 center = box.center + box.transform.position;
-        Vector3 size = box.size;
+        // Get a random point in the local space of the box
+        float x = Random.Range(-box.size.x / 2f, box.size.x / 2f);
+        float y = Random.Range(-box.size.y / 2f, box.size.y / 2f);
+        float z = Random.Range(-box.size.z / 2f, box.size.z / 2f);
 
-        float x = Random.Range(-size.x / 2, size.x / 2);
-        float z = Random.Range(-size.z / 2, size.z / 2);
+        Vector3 localPoint = box.center + new Vector3(x, y, z);
+        
+        // Transform the local point to world space (handles rotation, scale, and offset properly)
+        Vector3 worldPoint = box.transform.TransformPoint(localPoint);
 
-        Vector3 pos = center + new Vector3(x, 0, z);
+        // Start raycast from top of the box downwards
+        Vector3 rayStart = worldPoint;
+        rayStart.y = box.bounds.max.y + 1f;
 
         // Raycast xuống đất
-        if (Physics.Raycast(pos + Vector3.up * 10f, Vector3.down, out RaycastHit hit, 50f))
+        if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, box.bounds.size.y + 50f))
         {
-            pos.y = hit.point.y + 0.5f;
+            worldPoint.y = hit.point.y + 0.5f;
         }
 
-        return pos;
+        return worldPoint;
     }
 }

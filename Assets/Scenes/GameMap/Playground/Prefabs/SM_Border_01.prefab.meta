@@ -1,14 +1,3 @@
-fileFormatVersion: 2
-guid: e1b71672fd2c5ab41bb58d8c8bbb8469
-PrefabImporter:
-  externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 191533
-  packageName: Playground Low Poly
-  packageVersion: 1.0
-  assetPath: Assets/Playground Low Poly/Prefabs/SM_Border_01.prefab
-  uploadId: 427093
+version https://git-lfs.github.com/spec/v1
+oid sha256:f4abdf1fb408350ce41d6c2d30227b14579f18189acd965c45aa67ba1acfa3ea
+size 368

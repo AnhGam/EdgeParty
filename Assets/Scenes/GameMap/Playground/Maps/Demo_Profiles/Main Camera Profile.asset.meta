@@ -1,15 +1,3 @@
-fileFormatVersion: 2
-guid: b3fc6b00e8b0b7147ac2ddcccab1f43f
-NativeFormatImporter:
-  externalObjects: {}
-  mainObjectFileID: 11400000
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 191533
-  packageName: Playground Low Poly
-  packageVersion: 1.0
-  assetPath: Assets/Playground Low Poly/Maps/Demo_Profiles/Main Camera Profile.asset
-  uploadId: 427093
+version https://git-lfs.github.com/spec/v1
+oid sha256:54a911bfa038d7727f9b350239e653663d76ca85727ccad93530ba4efd309135
+size 421
