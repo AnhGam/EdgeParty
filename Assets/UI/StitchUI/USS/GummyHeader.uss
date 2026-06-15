@@ -1,0 +1,125 @@
+/* GummyHeader.uss - Styling for the unified header */
+
+.header {
+    height: 120px;
+    width: 100%;
+    background-color: #fff9e5;
+    border-bottom-width: 4px;
+    border-bottom-color: #ffe16d;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 32px;
+    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.08);
+}
+
+.brand-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.brand-title {
+    font-size: 36px;
+    color: #d1a500;
+    -unity-font-style: bold;
+    letter-spacing: -1px;
+    margin-right: 48px;
+}
+
+/* Header Navigation Links */
+.header-tabs {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.header-tab-link {
+    background-color: transparent;
+    border-width: 0;
+    color: rgba(78, 53, 0, 0.6);
+    -unity-font-style: bold;
+    font-size: 24px;
+    margin-right: 32px;
+    padding: 12px 18px;
+    transition-property: color, scale;
+    transition-duration: 0.1s;
+}
+
+.header-tab-link:hover {
+    color: #4e3500;
+    scale: 1.05 1.05;
+}
+
+.active-header-tab {
+    color: #904d00;
+    border-bottom-width: 4px;
+    border-bottom-color: #ffd700;
+    padding-bottom: 4px;
+}
+
+/* Right side stats */
+.header-stats {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.toll-btn {
+    width: 66px;
+    height: 66px;
+    padding: 0;
+    border-radius: 9999px;
+    margin-right: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toll-icon {
+    width: 24px;
+    height: 24px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/Logo.png'); /* fallback image */
+}
+
+.coin-counter {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: #f9f4e0;
+    border-radius: 24px;
+    padding: 12px 24px;
+    border-bottom-width: 3px;
+    border-bottom-color: #d0c6ab;
+    margin-right: 24px;
+}
+
+.coin-icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 12px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/Logo.png');
+    flex-shrink: 0;
+}
+
+.coin-value {
+    font-size: 26px;
+    color: #904d00;
+    -unity-font-style: bold;
+}
+
+.header-avatar {
+    width: 66px;
+    height: 66px;
+    border-radius: 9999px;
+    border-width: 3px;
+    border-color: #ffd700;
+    overflow: hidden;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_2.png');
+}
+ 
+.toll-icon-label {
+    font-size: 30px;
+    -unity-text-align: middle-center;
+}

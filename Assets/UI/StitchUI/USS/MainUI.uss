@@ -1,0 +1,392 @@
+/* MainUI.uss - Styling for Lobby/Home and Gummy Shop screens */
+
+.main-layout-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    background-color: var(--color-background);
+}
+
+.content-wrapper {
+    flex-grow: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.canvas-area {
+    flex-grow: 1;
+    position: relative;
+    padding: 32px;
+}
+
+.row-layout {
+    flex-direction: row;
+}
+
+/* =========================================================================
+   Home Screen (Lobby) Canvas Styles
+   ========================================================================= */
+
+.bg-lobby-theme {
+    /* No background image overlay, uses solid cream background */
+}
+
+.lobby-podium-section {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 60px;
+    position: relative;
+}
+
+.glow-base {
+    position: absolute;
+    bottom: 40px;
+    width: 240px;
+    height: 64px;
+    background-color: rgba(255, 215, 0, 0.2);
+    border-radius: 9999px;
+}
+
+.podium-floor {
+    position: absolute;
+    bottom: 50px;
+    width: 200px;
+    height: 48px;
+    background-color: #ffd700;
+    border-radius: 9999px;
+    border-bottom-width: 8px;
+    border-bottom-color: #705d00;
+}
+
+.character-wrapper {
+    position: absolute;
+    bottom: -10px;
+    align-items: center;
+}
+
+.character-avatar-render {
+    width: 672px;
+    height: 672px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_2.png');
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.lobby-footer-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    padding: 16px 0;
+    margin-bottom: 24px;
+}
+
+.main-action-btn {
+    width: 240px;
+    height: 72px;
+    font-size: 24px;
+    margin: 0 16px;
+    border-bottom-width: 6px;
+}
+
+/* Float Animation */
+@keyframes float {
+    0% { translate: 0 0; }
+    50% { translate: 0 -12px; }
+    100% { translate: 0 0; }
+}
+
+.animate-float {
+    animation-name: float;
+    animation-duration: 3s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+}
+
+
+/* =========================================================================
+   Gummy Shop Canvas Styles
+   ========================================================================= */
+
+.shop-preview-card {
+    width: 480px;
+    min-width: 480px;
+    max-width: 480px;
+    height: 540px;
+    min-height: 540px;
+    max-height: 540px;
+    align-self: flex-start;
+    margin-right: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background-color: #f4eeda;
+    border-width: 4px;
+    border-color: #e8e2cf;
+}
+
+.preview-badge {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    background-color: #ffd700;
+    padding: 12px 24px;
+    border-radius: 20px;
+    border-bottom-width: 2px;
+    border-bottom-color: #705d00;
+}
+
+.shop-preview-image {
+    width: 440px;
+    min-width: 440px;
+    max-width: 440px;
+    height: 440px;
+    min-height: 440px;
+    max-height: 440px;
+    margin-top: 45px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_2.png');
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.shadow-oval {
+    width: 160px;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.08);
+    border-radius: 9999px;
+    border-width: 0;
+}
+
+.shop-items-board {
+    padding: 32px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.shop-board-header {
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    row-gap: 12px;
+}
+
+.main-card-heading {
+    font-size: 38px;
+    -unity-font-style: bold;
+    color: #1e1c10;
+}
+
+.card-subtitle {
+    font-size: 18px;
+    color: #7a5741;
+    margin-top: 8px;
+    white-space: normal;
+}
+
+.shop-header-texts {
+    flex-shrink: 1;
+    min-width: 220px;
+}
+
+.shop-filters-row {
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+}
+
+.shop-filters-row .category-button {
+    width: auto;
+    height: auto;
+}
+
+/* Absolute positioned preview eye buttons on shop cards */
+.shop-item-preview-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    font-size: 22px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-width: 1px;
+    border-color: #dee2e6;
+    z-index: 10;
+}
+.shop-item-preview-btn:hover {
+    background-color: #ffffff;
+    scale: 1.1;
+}
+
+.filter-chip {
+    margin-left: 12px;
+    padding: 12px 28px;
+    font-size: 20px;
+    border-radius: 24px;
+}
+
+.bento-grid {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Featured card */
+.featured-item-card {
+    background-color: #fff9e5;
+    border-width: 2px;
+    border-color: #ffd27f;
+    border-radius: 32px;
+    padding: 24px;
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 24px;
+    height: 250px;
+    overflow: hidden;
+}
+
+.featured-item-image-col {
+    width: 180px;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+}
+
+.featured-item-img {
+    width: 100%;
+    height: 100%;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_1.png');
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.featured-item-detail-col {
+    flex-grow: 1;
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.item-tag-row {
+    flex-direction: row;
+    align-self: flex-start;
+}
+
+.row-between {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.legendary-tag {
+    background-color: #ffd0b4;
+    color: #7a5741;
+    border-radius: 9999px;
+    padding: 6px 16px;
+    font-size: 16px;
+    -unity-font-style: bold;
+    border-width: 1px;
+    border-color: #ffdbc7;
+    align-self: flex-start;
+}
+
+.item-title-featured {
+    font-size: 28px;
+    color: #1e1c10;
+    -unity-font-style: bold;
+    margin-top: 8px;
+}
+
+.item-desc-featured {
+    font-size: 18px;
+    color: #7a5741;
+}
+
+.price-indicator {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.price-val-text {
+    font-size: 28px;
+    color: #705d00;
+}
+.featured-buy-btn {
+    font-size: 22px;
+    padding: 16px 36px;
+}
+
+/* Regular row items */
+.regular-items-row {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.regular-item-card {
+    width: 48%;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    border-radius: 28px;
+}
+
+.item-img-container {
+    flex-grow: 1;
+    background-color: rgba(232, 226, 207, 0.3);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    padding: 12px;
+}
+
+.regular-item-img-1 {
+    width: 150px;
+    height: 150px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_1.png');
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.regular-item-img-2 {
+    width: 150px;
+    height: 150px;
+    background-image: url('project://database/Assets/UI/StitchUI/Textures/side_image_3.png');
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.regular-item-title {
+    font-size: 22px;
+    color: #1e1c10;
+    -unity-font-style: bold;
+}
+
+.regular-item-price {
+    font-size: 18px;
+    color: #705d00;
+    -unity-font-style: bold;
+}
+
+.regular-buy-btn {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

@@ -1,0 +1,77 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Style src="../USS/HUDStyle.uss" />
+    <ui:Template src="../Settings/SettingsMenu.uxml" name="SettingsMenu" />
+    <ui:VisualElement class="hud-container">
+        <!-- Top Center Score Board & Timer -->
+        <ui:VisualElement class="top-center-container" style="position: absolute; top: 24px; left: 50%; translate: -50% 0; align-items: center;">
+            <ui:VisualElement name="ScoreBoard" class="score-board" style="position: relative; top: 0; left: 0; translate: 0 0;">
+                <ui:Label name="RedScore" text="00" class="score-text red-score" />
+                <ui:Label text="|" class="score-separator" />
+                <ui:Label name="BlueScore" text="00" class="score-text blue-score" />
+            </ui:VisualElement>
+            <ui:Label name="MatchTimer" text="03:00" class="match-timer-label" style="background-color: rgba(15, 15, 15, 0.85); color: #FFD93D; font-size: 16px; -unity-font-style: bold; border-radius: 8px; padding: 4px 12px; margin-top: 6px; border-width: 1px; border-color: rgba(255, 255, 255, 0.12);" />
+        </ui:VisualElement>
+
+        <!-- Top Right Buttons -->
+        <ui:VisualElement name="TopRightBar" class="top-right-bar">
+            <ui:Button name="SoundButton" class="soft-button">
+                <ui:VisualElement name="SoundIcon" class="icon-sound" />
+            </ui:Button>
+            <ui:Button name="SettingsButton" class="soft-button">
+                <ui:VisualElement name="SettingsIcon" class="icon-settings" />
+            </ui:Button>
+            <ui:Button name="ExitButton" class="soft-button">
+                <ui:VisualElement name="ExitIcon" class="icon-exit" />
+            </ui:Button>
+        </ui:VisualElement>
+
+        <!-- Right Side Instructions -->
+        <ui:VisualElement name="InstructionPanel" class="instruction-panel">
+            <ui:VisualElement class="instruction-item">
+                <ui:Label text="RUN" class="instruction-label" />
+                <ui:Label text="SHIFT" class="key-cap" />
+            </ui:VisualElement>
+            <ui:VisualElement class="instruction-item">
+                <ui:Label text="PUNCH" class="instruction-label" />
+                <ui:Label text="L-CLICK" class="key-cap" />
+            </ui:VisualElement>
+            <ui:VisualElement class="instruction-item">
+                <ui:Label text="GRAB" class="instruction-label" />
+                <ui:Label text="HOLD L-CLICK" class="key-cap" style="padding-left: 12px; padding-right: 12px;" />
+            </ui:VisualElement>
+            <ui:VisualElement class="instruction-item">
+                <ui:Label text="JUMP" class="instruction-label" />
+                <ui:Label text="SPACE" class="key-cap" style="width: 80px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Dynamic Bottom Area -->
+        <ui:VisualElement name="BottomArea" class="bottom-center-area">
+            <ui:VisualElement name="DynamicBar" class="dynamic-bar">
+                <!-- Populated via script -->
+                <ui:Label text="CTRL" class="key-cap" />
+                <ui:Label text="J" class="key-cap" />
+                <ui:Label text="F" class="key-cap" />
+                <ui:Label text="BOOST" class="instruction-label" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Death / Spectating Overlay (hidden by default) -->
+        <ui:VisualElement name="DeathOverlay" class="death-overlay">
+            <ui:Label name="SpectatingLabel" text="SPECTATING" class="spectating-label" />
+            <ui:Label name="CountdownLabel" text="Respawning in 10s" class="countdown-label" />
+        </ui:VisualElement>
+
+        <!-- Win Overlay (hidden by default) -->
+        <ui:VisualElement name="WinOverlay" class="win-overlay" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.88); align-items: center; justify-content: center; flex-direction: column; display: none;">
+            <ui:Label name="WinTitleLabel" text="VICTORY!" class="win-title-label" style="color: #FFD93D; font-size: 64px; -unity-font-style: bold; margin-bottom: 8px;" />
+            <ui:Label name="WinSubtitleLabel" text="TEAM 1 WINS" class="win-subtitle-label" style="color: white; font-size: 28px; -unity-font-style: bold; margin-bottom: 24px;" />
+            <ui:Label name="WinDetailsLabel" text="Final Score: 12 - 08" class="win-details-label" style="color: rgba(255, 255, 255, 0.7); font-size: 18px; margin-bottom: 32px;" />
+            <ui:Label name="LobbyCountdownLabel" text="Returning to Lobby in 8s..." class="lobby-countdown-label" style="color: #FF5252; font-size: 16px; -unity-font-style: bold;" />
+        </ui:VisualElement>
+
+        <!-- Detailed Settings Panel (hidden by default) -->
+        <ui:Instance template="SettingsMenu" name="SettingsPanel" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; display: none;" />
+
+    </ui:VisualElement>
+</ui:UXML>

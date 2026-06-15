@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:Style src="project://database/Assets/UI/StitchUI/USS/TactileBase.uss" />
+    <ui:Style src="SettingsMenu.uss" />
+
+    <ui:VisualElement class="settings-overlay" name="SettingsOverlay">
+        
+        <!-- Inner centered container -->
+        <ui:VisualElement class="settings-container" name="SettingsContainer">
+            
+            <!-- Left Sidebar Navigation Panel -->
+            <ui:VisualElement class="tactile-panel-container settings-sidebar" name="SidebarPanel">
+                
+                <!-- Back Button -->
+                <ui:VisualElement style="align-items: flex-start; margin-bottom: 16px;">
+                    <ui:Button name="BtnBack" class="bouncy-btn btn-surface-3d settings-back-btn" style="padding: 10px 20px; font-size: 14px; flex-direction: row; align-items: center;">
+                        <ui:VisualElement class="icon-arrow-back" style="width: 18px; height: 18px; margin-right: 8px; -unity-background-image-tint-color: #795741;" />
+                        <ui:Label text="Back" style="font-size: 14px; -unity-font-style: bold; color: #1e1c10;" />
+                    </ui:Button>
+                </ui:VisualElement>
+
+                <!-- Sidebar Header Title -->
+                <ui:VisualElement style="align-items: center; margin-bottom: 24px;">
+                    <ui:VisualElement style="width: 72px; height: 72px; background-color: #ffd700; border-radius: 36px; border-width: 4px; border-color: #fe9c41; align-items: center; justify-content: center; margin-bottom: 12px;">
+                        <ui:VisualElement class="icon-settings" style="width: 40px; height: 40px; -unity-background-image-tint-color: #705e00;" />
+                    </ui:VisualElement>
+                    <ui:Label text="Settings" class="font-headline" style="font-size: 32px; -unity-font-style: bold;" />
+                    <ui:Label text="Customize your rumble" class="font-body" style="font-size: 13px; color: #4d4732; margin-top: 4px;" />
+                </ui:VisualElement>
+
+                <!-- Navigation Tabs Links -->
+                <ui:VisualElement class="settings-nav-tabs" name="NavTabs">
+                    <ui:Button name="TabAudio" class="settings-nav-tab settings-nav-tab-with-icon bouncy-btn btn-surface-3d active-tab">
+                        <ui:VisualElement name="IconAudio" class="icon-volume-up settings-nav-tab-icon" style="width: 22px; height: 22px; margin-right: 10px; -unity-background-image-tint-color: #705e00;" />
+                        <ui:Label text="Audio" style="font-size: 16px; -unity-font-style: bold;" />
+                    </ui:Button>
+                    <ui:Button name="TabGraphics" class="settings-nav-tab settings-nav-tab-with-icon bouncy-btn btn-surface-3d">
+                        <ui:VisualElement name="IconGraphics" class="icon-monitor settings-nav-tab-icon" style="width: 22px; height: 22px; margin-right: 10px; -unity-background-image-tint-color: #4d4732;" />
+                        <ui:Label text="Graphics" style="font-size: 16px; -unity-font-style: bold;" />
+                    </ui:Button>
+                    <ui:Button name="TabControls" class="settings-nav-tab settings-nav-tab-with-icon bouncy-btn btn-surface-3d">
+                        <ui:VisualElement name="IconControls" class="icon-videogame-asset settings-nav-tab-icon" style="width: 22px; height: 22px; margin-right: 10px; -unity-background-image-tint-color: #4d4732;" />
+                        <ui:Label text="Controls" style="font-size: 16px; -unity-font-style: bold;" />
+                    </ui:Button>
+                    <ui:Button name="TabNetwork" class="settings-nav-tab settings-nav-tab-with-icon bouncy-btn btn-surface-3d">
+                        <ui:VisualElement name="IconNetwork" class="icon-language settings-nav-tab-icon" style="width: 22px; height: 22px; margin-right: 10px; -unity-background-image-tint-color: #4d4732;" />
+                        <ui:Label text="Network" style="font-size: 16px; -unity-font-style: bold;" />
+                    </ui:Button>
+                </ui:VisualElement>
+
+                <!-- Spacer -->
+                <ui:VisualElement style="flex-grow: 1;" />
+
+                <!-- Save Changes Button at Bottom -->
+                <ui:Button name="BtnSaveChanges" class="bouncy-btn btn-primary-3d settings-save-btn" style="width: 100%; padding: 16px; font-size: 16px; flex-direction: row; align-items: center; justify-content: center;">
+                    <ui:VisualElement class="icon-save" style="width: 20px; height: 20px; margin-right: 10px; -unity-background-image-tint-color: #705e00;" />
+                    <ui:Label text="Save Changes" style="font-size: 16px; -unity-font-style: bold; color: #705e00;" />
+                </ui:Button>
+            </ui:VisualElement>
+
+            <!-- Right Main Content Canvas -->
+            <ui:VisualElement class="tactile-panel-bright settings-canvas" name="CanvasPanel" style="padding: 32px; flex-direction: column;">
+                
+                <!-- Canvas Header -->
+                <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center; border-bottom-width: 2px; border-bottom-color: #e8e2cf; padding-bottom: 16px; margin-bottom: 24px;">
+                    <ui:VisualElement style="flex-direction: row; align-items: center;">
+                        <ui:VisualElement name="MainHeaderIcon" class="icon-volume-up" style="width: 36px; height: 36px; margin-right: 12px; -unity-background-image-tint-color: #fe9c41;" />
+                        <ui:Label name="MainHeaderTitle" text="Audio Settings" class="font-headline" style="font-size: 28px; -unity-font-style: bold; color: #705d00;" />
+                    </ui:VisualElement>
+                    <ui:Button name="BtnResetDefaults" class="bouncy-btn btn-surface-3d" style="padding: 10px 20px; font-size: 14px; flex-direction: row; align-items: center;">
+                        <ui:VisualElement class="icon-restart-alt" style="width: 16px; height: 16px; margin-right: 6px; -unity-background-image-tint-color: #4d4732;" />
+                        <ui:Label text="Reset to Defaults" style="font-size: 14px; -unity-font-style: bold; color: #4d4732;" />
+                    </ui:Button>
+                </ui:VisualElement>
+
+                <!-- Scrollable Settings Area -->
+                <ui:ScrollView name="SettingsScroll" style="flex-grow: 1; padding-right: 12px;">
+
+                    <!-- Audio Tab Content -->
+                    <ui:VisualElement class="tab-content" name="ContentAudio">
+                        
+                        <!-- Volume Mixer Card -->
+                        <ui:VisualElement class="settings-section">
+                            <ui:VisualElement class="settings-section-title-container">
+                                <ui:VisualElement class="icon-graphic-eq" style="width: 24px; height: 24px; margin-right: 8px; -unity-background-image-tint-color: #795741;" />
+                                <ui:Label text="Volume Mixer" class="settings-section-title" />
+                            </ui:VisualElement>
+
+                            <!-- Master Volume -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Master Volume" class="setting-label" />
+                                    <ui:Label text="Overall game volume" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="gummy-slider-container">
+                                    <ui:Slider name="SliderMaster" class="gummy-slider" low-value="0" high-value="100" value="80" />
+                                    <ui:Label name="LabelMasterValue" text="80%" class="slider-value-badge" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- Music Volume -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:VisualElement style="flex-direction: row; align-items: center;">
+                                        <ui:VisualElement class="icon-music-note" style="width: 18px; height: 18px; margin-right: 6px; -unity-background-image-tint-color: #795741;" />
+                                        <ui:Label text="Music" class="setting-label" />
+                                    </ui:VisualElement>
+                                    <ui:Label text="Background music volume" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="gummy-slider-container">
+                                    <ui:Slider name="SliderMusic" class="gummy-slider" low-value="0" high-value="100" value="65" />
+                                    <ui:Label name="LabelMusicValue" text="65%" class="slider-value-badge" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- SFX Volume -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:VisualElement style="flex-direction: row; align-items: center;">
+                                        <ui:VisualElement class="icon-notifications-active" style="width: 18px; height: 18px; margin-right: 6px; -unity-background-image-tint-color: #795741;" />
+                                        <ui:Label text="Sound Effects" class="setting-label" />
+                                    </ui:VisualElement>
+                                    <ui:Label text="Effects and voice volume" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="gummy-slider-container">
+                                    <ui:Slider name="SliderSFX" class="gummy-slider" low-value="0" high-value="100" value="100" />
+                                    <ui:Label name="LabelSFXValue" text="100%" class="slider-value-badge" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                        <!-- Voice Chat Card -->
+                        <ui:VisualElement class="settings-section">
+                            <ui:VisualElement class="settings-section-title-container" style="justify-content: space-between;">
+                                <ui:VisualElement style="flex-direction: row; align-items: center;">
+                                    <ui:VisualElement class="icon-mic" style="width: 24px; height: 24px; margin-right: 8px; -unity-background-image-tint-color: #795741;" />
+                                    <ui:Label text="Voice Chat" class="settings-section-title" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="ToggleVoiceChat" class="gummy-toggle gummy-toggle--checked">
+                                    <ui:VisualElement class="gummy-toggle-knob" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- Input Device -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Input Device" class="setting-label" />
+                                    <ui:Label text="Your active microphone" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:DropdownField name="DropdownInputDevice" class="gummy-dropdown" />
+                            </ui:VisualElement>
+
+                            <!-- Transmission Mode -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Transmission Mode" class="setting-label" />
+                                    <ui:Label text="How you broadcast your voice" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="transmission-mode-container">
+                                    <ui:Button name="BtnModePTT" text="Push-to-Talk" class="transmission-mode-btn active-mode" />
+                                    <ui:Button name="BtnModeOpenMic" text="Open Mic" class="transmission-mode-btn" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- Push-to-Talk Key -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:VisualElement style="flex-direction: row; align-items: center;">
+                                        <ui:VisualElement class="icon-keyboard" style="width: 18px; height: 18px; margin-right: 6px; -unity-background-image-tint-color: #795741;" />
+                                        <ui:Label text="Push-to-Talk Key" class="setting-label" />
+                                    </ui:VisualElement>
+                                    <ui:Label text="Key held to speak in-game" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:Button name="BtnPTTKey" text="V" class="bouncy-btn btn-surface-3d keybind-btn" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                        <!-- Output & Focus Card -->
+                        <ui:VisualElement class="settings-section">
+                            <ui:VisualElement class="settings-section-title-container">
+                                <ui:VisualElement class="icon-speaker" style="width: 24px; height: 24px; margin-right: 8px; -unity-background-image-tint-color: #795741;" />
+                                <ui:Label text="Output &amp; Focus" class="settings-section-title" />
+                            </ui:VisualElement>
+
+                            <!-- Playback Device -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Playback Device" class="setting-label" />
+                                    <ui:Label text="Where you hear the game audio" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:DropdownField name="DropdownOutputDevice" class="gummy-dropdown" />
+                            </ui:VisualElement>
+
+                            <!-- Mute when Unfocused -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Mute when Unfocused" class="setting-label" />
+                                    <ui:Label text="Mute game audio when tabbed out" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="ToggleMuteUnfocused" class="gummy-toggle">
+                                    <ui:VisualElement class="gummy-toggle-knob" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <!-- Graphics Tab Content -->
+                    <ui:VisualElement class="tab-content" name="ContentGraphics" style="display: none;">
+                        
+                        <!-- Display Settings Card -->
+                        <ui:VisualElement class="settings-section">
+                            <ui:VisualElement class="settings-section-title-container">
+                                <ui:VisualElement class="icon-desktop-windows" style="width: 24px; height: 24px; margin-right: 8px; -unity-background-image-tint-color: #795741;" />
+                                <ui:Label text="Display Settings" class="settings-section-title" />
+                            </ui:VisualElement>
+
+                            <!-- Display Mode -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Display Mode" class="setting-label" />
+                                    <ui:Label text="How the game window is displayed" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:DropdownField name="DropdownDisplayMode" class="gummy-dropdown" />
+                            </ui:VisualElement>
+
+                            <!-- Resolution -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Resolution" class="setting-label" />
+                                    <ui:Label text="Dimensions of the game screen" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:DropdownField name="DropdownResolution" class="gummy-dropdown" />
+                            </ui:VisualElement>
+
+                            <!-- Frame Rate Limit -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Frame Rate Limit" class="setting-label" />
+                                    <ui:Label text="Maximum frames per second" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="gummy-slider-container">
+                                    <ui:Slider name="SliderFPSLimit" class="gummy-slider" low-value="30" high-value="240" value="144" />
+                                    <ui:Label name="LabelFPSLimitValue" text="144 FPS" class="slider-value-badge" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- V-Sync -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="V-Sync" class="setting-label" />
+                                    <ui:Label text="Locks framerate to screen rate to prevent tearing" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="ToggleVSync" class="gummy-toggle gummy-toggle--checked">
+                                    <ui:VisualElement class="gummy-toggle-knob" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <!-- Controls Tab Content -->
+                    <ui:VisualElement class="tab-content" name="ContentControls" style="display: none;">
+                        
+                        <!-- Mouse Sensitivity Card -->
+                        <ui:VisualElement class="settings-section">
+                            <ui:VisualElement class="settings-section-title-container">
+                                <ui:VisualElement class="icon-mouse" style="width: 24px; height: 24px; margin-right: 8px; -unity-background-image-tint-color: #795741;" />
+                                <ui:Label text="Mouse Sensitivity" class="settings-section-title" />
+                            </ui:VisualElement>
+
+                            <!-- Sensitivity X -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Camera Sensitivity X" class="setting-label" />
+                                    <ui:Label text="Horizontal camera rotation speed" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="gummy-slider-container">
+                                    <ui:Slider name="SliderSensitivityX" class="gummy-slider" low-value="1" high-value="100" value="50" />
+                                    <ui:Label name="LabelSensitivityXValue" text="50" class="slider-value-badge" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- Sensitivity Y -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Camera Sensitivity Y" class="setting-label" />
+                                    <ui:Label text="Vertical camera rotation speed" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="gummy-slider-container">
+                                    <ui:Slider name="SliderSensitivityY" class="gummy-slider" low-value="1" high-value="100" value="50" />
+                                    <ui:Label name="LabelSensitivityYValue" text="50" class="slider-value-badge" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- Invert Camera X -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Invert Camera X" class="setting-label" />
+                                    <ui:Label text="Invert left/right mouse movements" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="ToggleInvertX" class="gummy-toggle">
+                                    <ui:VisualElement class="gummy-toggle-knob" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- Invert Camera Y -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Invert Camera Y" class="setting-label" />
+                                    <ui:Label text="Invert up/down mouse movements" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="ToggleInvertY" class="gummy-toggle">
+                                    <ui:VisualElement class="gummy-toggle-knob" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+
+                        <!-- Keybindings Card -->
+                        <ui:VisualElement class="settings-section">
+                            <ui:VisualElement class="settings-section-title-container">
+                                <ui:VisualElement class="icon-keyboard" style="width: 24px; height: 24px; margin-right: 8px; -unity-background-image-tint-color: #795741;" />
+                                <ui:Label text="Keybindings" class="settings-section-title" />
+                            </ui:VisualElement>
+
+                            <ui:VisualElement class="keybind-grid">
+                                <!-- Forward -->
+                                <ui:VisualElement class="keybind-row">
+                                    <ui:Label text="Move Forward" class="keybind-label font-body" />
+                                    <ui:Button name="BtnKeybindForward" text="W" class="bouncy-btn btn-surface-3d keybind-btn" />
+                                </ui:VisualElement>
+                                <!-- Backward -->
+                                <ui:VisualElement class="keybind-row">
+                                    <ui:Label text="Move Backward" class="keybind-label font-body" />
+                                    <ui:Button name="BtnKeybindBackward" text="S" class="bouncy-btn btn-surface-3d keybind-btn" />
+                                </ui:VisualElement>
+                                <!-- Left -->
+                                <ui:VisualElement class="keybind-row">
+                                    <ui:Label text="Move Left" class="keybind-label font-body" />
+                                    <ui:Button name="BtnKeybindLeft" text="A" class="bouncy-btn btn-surface-3d keybind-btn" />
+                                </ui:VisualElement>
+                                <!-- Right -->
+                                <ui:VisualElement class="keybind-row">
+                                    <ui:Label text="Move Right" class="keybind-label font-body" />
+                                    <ui:Button name="BtnKeybindRight" text="D" class="bouncy-btn btn-surface-3d keybind-btn" />
+                                </ui:VisualElement>
+                                <!-- Jump -->
+                                <ui:VisualElement class="keybind-row">
+                                    <ui:Label text="Jump" class="keybind-label font-body" />
+                                    <ui:Button name="BtnKeybindJump" text="Space" class="bouncy-btn btn-surface-3d keybind-btn" style="min-width: 100px;" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <!-- Network Tab Content -->
+                    <ui:VisualElement class="tab-content" name="ContentNetwork" style="display: none;">
+                        
+                        <!-- Network & UI Card -->
+                        <ui:VisualElement class="settings-section">
+                            <ui:VisualElement class="settings-section-title-container">
+                                <ui:VisualElement class="icon-public" style="width: 24px; height: 24px; margin-right: 8px; -unity-background-image-tint-color: #795741;" />
+                                <ui:Label text="Network &amp; UI" class="settings-section-title" />
+                            </ui:VisualElement>
+
+                            <!-- Matchmaking Region -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Matchmaking Region" class="setting-label" />
+                                    <ui:Label text="Server region for multiplayer games" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:DropdownField name="DropdownRegion" class="gummy-dropdown" />
+                            </ui:VisualElement>
+
+                            <!-- Show Ping & FPS -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Show Ping &amp; FPS" class="setting-label" />
+                                    <ui:Label text="Display network latency and performance stats" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="ToggleShowPing" class="gummy-toggle">
+                                    <ui:VisualElement class="gummy-toggle-knob" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+
+                            <!-- Display Player Names -->
+                            <ui:VisualElement class="setting-row">
+                                <ui:VisualElement class="setting-label-col">
+                                    <ui:Label text="Display Player Names" class="setting-label" />
+                                    <ui:Label text="Show user names above characters" class="setting-desc" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="ToggleShowNames" class="gummy-toggle gummy-toggle--checked">
+                                    <ui:VisualElement class="gummy-toggle-knob" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <!-- Bottom padding -->
+                    <ui:VisualElement style="height: 32px;" />
+
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
