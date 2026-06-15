@@ -52,8 +52,27 @@ namespace EdgeParty.Gameplay.Character
                 if (pelvisRigidbody == null) return;
             }
 
+            UpdateGroundCheck();
             ApplyMovementForces();
             ApplyRotation();
+        }
+
+        private void UpdateGroundCheck()
+        {
+            if (pelvisRigidbody == null) return;
+            
+            // SphereCast downwards from the pelvis to detect ground contact
+            Ray ray = new Ray(pelvisRigidbody.position, Vector3.down);
+            if (Physics.SphereCast(ray, groundCheckRadius, out RaycastHit hit, groundCheckDistance, groundLayer))
+            {
+                IsGrounded = true;
+                GroundNormal = hit.normal;
+            }
+            else
+            {
+                IsGrounded = false;
+                GroundNormal = Vector3.up;
+            }
         }
 
         public void SetMovementInput(Vector3 moveDir, bool isRunning)

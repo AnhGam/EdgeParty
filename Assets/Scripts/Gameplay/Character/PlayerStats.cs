@@ -47,6 +47,7 @@ namespace EdgeParty.Gameplay.Character
         public NetworkVariable<float> CurrentHealth  = new NetworkVariable<float>(100f);
         public NetworkVariable<float> CurrentStamina = new NetworkVariable<float>(100f);
         public NetworkVariable<bool>  IsDead         = new NetworkVariable<bool>(false);
+        [HideInInspector] public bool fellOffMap = false;
 
         public event Action<float, float> OnHealthChanged;
         public event Action<float, float> OnStaminaChanged;
@@ -68,7 +69,8 @@ namespace EdgeParty.Gameplay.Character
 
         private void Awake()
         {
-            _motor = GetComponentInParent<CharacterMotor>();
+            _motor = transform.root.GetComponentInChildren<CharacterMotor>();
+            if (_motor == null) _motor = GetComponentInParent<CharacterMotor>();
             if (_motor == null) _motor = GetComponentInChildren<CharacterMotor>();
         }
 
@@ -97,13 +99,30 @@ namespace EdgeParty.Gameplay.Character
 
             float dt = Time.deltaTime;
 
-            if (_motor != null && _motor.pelvisRigidbody != null)
+            if (_motor == null)
             {
-                if (_motor.pelvisRigidbody.position.y < fallDeathY)
+                _motor = GetComponentInParent<CharacterMotor>();
+                if (_motor == null) _motor = GetComponentInChildren<CharacterMotor>();
+            }
+
+            Rigidbody pelvisRb = (_motor != null) ? _motor.pelvisRigidbody : null;
+            if (pelvisRb == null)
+            {
+                foreach (var rb in transform.root.GetComponentsInChildren<Rigidbody>())
                 {
-                    FallOffMap();
-                    return;
+                    if (rb.name.ToLower().Contains("pelvis"))
+                    {
+                        pelvisRb = rb;
+                        break;
+                    }
                 }
+            }
+
+            float currentY = (pelvisRb != null) ? pelvisRb.position.y : transform.position.y;
+            if (currentY < fallDeathY)
+            {
+                FallOffMap();
+                return;
             }
 
             if (healthRegenRate > 0f)
@@ -122,8 +141,7 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
-        /// <summary>Called by PunchHitbox on the server when this player is struck.</summary>
-        public void TakeDamage(float damage, Vector3 hitDirection, Rigidbody pelvisRb = null)
+        public void TakeDamage(float damage, Vector3 hitDirection, Rigidbody pelvisRb = null, float customKnockbackForce = -1f)
         {
             if (!IsServer || IsDead.Value) return;
 
@@ -132,8 +150,13 @@ namespace EdgeParty.Gameplay.Character
 
             if (pelvisRb != null)
             {
+                float force = customKnockbackForce > 0f ? customKnockbackForce : knockbackForce;
+                if (CurrentHealth.Value <= 0f)
+                {
+                    force *= 0.5f;
+                }
                 Vector3 kb = hitDirection.normalized + Vector3.up * knockbackUpRatio;
-                pelvisRb.AddForce(kb.normalized * knockbackForce, ForceMode.Impulse);
+                pelvisRb.AddForce(kb.normalized * force, ForceMode.Impulse);
             }
 
             NotifyHitClientRpc(damage, hitDirection);
@@ -177,12 +200,7 @@ namespace EdgeParty.Gameplay.Character
             CurrentHealth.Value  = maxHealth;
             CurrentStamina.Value = maxStamina;
             IsDead.Value         = false;
-
-            if (_motor != null && _motor.pelvisRigidbody != null)
-            {
-                _motor.pelvisRigidbody.position = position;
-                _motor.pelvisRigidbody.linearVelocity = Vector3.zero;
-            }
+            fellOffMap           = false;
         }
 
         private void Die()
@@ -194,6 +212,7 @@ namespace EdgeParty.Gameplay.Character
         public void FallOffMap()
         {
             if (!IsServer || IsDead.Value) return;
+            fellOffMap = true;
             IsDead.Value = true;
             if (_motor != null && _motor.pelvisRigidbody != null)
             {

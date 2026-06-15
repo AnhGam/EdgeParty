@@ -10,6 +10,21 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
         type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
+        type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -72,21 +87,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Cosmic_Retro_Blaster_2_5
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
-        type: 3}
-      propertyPath: m_LocalScale.x
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
-        type: 3}
-      propertyPath: m_LocalScale.y
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: 96f78cc8f4714694db873632c6694f36,
-        type: 3}
-      propertyPath: m_LocalScale.z
-      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -154,15 +154,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Gameplay.Items.StunGun
   ShowTopMostFoldoutHeaderGroup: 1
   stunDuration: 2.5
-  stunRange: 1.5
-  electricVFXPrefab: {fileID: 7856649774641617467, guid: 5eeaa49a26f1bb7468d756408c7434a4, type: 3}
+  stunRange: 5
+  electricVFXPrefab: {fileID: 2352610519853280536, guid: 5eeaa49a26f1bb7468d756408c7434a4,
+    type: 3}
   stunHitSFX: {fileID: 8300000, guid: 921546675187e0b4598042a87463a2b6, type: 3}
   stunLoopSFX: {fileID: 8300000, guid: 2139cd8108eaece4f9409f55f88f8a6c, type: 3}
 --- !u!135 &4567890123456789
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 3994467029059914190}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4300475061299410079}
   m_Material: {fileID: 0}
@@ -183,7 +184,7 @@ SphereCollider:
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 3994467029059914190}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4300475061299410079}
   m_Enabled: 1

@@ -154,6 +154,18 @@ namespace EdgeParty.Gameplay.Character
             return false;
         }
 
+        /// <summary>
+        /// Kích hoạt hoạt ảnh tấn công trực tiếp (dùng cho vũ khí/bom) mà không cần kiểm tra stamina hay tiêu tốn stamina.
+        /// </summary>
+        public void ForceTriggerAttack()
+        {
+            if (_isDead) return;
+            if (!_upperBodyActive)
+            {
+                StartAttack();
+            }
+        }
+
         private void Update()
         {
             float dt = Time.deltaTime;

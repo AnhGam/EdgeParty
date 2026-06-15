@@ -143,9 +143,15 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   explosionRadius: 5
   knockbackForce: 100
-  fuseTime: 3
-  explosionVFXPrefab: {fileID: 8301548480434407513, guid: df2527528f389ce428023349503d76bf, type: 3}
+  fuseTime: 3.5
+  explosionVFXPrefab: {fileID: 6231179254812234503, guid: 9769217d989b43643952a8ea313d42af,
+    type: 3}
   explosionSFX: {fileID: 8300000, guid: 3443ddb7be9757a4abb12475cc0d4a60, type: 3}
+  isPickup:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 1
 --- !u!114 &3456789012345678
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -26,7 +26,7 @@ namespace EdgeParty.Gameplay.Character
         [Tooltip("Base damage dealt per punch")]
         public float damage = 34f;
         [Tooltip("Radius for hit detection")]
-        public float hitRadius = 0.25f;
+        public float hitRadius = 0.5f;
         [Tooltip("Layer mask for valid hit targets (should include the Player layer)")]
         public LayerMask targetLayers = ~0;
 
@@ -38,7 +38,7 @@ namespace EdgeParty.Gameplay.Character
         private bool _isActive;
         private Rigidbody _ownerPelvis;         // set by CharacterAnimationController
         private PlayerStats _ownerStats;        // to avoid self-hit
-        private System.Collections.Generic.HashSet<Collider> _hitThisSwing = new();
+        private System.Collections.Generic.HashSet<PlayerStats> _hitThisSwing = new();
 
         private Collider _col;
 
@@ -75,13 +75,6 @@ namespace EdgeParty.Gameplay.Character
             Collider[] hits = Physics.OverlapSphere(transform.position, hitRadius, targetLayers);
             foreach (var other in hits)
             {
-                if (_hitThisSwing.Contains(other)) continue;
-
-                // Skip own body
-                var otherController = other.GetComponentInParent<PlayerController>();
-                var myController = GetComponentInParent<PlayerController>();
-                if (myController != null && otherController != null && myController == otherController) continue;
-
                 // Find PlayerStats on target hierarchy
                 var targetStats = other.GetComponentInParent<PlayerStats>();
                 if (targetStats == null)
@@ -91,7 +84,14 @@ namespace EdgeParty.Gameplay.Character
                 // Don't hit self
                 if (targetStats == _ownerStats) continue;
 
-                _hitThisSwing.Add(other);
+                if (_hitThisSwing.Contains(targetStats)) continue;
+
+                // Skip own body
+                var otherController = other.GetComponentInParent<PlayerController>();
+                var myController = GetComponentInParent<PlayerController>();
+                if (myController != null && otherController != null && myController == otherController) continue;
+
+                _hitThisSwing.Add(targetStats);
 
                 // Direction from attacker pelvis toward target
                 Vector3 hitDir = Vector3.forward;

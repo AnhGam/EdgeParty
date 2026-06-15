@@ -63,7 +63,7 @@ namespace EdgeParty.Gameplay.Character
 
         [Header("Dead State")]
         [Tooltip("Giây tự hồi sau khi chết")]
-        public float autoRespawnDelay = 15f;
+        public float autoRespawnDelay = 10f;
         [Tooltip("Giây chờ sau khi spring phục hồi trước khi nhận phím")]
         public float inputBlockAfterRespawn = 1.5f;
 
@@ -74,11 +74,13 @@ namespace EdgeParty.Gameplay.Character
         // Trạng thái chết cục bộ (client-side): block input di chuyển, chỉ cho xoay camera
         private bool _isLocallyDead = false;
         private bool _isInputBlocked = false;  // block sau respawn cho đến khi nhân vật đứng ổn
+        private bool _isInitialSpawn = true;
 
         private void OnValidate() => SyncLegacyReferences();
 
         private void Awake()
         {
+            autoRespawnDelay = 10f;
             _followers = GetComponentsInChildren<RagdollBoneFollower>();
             _grabHandlers = GetComponentsInChildren<GrabHandler>();
             Transform root = transform.root;
@@ -439,15 +441,48 @@ namespace EdgeParty.Gameplay.Character
 
         public void Teleport(Vector3 position)
         {
-            Vector3 offset = position - transform.position;
-            Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
-            foreach (var rb in rigidbodies)
+            if (pelvisRigidbody == null)
             {
-                rb.position += offset;
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
+                foreach (var rb in GetComponentsInChildren<Rigidbody>())
+                {
+                    if (rb.name.ToLower().Contains("pelvis"))
+                    {
+                        pelvisRigidbody = rb;
+                        break;
+                    }
+                }
             }
-            transform.position = position;
+
+            Vector3 offset;
+            Vector3 pelvisPos = pelvisRigidbody != null ? pelvisRigidbody.transform.position : transform.position;
+
+            // Nếu là lần đầu tiên spawn hoặc pelvis ở quá xa root (do rơi tự do/ragdoll lệch sâu)
+            if (!_isInitialSpawn && pelvisRigidbody != null && Vector3.Distance(pelvisPos, transform.position) > 5f)
+            {
+                offset = position - pelvisPos;
+                Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
+                foreach (var rb in rigidbodies)
+                {
+                    rb.position += offset;
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+                transform.position += offset;
+            }
+            else
+            {
+                offset = position - transform.position;
+                Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
+                foreach (var rb in rigidbodies)
+                {
+                    rb.position += offset;
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+                transform.position = position;
+                _isInitialSpawn = false;
+            }
+
             if (ghostRoot != null)
             {
                 ghostRoot.position = position;
@@ -566,7 +601,7 @@ namespace EdgeParty.Gameplay.Character
             animController.TriggerDash();
         }
 
-        public void OnAttackTriggered_Server()
+        public void OnAttackTriggered_Server(Vector3 aimDirection = default)
         {
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;

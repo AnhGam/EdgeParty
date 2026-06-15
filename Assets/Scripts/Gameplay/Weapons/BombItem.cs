@@ -9,7 +9,7 @@ namespace EdgeParty.Gameplay.Items
         [Header("Explosion Settings")]
         public float explosionRadius = 5f;
         public float knockbackForce = 100f;
-        public float fuseTime = 3f;       // Thời gian nổ sau khi ném (default to 3s)
+        public float fuseTime = 3.5f;       // Thời gian nổ sau khi ném (default to 3.5s)
 
         [Header("VFX / SFX")]
         [Tooltip("Kéo Explosion VFX Prefab vào — hoặc để trống để dùng built-in particle")]
@@ -18,6 +18,9 @@ namespace EdgeParty.Gameplay.Items
         public AudioClip explosionSFX;
 
         public NetworkVariable<bool> isPickup = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<Vector3> _netPosition = new NetworkVariable<Vector3>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<Quaternion> _netRotation = new NetworkVariable<Quaternion>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
         private bool _hasExploded = false;
         private bool _isThrown = false;
@@ -38,6 +41,12 @@ namespace EdgeParty.Gameplay.Items
             isPickup.OnValueChanged += OnPickupStateChanged;
             if (isPickup.Value) SetupAsPickup();
             else SetupAsProjectile();
+
+            if (IsServer)
+            {
+                _netPosition.Value = transform.position;
+                _netRotation.Value = transform.rotation;
+            }
         }
 
         public override void OnNetworkDespawn()
@@ -62,6 +71,11 @@ namespace EdgeParty.Gameplay.Items
 
             transform.localScale = Vector3.one;
 
+            foreach (var r in GetComponentsInChildren<Renderer>())
+            {
+                r.enabled = true;
+            }
+
             if (_rb == null) _rb = GetComponent<Rigidbody>();
             if (_rb != null)
             {
@@ -83,11 +97,10 @@ namespace EdgeParty.Gameplay.Items
 
             transform.localScale = Vector3.one;
 
-            // Hide the networked bomb completely! 
-            // The visual representation is handled by PlayerController.SpawnVisualBombClientRpc
+            // Keep the networked bomb visible
             foreach (var r in GetComponentsInChildren<Renderer>())
             {
-                r.enabled = false;
+                r.enabled = true;
             }
 
             if (_rb == null) _rb = GetComponent<Rigidbody>();
@@ -104,7 +117,10 @@ namespace EdgeParty.Gameplay.Items
         {
             if (!IsServer) return;
             isPickup.Value = false;
+            SetupAsProjectile(); // Explicitly call to set physics parameters immediately on server
             _isThrown = true;
+            _netPosition.Value = transform.position;
+            _netRotation.Value = transform.rotation;
 
             // Ignore collision with the thrower to prevent immediate explosion in hand
             if (thrower != null)
@@ -127,13 +143,34 @@ namespace EdgeParty.Gameplay.Items
             }
         }
 
+        private void FixedUpdate()
+        {
+            if (IsServer && _isThrown && !_hasExploded)
+            {
+                _netPosition.Value = transform.position;
+                _netRotation.Value = transform.rotation;
+            }
+        }
+
         private void Update()
         {
-            if (!IsServer || _hasExploded || !_isThrown) return;
+            if (IsServer)
+            {
+                if (_hasExploded || !_isThrown) return;
 
-            _timer += Time.deltaTime;
-            if (_timer >= fuseTime)
-                Explode();
+                _timer += Time.deltaTime;
+                if (_timer >= fuseTime)
+                    Explode();
+            }
+            else
+            {
+                // Smooth interpolation for clients when thrown
+                if (!isPickup.Value && !_hasExploded)
+                {
+                    transform.position = Vector3.Lerp(transform.position, _netPosition.Value, Time.deltaTime * 25f);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, _netRotation.Value, Time.deltaTime * 25f);
+                }
+            }
         }
 
         private void OnCollisionEnter(Collision collision)
@@ -147,22 +184,32 @@ namespace EdgeParty.Gameplay.Items
             _hasExploded = true;
 
             Vector3 explosionPos = transform.position;
+            Debug.Log($"[BombItem] Explode() triggered at {explosionPos}. Radius: {explosionRadius}");
 
             // Physics knockback — tính trên server
             Collider[] hits = Physics.OverlapSphere(explosionPos, explosionRadius);
+            Debug.Log($"[BombItem] OverlapSphere found {hits.Length} colliders.");
+
             foreach (var hit in hits)
             {
                 var rb = hit.GetComponent<Rigidbody>();
                 if (rb == null) continue;
 
+                // Nếu là Player thì bỏ qua, TakeDamage sẽ lo việc AddForce một lần duy nhất vào pelvis
+                if (hit.GetComponentInParent<PlayerStats>() != null || hit.GetComponentInChildren<PlayerStats>() != null)
+                {
+                    Debug.Log($"[BombItem] Skipping physics force loop for player bone: {hit.name}");
+                    continue;
+                }
+
                 Vector3 dir = (rb.position - explosionPos).normalized;
                 float dist = Vector3.Distance(rb.position, explosionPos);
                 float falloff = 1f - Mathf.Clamp01(dist / explosionRadius);
-                float force = knockbackForce * falloff;
+                float force = knockbackForce * falloff * 0.2f; // Giảm mạnh lực đối với vật thể thường
 
-                // Thêm lực lên theo góc nhỏ để bay người đẹp hơn
                 Vector3 knockDir = (dir + Vector3.up * 0.1f).normalized;
                 rb.AddForce(knockDir * force, ForceMode.Impulse);
+                Debug.Log($"[BombItem] Applied {force} knockback force to regular object: {hit.name}");
             }
 
             // Damage calculation — only on server
@@ -173,43 +220,82 @@ namespace EdgeParty.Gameplay.Items
                 if (targetStats == null)
                     targetStats = hit.GetComponentInChildren<PlayerStats>();
 
-                if (targetStats == null || processedPlayers.Contains(targetStats)) continue;
+                if (targetStats == null)
+                {
+                    Debug.Log($"[BombItem] Collider {hit.name} has no PlayerStats in parent/children.");
+                    continue;
+                }
+
+                if (processedPlayers.Contains(targetStats))
+                {
+                    Debug.Log($"[BombItem] Player {targetStats.name} already processed.");
+                    continue;
+                }
+                
                 processedPlayers.Add(targetStats);
 
-                // Find the pelvis or transform to measure distance
-                Transform targetCenter = targetStats.transform;
-                var targetController = targetStats.GetComponent<PlayerController>();
-                if (targetController != null && targetController.pelvisRigidbody != null)
+                // Find the pelvis or transform to measure distance, resolving nested structure correctly
+                var targetController = targetStats.GetComponentInChildren<PlayerController>();
+                if (targetController == null)
+                    targetController = targetStats.GetComponentInParent<PlayerController>();
+
+                Rigidbody targetPelvis = null;
+                if (targetController != null)
                 {
-                    targetCenter = targetController.pelvisRigidbody.transform;
+                    targetPelvis = targetController.pelvisRigidbody;
+                }
+                if (targetPelvis == null)
+                {
+                    foreach (var rb in targetStats.GetComponentsInChildren<Rigidbody>())
+                    {
+                        if (rb.name.ToLower().Contains("pelvis"))
+                        {
+                            targetPelvis = rb;
+                            break;
+                        }
+                    }
+                }
+
+                Transform targetCenter = (targetPelvis != null) ? targetPelvis.transform : targetStats.transform;
+                if (targetPelvis != null)
+                {
+                    Debug.Log($"[BombItem] Found player pelvis at {targetCenter.position}");
+                }
+                else
+                {
+                    Debug.Log($"[BombItem] Target has no pelvis, using root/fallback transform at {targetCenter.position}");
                 }
 
                 float dist = Vector3.Distance(targetCenter.position, explosionPos);
                 float damage = 0f;
 
-                if (dist > 3f)
-                {
-                    damage = 0f;
-                }
-                else if (dist <= 0.5f)
+                if (dist <= 1.0f)
                 {
                     damage = targetStats.maxHealth; // Death
+                    Debug.Log($"[BombItem] Distance to {targetStats.name} is {dist}m (<= 1.0m) -> Fatal Damage: {damage}");
                 }
-                else if (dist >= 2f && dist <= 3f)
+                else if (dist <= explosionRadius)
                 {
-                    damage = 34f; // 1 punch hit
+                    // Scale damage from 80 down to 25 across the range 1.0m to explosionRadius
+                    float t = (dist - 1.0f) / (explosionRadius - 1.0f);
+                    damage = Mathf.Lerp(80f, 25f, t);
+                    Debug.Log($"[BombItem] Distance to {targetStats.name} is {dist}m -> Scaled Damage: {damage}");
                 }
-                else // between 0.5m and 2m
+                else
                 {
-                    float t = (2f - dist) / 1.5f;
-                    damage = 34f + t * (75f - 34f);
+                    Debug.Log($"[BombItem] Distance to {targetStats.name} is {dist}m (> {explosionRadius}m) -> No Damage");
                 }
 
                 if (damage > 0f)
                 {
-                    Rigidbody targetPelvis = targetController != null ? targetController.pelvisRigidbody : null;
                     Vector3 hitDir = (targetCenter.position - explosionPos).normalized;
-                    targetStats.TakeDamage(damage, hitDir, targetPelvis);
+                    
+                    // Scale bomb knockback force by distance falloff (increased by 1.3x per user request)
+                    float falloff = 1f - Mathf.Clamp01(dist / explosionRadius);
+                    float bombForce = knockbackForce * falloff * 1.3f;
+                    
+                    Debug.Log($"[BombItem] Calling TakeDamage on {targetStats.name} for {damage} HP. Force: {bombForce}");
+                    targetStats.TakeDamage(damage, hitDir, targetPelvis, bombForce);
                 }
             }
 
@@ -223,81 +309,18 @@ namespace EdgeParty.Gameplay.Items
         [Rpc(SendTo.ClientsAndHost)]
         private void TriggerExplosionEffectsClientRpc(Vector3 position)
         {
+            _hasExploded = true;
+            
             // VFX
             if (explosionVFXPrefab != null)
             {
                 var vfx = Instantiate(explosionVFXPrefab, position, Quaternion.identity);
                 Destroy(vfx, 3f);
             }
-            else
-            {
-                // Built-in fallback: tạo particle system đơn giản
-                SpawnBuiltinExplosionVFX(position);
-            }
 
             // SFX
             if (explosionSFX != null && AudioManager.Instance != null)
                 AudioManager.Instance.PlaySFX(explosionSFX);
-        }
-
-        private void SpawnBuiltinExplosionVFX(Vector3 position)
-        {
-            var root = new GameObject("ExplosionVFX_Auto");
-            root.transform.position = position;
-
-            // 1. Lửa — burst cam-đỏ
-            var fireGO = new GameObject("Fire");
-            fireGO.transform.SetParent(root.transform, false);
-            var fireSys = fireGO.AddComponent<ParticleSystem>();
-            fireSys.Stop(); // Ngừng chạy trước khi setup để tránh lỗi
-
-            var fireMain = fireSys.main;
-            fireMain.duration = 0.4f;
-            fireMain.loop = false;
-            fireMain.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.8f);
-            fireMain.startSpeed = new ParticleSystem.MinMaxCurve(5f, 12f);
-            fireMain.startSize = new ParticleSystem.MinMaxCurve(0.4f, 1.2f);
-            fireMain.startColor = new ParticleSystem.MinMaxGradient(
-                new Color(1f, 0.5f, 0f), new Color(1f, 0.2f, 0f));
-            fireMain.gravityModifier = -0.3f;
-            
-            var fireEmission = fireSys.emission;
-            fireEmission.rateOverTime = 0;
-            fireEmission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 40) });
-            
-            var fireShape = fireSys.shape;
-            fireShape.shapeType = ParticleSystemShapeType.Sphere;
-            fireShape.radius = 0.3f;
-
-            var fireRenderer = fireGO.GetComponent<ParticleSystemRenderer>();
-
-            fireSys.Play();
-
-            // 2. Khói — burst xám
-            var smokeGO = new GameObject("Smoke");
-            smokeGO.transform.SetParent(root.transform, false);
-            var smokeSys = smokeGO.AddComponent<ParticleSystem>();
-            smokeSys.Stop(); // Ngừng chạy trước khi setup để tránh lỗi
-
-            var smokeMain = smokeSys.main;
-            smokeMain.duration = 0.5f;
-            smokeMain.loop = false;
-            smokeMain.startLifetime = new ParticleSystem.MinMaxCurve(1f, 2f);
-            smokeMain.startSpeed = new ParticleSystem.MinMaxCurve(2f, 6f);
-            smokeMain.startSize = new ParticleSystem.MinMaxCurve(0.6f, 1.8f);
-            smokeMain.startColor = new ParticleSystem.MinMaxGradient(
-                new Color(0.3f, 0.3f, 0.3f, 0.8f), new Color(0.6f, 0.6f, 0.6f, 0.4f));
-            smokeMain.gravityModifier = -0.15f;
-            
-            var smokeEmission = smokeSys.emission;
-            smokeEmission.rateOverTime = 0;
-            smokeEmission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 20) });
-
-            var smokeRenderer = smokeGO.GetComponent<ParticleSystemRenderer>();
-            
-            smokeSys.Play();
-
-            Destroy(root, 3f);
         }
 
         private void OnDrawGizmosSelected()

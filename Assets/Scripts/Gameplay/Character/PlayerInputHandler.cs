@@ -52,7 +52,7 @@ namespace EdgeParty.Gameplay.Character
             
             if (isListening && !IsSpawned) return; // Prevent RPC errors during initialization
 
-            bool isLocalController = isOffline || IsOwner;
+            bool isLocalController = isOffline || IsLocalPlayer;
             if (isLocalController)
             {
                 // Self-healing for third person camera target
@@ -108,12 +108,14 @@ namespace EdgeParty.Gameplay.Character
 
             bool isAttackPressed = (mouse != null && mouse.leftButton.wasPressedThisFrame) || keyboard.jKey.wasPressedThisFrame;
 
+            Vector3 aimDirection = _camTransform != null ? _camTransform.forward : _controller.transform.forward;
+
             if (isOffline)
             {
                 _controller.OnInputReceived_Server(worldMoveDir, isRunning);
                 if (WasKeyPressedThisFrame(jumpKey)) _controller.OnJumpTriggered_Server(worldMoveDir);
                 if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) _controller.OnDashTriggered_Server();
-                if (isAttackPressed) _controller.OnAttackTriggered_Server();
+                if (isAttackPressed) _controller.OnAttackTriggered_Server(aimDirection);
                 if (keyboard.eKey.wasPressedThisFrame) _controller.OnGrabTriggered_Server();
             }
             else
@@ -125,7 +127,7 @@ namespace EdgeParty.Gameplay.Character
                 if (WasKeyPressedThisFrame(jumpKey)) TriggerJumpServerRpc(worldMoveDir);
                 
                 if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) TriggerDashServerRpc();
-                if (isAttackPressed) TriggerAttackServerRpc();
+                if (isAttackPressed) TriggerAttackServerRpc(aimDirection);
                 if (keyboard.eKey.wasPressedThisFrame) TriggerGrabServerRpc();
             }
         }
@@ -196,9 +198,9 @@ namespace EdgeParty.Gameplay.Character
         }
 
         [ServerRpc]
-        private void TriggerAttackServerRpc()
+        private void TriggerAttackServerRpc(Vector3 aimDirection)
         {
-            _controller.OnAttackTriggered_Server();
+            _controller.OnAttackTriggered_Server(aimDirection);
         }
 
         [ServerRpc]
