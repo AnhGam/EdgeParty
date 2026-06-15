@@ -39,7 +39,7 @@ namespace EdgeParty.Gameplay.Character
         {
             if (pelvisRigidbody == null)
             {
-                var allRbs = transform.root.GetComponentsInChildren<Rigidbody>();
+                var allRbs = transform.root.GetComponentsInChildren<Rigidbody>(true);
                 foreach (var rb in allRbs)
                 {
                     if (rb.name.ToLower().Contains("pelvis"))

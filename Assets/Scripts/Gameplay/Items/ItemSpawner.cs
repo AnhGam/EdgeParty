@@ -41,6 +41,7 @@ public class ItemSpawner : MonoBehaviour
     // ─── State ────────────────────────────────────────────────────────────
     private List<Transform> _spawnPoints = new List<Transform>();
     private Dictionary<Transform, float> _pointCooldowns = new Dictionary<Transform, float>();
+    private Dictionary<Transform, GameObject> _pointOccupants = new Dictionary<Transform, GameObject>();
     private int _activeItemCount = 0;
     private float _nextSpawnTime = 0f;
     private bool _spawnEnabled = false;
@@ -142,6 +143,7 @@ public class ItemSpawner : MonoBehaviour
         spawned.Spawn();
         _activeItemCount++;
         _pointCooldowns[point] = spawnPointCooldown;
+        _pointOccupants[point] = spawned.gameObject;
 
         // Tự giảm count khi item despawn
         var tracker = spawned.GetComponent<ItemLifetimeTracker>();
@@ -164,8 +166,13 @@ public class ItemSpawner : MonoBehaviour
         List<Transform> available = new List<Transform>();
         foreach (var pt in _spawnPoints)
         {
-            if (!_pointCooldowns.ContainsKey(pt) || _pointCooldowns[pt] <= 0f)
+            bool isOccupied = _pointOccupants.ContainsKey(pt) && _pointOccupants[pt] != null;
+            bool isCoolingDown = _pointCooldowns.ContainsKey(pt) && _pointCooldowns[pt] > 0f;
+
+            if (!isOccupied && !isCoolingDown)
+            {
                 available.Add(pt);
+            }
         }
         if (available.Count == 0) return null;
         return available[Random.Range(0, available.Count)];

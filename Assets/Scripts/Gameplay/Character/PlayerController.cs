@@ -74,13 +74,12 @@ namespace EdgeParty.Gameplay.Character
         // Trạng thái chết cục bộ (client-side): block input di chuyển, chỉ cho xoay camera
         private bool _isLocallyDead = false;
         private bool _isInputBlocked = false;  // block sau respawn cho đến khi nhân vật đứng ổn
-        private bool _isInitialSpawn = true;
 
         private void OnValidate() => SyncLegacyReferences();
 
         private void Awake()
         {
-            autoRespawnDelay = 10f;
+            autoRespawnDelay = 10f; // Force 10s auto-respawn delay programmatically to override inspector defaults
             _followers = GetComponentsInChildren<RagdollBoneFollower>();
             _grabHandlers = GetComponentsInChildren<GrabHandler>();
             Transform root = transform.root;
@@ -92,7 +91,7 @@ namespace EdgeParty.Gameplay.Character
             if (ghostRoot == null) ghostRoot = root.Find("Chibi_Monkey_00_Ghost");
             if (pelvisRigidbody == null)
             {
-                foreach (var rb in root.GetComponentsInChildren<Rigidbody>())
+                foreach (var rb in root.GetComponentsInChildren<Rigidbody>(true))
                     if (rb.name.ToLower().Contains("pelvis")) { pelvisRigidbody = rb; break; }
             }
             if (pelvisRigidbody != null)
@@ -109,6 +108,17 @@ namespace EdgeParty.Gameplay.Character
             {
                 appearance = gameObject.AddComponent<NetworkPlayerAppearance>();
                 Debug.Log("[PlayerController] Dynamically attached NetworkPlayerAppearance to player!");
+            }
+
+            // Prevent active ragdoll limbs from sinking into the ground or jittering
+            foreach (var rb in transform.root.GetComponentsInChildren<Rigidbody>(true))
+            {
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+                rb.maxDepenetrationVelocity = 25f;
+                if (!rb.isKinematic)
+                {
+                    rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                }
             }
         }
 
@@ -135,7 +145,7 @@ namespace EdgeParty.Gameplay.Character
                 if (ghostRoot != null) motor.ghostRoot = ghostRoot;
                 if (ghostPelvis != null) motor.ghostPelvis = ghostPelvis;
                 if (motor.pelvisRigidbody == null)
-                    foreach (var rb in transform.root.GetComponentsInChildren<Rigidbody>())
+                    foreach (var rb in transform.root.GetComponentsInChildren<Rigidbody>(true))
                         if (rb.name.ToLower().Contains("pelvis")) { motor.pelvisRigidbody = rb; break; }
             }
             if (animController != null)
@@ -152,7 +162,7 @@ namespace EdgeParty.Gameplay.Character
         {
             Debug.Log("PLAYER SPAWNED");
 
-            if (IsOwner)
+            if (IsLocalPlayer)
             {
                 AssignCameraTarget();
             }
@@ -172,7 +182,7 @@ namespace EdgeParty.Gameplay.Character
                 nameplateInstance?.SetPlayerName(newName.ToString());
             };
 
-            if (IsOwner)
+            if (IsLocalPlayer)
             {
                 // Write username into the network variable so all clients see it
                 string myName = AuthService.Instance != null ? AuthService.Instance.CachedUsername : $"Player {OwnerClientId}";
@@ -217,7 +227,7 @@ namespace EdgeParty.Gameplay.Character
                 stats.OnRespawned += OnPlayerRespawned_Ragdoll;
 
                 // Spectator camera: only relevant for the local owner
-                if (IsOwner)
+                if (IsLocalPlayer)
                 {
                     stats.OnDied     += OnLocalPlayerDied;
                     stats.OnRespawned += OnLocalPlayerRespawned;
@@ -244,7 +254,7 @@ namespace EdgeParty.Gameplay.Character
         {
             if (!IsServer) return;
             CurrentHeldItem = type;
-            heldItemCharges = (type == WeaponPickup.ItemType.Bomb) ? 1 : 3;
+            heldItemCharges = 1;
             NotifyPickupClientRpc((int)type);
             Debug.Log($"[PlayerController] {playerNameSync.Value} picked up {type}");
         }
@@ -353,10 +363,13 @@ namespace EdgeParty.Gameplay.Character
 
             _weaponVisualInstance = Instantiate(prefab, hand);
 
-            // Strip all MonoBehaviours (including NetworkObject, WeaponPickup, etc) to make it a dumb visual
+            // Strip only specific Netcode/Pickup scripts to make it a dumb visual, but keep StunGun component
             foreach (var mono in _weaponVisualInstance.GetComponentsInChildren<MonoBehaviour>())
             {
-                Destroy(mono);
+                if (mono is NetworkObject || mono is WeaponPickup)
+                {
+                    Destroy(mono);
+                }
             }
 
             // STOP PHYSICS from simulating before destruction
@@ -441,51 +454,53 @@ namespace EdgeParty.Gameplay.Character
 
         public void Teleport(Vector3 position)
         {
-            if (pelvisRigidbody == null)
+            Rigidbody[] rigidbodies = transform.root.GetComponentsInChildren<Rigidbody>(true);
+            
+            // 1. Temporarily make all rigidbodies kinematic to disable joint physics solver during teleport
+            System.Collections.Generic.List<bool> wasKinematic = new System.Collections.Generic.List<bool>();
+            foreach (var rb in rigidbodies)
             {
-                foreach (var rb in GetComponentsInChildren<Rigidbody>())
-                {
-                    if (rb.name.ToLower().Contains("pelvis"))
-                    {
-                        pelvisRigidbody = rb;
-                        break;
-                    }
-                }
+                wasKinematic.Add(rb.isKinematic);
+                rb.isKinematic = true;
             }
 
-            Vector3 offset;
-            Vector3 pelvisPos = pelvisRigidbody != null ? pelvisRigidbody.transform.position : transform.position;
+            // 2. Move the root to the target position
+            transform.root.position = position;
 
-            // Nếu là lần đầu tiên spawn hoặc pelvis ở quá xa root (do rơi tự do/ragdoll lệch sâu)
-            if (!_isInitialSpawn && pelvisRigidbody != null && Vector3.Distance(pelvisPos, transform.position) > 5f)
-            {
-                offset = position - pelvisPos;
-                Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
-                foreach (var rb in rigidbodies)
-                {
-                    rb.position += offset;
-                    rb.linearVelocity = Vector3.zero;
-                    rb.angularVelocity = Vector3.zero;
-                }
-                transform.position += offset;
-            }
-            else
-            {
-                offset = position - transform.position;
-                Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
-                foreach (var rb in rigidbodies)
-                {
-                    rb.position += offset;
-                    rb.linearVelocity = Vector3.zero;
-                    rb.angularVelocity = Vector3.zero;
-                }
-                transform.position = position;
-                _isInitialSpawn = false;
-            }
-
-            if (ghostRoot != null)
+            // 3. If ghostRoot is somehow not a child of root, move it as well
+            if (ghostRoot != null && !ghostRoot.IsChildOf(transform.root))
             {
                 ghostRoot.position = position;
+            }
+
+            // 4. Restore kinematic state, reset velocities, and snap ragdoll bones to ghost bones
+            for (int i = 0; i < rigidbodies.Length; i++)
+            {
+                var rb = rigidbodies[i];
+                rb.isKinematic = wasKinematic[i];
+                
+                if (!rb.isKinematic)
+                {
+                    var f = rb.GetComponent<RagdollBoneFollower>();
+                    if (f != null && f.targetBone != null)
+                    {
+                        rb.position = f.targetBone.position;
+                        rb.rotation = f.targetBone.rotation;
+                    }
+                    else if (motor != null && rb == motor.pelvisRigidbody && motor.ghostPelvis != null)
+                    {
+                        rb.position = motor.ghostPelvis.position;
+                        rb.rotation = motor.ghostPelvis.rotation;
+                    }
+                    else
+                    {
+                        rb.position = rb.transform.position;
+                        rb.rotation = rb.transform.rotation;
+                    }
+
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
             }
         }
 
@@ -496,9 +511,35 @@ namespace EdgeParty.Gameplay.Character
         public void RequestRespawnRpc()
         {
             if (stats == null) return;
-            Vector3 pos = SpawnManager.Instance != null
-                ? SpawnManager.Instance.GetSpawnPosition(TeamID.Value)
-                : transform.position + Vector3.up * 2f;
+            Vector3 currentPos = pelvisRigidbody != null ? pelvisRigidbody.position : transform.position;
+
+            Vector3 origin = currentPos + Vector3.up * 2f;
+            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, 10f);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            
+            Vector3 groundPoint = currentPos;
+            bool foundGround = false;
+            foreach (var hit in hits)
+            {
+                if (hit.collider.transform.IsChildOf(transform.root))
+                {
+                    continue; // Ignore self
+                }
+                groundPoint = hit.point;
+                foundGround = true;
+                break;
+            }
+            
+            Vector3 pos;
+            if (foundGround)
+            {
+                pos = groundPoint + Vector3.up * 0.2f;
+            }
+            else
+            {
+                pos = currentPos + Vector3.up * 1.5f;
+            }
+
             stats.Respawn(pos);
             Teleport(pos);
         }
@@ -606,15 +647,24 @@ namespace EdgeParty.Gameplay.Character
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
 
+            Transform aimTransform = ghostRoot != null ? ghostRoot : transform;
+            Vector3 centerPos = pelvisRigidbody != null ? pelvisRigidbody.position : transform.position;
+
+            Vector3 finalAimDir = (aimDirection != default && aimDirection.sqrMagnitude > 0.001f) ? aimDirection : aimTransform.forward;
+
+            // Rotate character's visual orientation towards aimDirection if aiming
+            Vector3 flatAimDir = Vector3.ProjectOnPlane(finalAimDir, Vector3.up).normalized;
+            if (flatAimDir.sqrMagnitude > 0.001f && ghostRoot != null)
+            {
+                ghostRoot.rotation = Quaternion.LookRotation(flatAimDir, Vector3.up);
+            }
+
             if (CurrentHeldItem == WeaponPickup.ItemType.Bomb)
             {
-                Vector3 spawnPos = transform.position + Vector3.up * 1.5f + transform.forward * 0.8f;
-                Vector3 throwDir = (transform.forward + Vector3.up * 0.3f).normalized;
+                Vector3 spawnPos = centerPos + Vector3.up * 1.5f + finalAimDir * 0.8f;
+                Vector3 throwDir = (finalAimDir + Vector3.up * 0.3f).normalized;
                 
-                // Show visual bomb on all clients instantly!
-                SpawnVisualBombClientRpc(spawnPos, throwDir * 12f);
-
-                // Server logical bomb (networked but completely invisible)
+                // Server logical bomb (networked)
                 var bombGo = Instantiate(Resources.Load<GameObject>("BombBall"), spawnPos, Quaternion.identity);
                 var netObj = bombGo.GetComponent<NetworkObject>();
                 netObj.Spawn();
@@ -626,10 +676,13 @@ namespace EdgeParty.Gameplay.Character
                 }
 
                 ConsumeHeldItem();
+                animController?.ForceTriggerAttack();
                 return;
             }
             else if (CurrentHeldItem == WeaponPickup.ItemType.StunGun)
             {
+                if (heldItemCharges <= 0) return;
+
                 // 5s cooldown check
                 if (Time.time - _lastStunGunFireTime < 5f)
                 {
@@ -637,157 +690,229 @@ namespace EdgeParty.Gameplay.Character
                 }
                 _lastStunGunFireTime = Time.time;
 
-                Vector3 origin = transform.position + Vector3.up * 1.2f;
-                Vector3 direction = transform.forward;
-                float stunRange = 6f;
+                Vector3 finalForwardDir = aimTransform.forward;
+                Vector3 origin = centerPos + Vector3.up * 0.8f + finalForwardDir * 0.4f;
+                Vector3 direction = finalForwardDir;
 
-                PlayStunGunShotEffectsClientRpc(origin, direction);
+                var stunGun = GetComponentInChildren<EdgeParty.Gameplay.Items.StunGun>();
+                float range = stunGun != null ? stunGun.stunRange : 2.5f;
 
-                if (Physics.Raycast(origin, direction, out RaycastHit hit, stunRange))
-                {
-                    var targetController = hit.collider.GetComponentInParent<PlayerController>();
-                    if (targetController != null && targetController != this)
-                    {
-                        if (targetController.stats != null)
-                        {
-                            targetController.stats.TakeDamage(targetController.stats.maxHealth, direction, targetController.pelvisRigidbody);
-                        }
-                    }
-                }
+                UseStunGunServerRpc(origin, direction, range);
 
                 heldItemCharges--;
                 if (heldItemCharges <= 0)
                 {
-                    ConsumeHeldItem();
+                    StartCoroutine(DelayedConsumeHeldItem(0.6f));
                 }
+                animController?.ForceTriggerAttack();
                 return;
             }
 
+            // Default punch attack:
+            // Rotate character's visual orientation towards aimDirection if aiming
+            Vector3 flatAimDirDefault = Vector3.ProjectOnPlane(finalAimDir, Vector3.up).normalized;
+            if (flatAimDirDefault.sqrMagnitude > 0.001f && ghostRoot != null)
+            {
+                ghostRoot.rotation = Quaternion.LookRotation(flatAimDirDefault, Vector3.up);
+            }
             animController?.TriggerAttack();
         }
 
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SpawnVisualBombClientRpc(Vector3 position, Vector3 velocity)
+        [Rpc(SendTo.Server)]
+        private void UseStunGunServerRpc(Vector3 origin, Vector3 direction, float range)
         {
-            var bombGo = Instantiate(Resources.Load<GameObject>("BombBall"), position, Quaternion.identity);
-            
-            // Strip network components
-            var netObj = bombGo.GetComponent<NetworkObject>();
-            if (netObj != null) Destroy(netObj);
-            
-            var bombItem = bombGo.GetComponent<BombItem>();
-            if (bombItem != null) Destroy(bombItem);
-            
-            var pickup = bombGo.GetComponent<WeaponPickup>();
-            if (pickup != null) Destroy(pickup);
-            
-            // Setup physics
-            var rb = bombGo.GetComponent<Rigidbody>();
-            if (rb != null)
+            Vector3 hitPoint = origin + direction * range;
+            ulong targetId = 0;
+
+            RaycastHit[] hits = Physics.SphereCastAll(origin, 0.4f, direction, range);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            Debug.Log($"[StunGun] UseStunGunServerRpc. Origin: {origin}, Dir: {direction}, Range: {range}. Total Raycast Hits: {hits.Length}");
+
+            foreach (var hit in hits)
             {
-                rb.isKinematic = false;
-                rb.useGravity = true;
-                rb.linearVelocity = velocity;
-                rb.angularVelocity = new Vector3(Random.Range(-10f, 10f), Random.Range(-10f, 10f), Random.Range(-10f, 10f));
-            }
-            
-            // Destroy visual bomb slightly after the real explosion happens
-            Destroy(bombGo, 3.1f);
-        }
+                if (hit.collider.isTrigger)
+                {
+                    continue; // Skip trigger colliders without logging
+                }
 
-        [Rpc(SendTo.ClientsAndHost)]
-        private void PlayStunGunShotEffectsClientRpc(Vector3 serverOrigin, Vector3 direction)
-        {
-            Transform hand = FindRightHand();
-            Vector3 visualOrigin = hand != null ? hand.position : serverOrigin;
+                // Correct target resolution support for nested player structure
+                var targetStats = hit.collider.GetComponentInParent<PlayerStats>();
+                if (targetStats == null) targetStats = hit.collider.GetComponentInChildren<PlayerStats>();
 
-            // Draw a beam
-            var beam = new GameObject("StunGunBeam");
-            var lr = beam.AddComponent<LineRenderer>();
-            lr.startWidth = 0.12f;
-            lr.endWidth = 0.04f;
-            lr.positionCount = 2;
+                PlayerController targetController = null;
+                if (targetStats != null)
+                {
+                    targetController = targetStats.GetComponentInChildren<PlayerController>();
+                    if (targetController == null) targetController = targetStats.GetComponentInParent<PlayerController>();
+                }
+                else
+                {
+                    targetController = hit.collider.GetComponentInParent<PlayerController>();
+                    if (targetController == null) targetController = hit.collider.GetComponentInChildren<PlayerController>();
+                }
 
-            Vector3 hitPoint = visualOrigin + direction * 6f;
-            if (Physics.Raycast(visualOrigin, direction, out RaycastHit hit, 6f))
-            {
+                // Skip if hitting self (either root child or self reference)
+                if (hit.collider.transform.IsChildOf(transform.root) || targetController == this)
+                {
+                    continue; // Ignore self collision without logging
+                }
+
                 hitPoint = hit.point;
-                SpawnStunHitVFX(hitPoint);
+                Debug.Log($"[StunGun] Hit solid collider: {hit.collider.name} at {hitPoint}");
+
+                if (targetController != null)
+                {
+                    if (targetController.IsSpawned && targetController.NetworkObject != null)
+                        targetId = targetController.NetworkObjectId;
+
+                    if (targetController.stats != null)
+                    {
+                        targetController.stats.TakeDamage(100f, direction);
+                    }
+
+                    Debug.Log($"[StunGun] Dealt 100 damage to target player {targetController.name} (ID: {targetId})");
+                }
+                break; // Stop at first non-shooter solid collider hit
             }
 
-            lr.SetPositions(new Vector3[] { visualOrigin, hitPoint });
-
-            lr.startColor = new Color(0.3f, 0.9f, 1f, 1.0f);
-            lr.endColor = new Color(0.3f, 0.9f, 1f, 0.2f);
-
-            Destroy(beam, 0.2f);
-
-            // Muzzle flash
-            SpawnMuzzleFlashVFX(visualOrigin);
-
-            // SFX
-            var shotSFX = Resources.Load<AudioClip>("Audios/electricShock_sfx");
-            if (shotSFX == null) shotSFX = Resources.Load<AudioClip>("Audios/gun_hit_sfx");
-            if (shotSFX != null && AudioManager.Instance != null)
-                AudioManager.Instance.PlaySFX(shotSFX);
+            ulong shooterId = NetworkObjectId;
+            FireStunGunBeamClientRpc(origin, hitPoint, shooterId, targetId);
         }
 
-        private void SpawnMuzzleFlashVFX(Vector3 position)
+        [Rpc(SendTo.ClientsAndHost)]
+        private void FireStunGunBeamClientRpc(Vector3 origin, Vector3 hitPoint, ulong shooterId, ulong targetId)
         {
-            var flashVFX = new GameObject("MuzzleFlashVFX");
-            flashVFX.transform.position = position;
-            var ps = flashVFX.AddComponent<ParticleSystem>();
-            ps.Stop();
-            var main = ps.main;
-            main.duration = 0.15f;
-            main.loop = false;
-            main.startLifetime = 0.1f;
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.5f, 1.5f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.18f);
-            main.startColor = new Color(0.3f, 0.9f, 1f, 0.9f);
-
-            var emission = ps.emission;
-            emission.rateOverTime = 0f;
-            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 8) });
-
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.05f;
-
-            var renderer = flashVFX.GetComponent<ParticleSystemRenderer>();
-            if (GetParticleMaterial() != null) renderer.material = GetParticleMaterial();
-
-            ps.Play();
-            Destroy(flashVFX, 0.4f);
+            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(shooterId, out var shooterNetObj))
+            {
+                var shooterController = shooterNetObj.GetComponent<PlayerController>();
+                if (shooterController == null)
+                {
+                    shooterController = shooterNetObj.GetComponentInChildren<PlayerController>();
+                }
+                if (shooterController != null)
+                {
+                    var stunGun = shooterController.GetComponentInChildren<EdgeParty.Gameplay.Items.StunGun>();
+                    shooterController.StartCoroutine(shooterController.BeamRoutine(origin, hitPoint, shooterController.transform, stunGun));
+                }
+            }
         }
 
-        private void SpawnStunHitVFX(Vector3 position)
+        private IEnumerator BeamRoutine(Vector3 origin, Vector3 hitPoint, Transform shooterTransform, EdgeParty.Gameplay.Items.StunGun stunGun)
         {
-            var hitVFX = new GameObject("StunHitVFX");
-            hitVFX.transform.position = position;
-            var ps = hitVFX.AddComponent<ParticleSystem>();
-            ps.Stop();
-            var main = ps.main;
-            main.duration = 0.2f;
-            main.loop = false;
-            main.startLifetime = 0.15f;
-            main.startSpeed = new ParticleSystem.MinMaxCurve(1f, 3f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.12f);
-            main.startColor = new Color(0.3f, 0.9f, 1f, 0.9f);
+            GameObject vfxInstance = null;
+            AudioClip hitSFX = null;
+            LineRenderer lr = null;
+            Material beamMat = null;
 
-            var emission = ps.emission;
-            emission.rateOverTime = 0f;
-            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 10) });
+            // Follow the gun directly if available, otherwise fallback to shooter transform
+            Transform startTransform = (stunGun != null) ? stunGun.transform : shooterTransform;
 
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.1f;
+            if (stunGun != null)
+            {
+                if (stunGun.electricVFXPrefab != null)
+                {
+                    vfxInstance = Instantiate(stunGun.electricVFXPrefab, origin, Quaternion.identity);
+                    vfxInstance.transform.SetParent(shooterTransform);
+                    
+                    // Call Play on the BaseVfx component to correctly initialize and run the beam VFX
+                    var baseVfx = vfxInstance.GetComponent<PixPlays.ElementalVFX.BaseVfx>();
+                    if (baseVfx == null) baseVfx = vfxInstance.GetComponentInChildren<PixPlays.ElementalVFX.BaseVfx>();
+                    if (baseVfx != null)
+                    {
+                        var vfxData = new PixPlays.ElementalVFX.VfxData(startTransform, hitPoint, 0.5f, 1f);
+                        baseVfx.Play(vfxData);
+                    }
 
-            var renderer = hitVFX.GetComponent<ParticleSystemRenderer>();
-            if (GetParticleMaterial() != null) renderer.material = GetParticleMaterial();
+                    // Force play all particle systems in the custom VFX as fallback
+                    var particleSystems = vfxInstance.GetComponentsInChildren<ParticleSystem>();
+                    foreach (var ps in particleSystems)
+                    {
+                        ps.Play();
+                    }
+                }
+                hitSFX = stunGun.stunHitSFX;
+            }
 
-            ps.Play();
-            Destroy(hitVFX, 0.5f);
+            // Always create a purple line renderer for visual feedback of the beam connection
+            GameObject beamLineGo = new GameObject("StunGunBeam_Line");
+            beamLineGo.transform.SetParent(shooterTransform);
+            lr = beamLineGo.AddComponent<LineRenderer>();
+            lr.positionCount = 2;
+            lr.startWidth = 0.12f;
+            lr.endWidth = 0.12f;
+
+            // Safe URP shader lookup to prevent NullReferenceException on material creation
+            Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+            if (shader == null) shader = Shader.Find("Unlit/Color");
+            if (shader == null) shader = Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply");
+
+            if (shader != null)
+            {
+                beamMat = new Material(shader);
+                Color purple = new Color(0.6f, 0f, 1f, 1f); // Purple
+                if (beamMat.HasProperty("_BaseColor")) beamMat.SetColor("_BaseColor", purple);
+                else if (beamMat.HasProperty("_Color")) beamMat.SetColor("_Color", purple);
+                lr.material = beamMat;
+            }
+
+            lr.startColor = new Color(0.6f, 0f, 1f, 1f); // Purple
+            lr.endColor = new Color(0.6f, 0f, 1f, 1f);
+
+            if (hitSFX == null)
+            {
+                hitSFX = Resources.Load<AudioClip>("Audios/electricShock_sfx");
+            }
+
+            if (hitSFX != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlaySFX(hitSFX);
+
+            Vector3 localOffset = startTransform != null ? startTransform.InverseTransformPoint(origin) : Vector3.zero;
+
+            float elapsed = 0f;
+            while (elapsed < 0.5f)
+            {
+                if (startTransform == null) break;
+                
+                Vector3 currentPos = startTransform.TransformPoint(localOffset);
+                if (lr != null)
+                {
+                    lr.SetPosition(0, currentPos);
+                    lr.SetPosition(1, hitPoint);
+                }
+
+                if (vfxInstance != null)
+                {
+                    vfxInstance.transform.position = currentPos;
+                    vfxInstance.transform.LookAt(hitPoint);
+                }
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            if (vfxInstance != null)
+                Destroy(vfxInstance);
+            if (beamLineGo != null)
+                Destroy(beamLineGo);
+            if (beamMat != null)
+                Destroy(beamMat);
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void DespawnWeaponEffectClientRpc()
+        {
+            // Just destroy the visual weapon
+        }
+
+        private IEnumerator DelayedConsumeHeldItem(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (heldItemCharges <= 0 && CurrentHeldItem == WeaponPickup.ItemType.StunGun)
+            {
+                ConsumeHeldItem();
+            }
         }
 
         public void OnGrabTriggered_Server()
@@ -911,10 +1036,15 @@ namespace EdgeParty.Gameplay.Character
             foreach (var f in _followers)
             {
                 f.SetSpringMultiplier(0f);
-                f.UnlockAllLimits();
+                // Unlock limits on the root pelvis bone only, to let the player fall over naturally
+                // while keeping limb joint limits intact to prevent them from crumpling/collapsing.
+                if (f.gameObject.name.ToLower().Contains("pelvis"))
+                {
+                    f.UnlockAllLimits();
+                }
             }
 
-            Debug.Log($"[PlayerController] {playerNameSync.Value} died — ragdoll limp and limits freed.");
+            Debug.Log($"[PlayerController] {playerNameSync.Value} died — ragdoll limp.");
         }
 
         private void OnPlayerRespawned_Ragdoll()
@@ -931,11 +1061,14 @@ namespace EdgeParty.Gameplay.Character
                 pelvisRigidbody.constraints = _originalPelvisConstraints;
             }
 
-            // Khôi phục spring về multiplier = 1
+            // Khôi phục spring về multiplier = 1 và khôi phục các limits
             if (_followers == null || _followers.Length == 0)
                 _followers = GetComponentsInChildren<RagdollBoneFollower>();
             foreach (var f in _followers)
+            {
                 f.SetSpringMultiplier(1f);
+                f.RestoreLimits();
+            }
 
             // Đợi thêm inputBlockAfterRespawn giây cho nhân vật đứng dậy ổn định
             StartCoroutine(UnblockInputAfterDelay(inputBlockAfterRespawn));
@@ -958,13 +1091,39 @@ namespace EdgeParty.Gameplay.Character
 
             if (stats == null || !stats.IsDead.Value) yield break;  // đã hồi rồi (edge case)
 
-            Vector3 pos = SpawnManager.Instance != null
-                ? SpawnManager.Instance.GetSpawnPosition(TeamID.Value)
-                : transform.position + Vector3.up * 2f;
+            Vector3 currentPos = pelvisRigidbody != null ? pelvisRigidbody.position : transform.position;
 
+            Vector3 origin = currentPos + Vector3.up * 2f;
+            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, 10f);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            
+            Vector3 groundPoint = currentPos;
+            bool foundGround = false;
+            foreach (var hit in hits)
+            {
+                if (hit.collider.transform.IsChildOf(transform.root))
+                {
+                    continue; // Ignore self
+                }
+                groundPoint = hit.point;
+                foundGround = true;
+                break;
+            }
+            
+            Vector3 pos;
+            if (foundGround)
+            {
+                pos = groundPoint + Vector3.up * 0.2f;
+            }
+            else
+            {
+                pos = currentPos + Vector3.up * 1.5f;
+            }
+
+            bool wasFellOffMap = stats.fellOffMap; // Capture before Respawn clears it
             stats.Respawn(pos);
             Teleport(pos);
-            Debug.Log($"[PlayerController] Auto-respawned {playerNameSync.Value} after {autoRespawnDelay}s.");
+            Debug.Log($"[PlayerController] Auto-respawned {playerNameSync.Value} after {autoRespawnDelay}s at {pos}. FellOffMap={wasFellOffMap}");
         }
 
         [Rpc(SendTo.ClientsAndHost)]
@@ -990,6 +1149,15 @@ namespace EdgeParty.Gameplay.Character
                 AudioManager.Instance.PlaySFX(stunSFX);
 
             yield return new WaitForSeconds(duration);
+
+            // If we died during the stun, do NOT wake up (let the death/respawn handling take over)
+            if (stats != null && stats.IsDead.Value) yield break;
+
+            if (pelvisRigidbody != null)
+            {
+                // Nudge pelvis up slightly to avoid clipping through the ground when muscles stiffen
+                pelvisRigidbody.position += Vector3.up * 0.25f;
+            }
 
             _isLocallyDead = false;
             foreach (var f in _followers)
