@@ -11,7 +11,7 @@ namespace EdgeParty.Infrastructure.VoiceChat
     public class VoiceChatManager : MonoBehaviour
     {
         public static VoiceChatManager Instance { get; private set; }
-
+        public event Action OnVoiceReady;
         [Header("Settings")]
         [SerializeField] private string defaultChannelName = "MainLobby";
 
@@ -97,7 +97,7 @@ namespace EdgeParty.Infrastructure.VoiceChat
                 Debug.Log("[VoiceChat] Logged into Vivox.");
 
                 _isInitialized = true;
-
+                OnVoiceReady?.Invoke();
                 await JoinChannel(defaultChannelName);
             }
             catch (Exception e)

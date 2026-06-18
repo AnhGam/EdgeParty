@@ -1,8 +1,11 @@
+using System.Collections.Generic;
+using EdgeParty.Infrastructure.VoiceChat;
+using Unity.Services.Vivox;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UIElements;
-using System.Collections.Generic;
-using Unity.Services.Vivox;
+
+
 
 public class SettingsMenu : MonoBehaviour
 {
@@ -29,7 +32,7 @@ public class SettingsMenu : MonoBehaviour
             return false;
         }
     }
-
+    private bool _isInitialized;
     private VisualElement _root;
     private string _activeTab = "audio";
 
@@ -70,6 +73,11 @@ public class SettingsMenu : MonoBehaviour
         {
             InitializeWithRoot(uiDocument.rootVisualElement);
         }
+
+        if (VoiceChatManager.Instance != null)
+        {
+            VoiceChatManager.Instance.OnVoiceReady += PopulateVoiceDevicesAsync;
+        }
     }
 
     private void OnApplicationFocus(bool hasFocus)
@@ -89,9 +97,12 @@ public class SettingsMenu : MonoBehaviour
     public void InitializeWithRoot(VisualElement root)
     {
         if (root == null) return;
+        if (_isInitialized)
+            return;
+        _isInitialized = true;
         _root = root;
 
-        BindTabButton("TabAudio", "audio");
+        BindTabButton("TabAudio", "audio"); 
         BindTabButton("TabGraphics", "graphics");
         BindTabButton("TabControls", "controls");
         BindTabButton("TabNetwork", "network");
@@ -637,7 +648,7 @@ public class SettingsMenu : MonoBehaviour
         PlayerPrefs.DeleteKey("KeybindJump");
 
         // Reload UI
-        if (_root != null) InitializeWithRoot(_root);
+        if (_root != null) ReloadUIFromPrefs();
 
         LoadAndApplyAllSettings();
         Debug.Log("[SettingsMenu] Reset all settings to defaults!");
@@ -790,7 +801,37 @@ public class SettingsMenu : MonoBehaviour
         float db = Mathf.Log10(Mathf.Max(value, 0.0001f)) * 20f;
         mixer.SetFloat("SFXVolume", db);
     }
+    private void ReloadUIFromPrefs()
+    {
+        BindSliderValue("SliderMaster", "LabelMasterValue", "MasterVolume", "%", 80);
+        BindSliderValue("SliderMusic", "LabelMusicValue", "MusicVolume", "%", 65);
+        BindSliderValue("SliderSFX", "LabelSFXValue", "SFXVolume", "%", 100);
 
+        LoadUISettingsFromPrefs();
+        SetupDropdowns();
+
+        CaptureInitialValues();
+    }
+    private void BindSliderValue(
+      string sliderName,
+      string labelName,
+      string prefKey,
+      string suffix,
+      float defaultValue)
+    {
+        var slider = _root.Q<Slider>(sliderName);
+        var label = _root.Q<Label>(labelName);
+
+        if (slider == null)
+            return;
+
+        float value = PlayerPrefs.GetFloat(prefKey, defaultValue);
+
+        slider.SetValueWithoutNotify(value);
+
+        if (label != null)
+            label.text = $"{Mathf.RoundToInt(value)}{suffix}";
+    }
     // ===================== UNSAVED CHANGES TRACKING =====================
 
     private void CaptureInitialValues()
@@ -1040,10 +1081,13 @@ public class SettingsMenu : MonoBehaviour
         btnDontSave.clicked += () =>
         {
             EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
+
             _root.Remove(popupOverlay);
-            
-            // Revert changes back to what was initially loaded
+
+            ReloadUIFromPrefs();
+
             LoadAndApplyAllSettings();
+
             CloseSettings();
         };
         btnRow.Add(btnDontSave);
@@ -1123,5 +1167,19 @@ public class SettingsMenu : MonoBehaviour
 
         if (isActive) HandleBackButton(); // Always verify unsaved changes when toggling off
         else OpenSettings();
+    }
+    //Refresh Vivox devices khi login xong
+ 
+    private void OnDisable()
+    {
+        if (VoiceChatManager.Instance != null)
+        {
+            VoiceChatManager.Instance.OnVoiceReady -= PopulateVoiceDevicesAsync;
+        }
+    }
+    private void OnDestroy()
+    {
+        OnCloseSettingsEvent = null;
+        OnOpenSettingsEvent = null;
     }
 }
