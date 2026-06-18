@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace EdgeParty.Core
 {
@@ -49,6 +50,9 @@ namespace EdgeParty.Core
         [Tooltip("Kéo tất cả AudioClip vào đây và đặt tên để gọi bằng PlaySFX/PlayMusic")]
         [SerializeField] private Sound[] sounds;
 
+        [SerializeField] private AudioMixerGroup sfxMixerGroup; // (Tùy chọn) Mixer để quản lý nhóm âm thanh, nếu cần thiết.
+        [SerializeField] private AudioMixerGroup musicMixerGroup; // (Tùy chọn) Mixer để quản lý nhóm nhạc nền, nếu cần thiết.
+
         // ─── Audio Sources ────────────────────────────────────────────
 
         [Header("Volume")]
@@ -79,11 +83,13 @@ namespace EdgeParty.Core
             _musicSource.loop         = true;
             _musicSource.volume       = musicVolume;
             _musicSource.playOnAwake  = false;
+            _musicSource.outputAudioMixerGroup = musicMixerGroup; // (Tùy chọn) Gán vào mixer nếu có
 
             // Tạo AudioSource cho SFX
             _sfxSource                = gameObject.AddComponent<AudioSource>();
             _sfxSource.loop           = false;
             _sfxSource.volume         = sfxVolume;
+            _sfxSource.outputAudioMixerGroup = sfxMixerGroup; // (Tùy chọn) Gán vào mixer nếu có
             _sfxSource.playOnAwake    = false;
 
             // Build Dictionary

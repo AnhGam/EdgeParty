@@ -267,7 +267,7 @@ namespace EdgeParty.Gameplay.Character
             UpdateWeaponVisuals();
 
             // Play pickup sound on all clients
-            var pickupSFX = Resources.Load<AudioClip>("Audios/gun_hit_sfx");
+            var pickupSFX = Resources.Load<AudioClip>("Audios/Gameplay/Item_pickup");
             if (pickupSFX != null && AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlaySFX(pickupSFX);
