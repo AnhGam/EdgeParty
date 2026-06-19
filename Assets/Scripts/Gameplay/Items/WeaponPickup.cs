@@ -107,6 +107,8 @@ namespace EdgeParty.Gameplay.Items
 
             pc.PickupItem(itemType);
 
+            CollectClientRpc();
+
             var netObj = GetComponent<NetworkObject>();
             if (netObj != null && netObj.IsSpawned)
             {
@@ -123,6 +125,14 @@ namespace EdgeParty.Gameplay.Items
             {
                 Destroy(gameObject);
             }
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void CollectClientRpc()
+        {
+            gameObject.SetActive(false);
+            // Play SFX
+            AudioManager.Instance?.PlaySFX(pickupSFX);
         }
     }
 }

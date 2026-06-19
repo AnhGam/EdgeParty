@@ -246,24 +246,24 @@ MonoBehaviour:
   - name: Cap_A
     prefab: {fileID: 6798042261561142768, guid: ba8e71be4dfb7bd44bff32203732656c,
       type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 20b93ab23c8f99b4a837ba1932bf29a0, type: 3}
   - name: Cap_B
     prefab: {fileID: 976632356777530422, guid: 23c6c046351f39d4a880ea42bf588a36, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 43c4a2e36228b414fbb6453ff0581fac, type: 3}
   glasses:
   - name: Pixel_Glasses
     prefab: {fileID: 4859216011480407954, guid: dd3a036e795ac234ca13136d8a74427a,
       type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 2e62bb34627d15e4cb508fa0c0ba7f49, type: 3}
   necklaces:
   - name: Knot
     prefab: {fileID: 1819815232641596238, guid: 19c0fed2dd3c3d5438d50e1456c7c2c5,
       type: 3}
-    icon: {fileID: 2800000, guid: 9a8c5337231d3a84b8d1ba6c034a4298, type: 3}
+    icon: {fileID: 2800000, guid: 02df9c28910c4ed44a92ed9c279e4cc4, type: 3}
   - name: Necklace_A
     prefab: {fileID: 1542082816015543425, guid: 17f748c542b1d1d41a75210cc9190330,
       type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c1942e38139612f4ea80ee9b87031873, type: 3}
   emotions:
   - name: T_Chibi_Emo_01
     texture: {fileID: 2800000, guid: d5cbd665c8f65c646b226b8ec9b7de02, type: 3}
