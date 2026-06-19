@@ -25,6 +25,12 @@ namespace EdgeParty.Gameplay.Items
         private Vector3 _startPos;
         private bool _picked = false;
 
+        private void OnEnable()
+        {
+            _picked = false;
+            _startPos = transform.position;
+        }
+
         private void Start()
         {
             _startPos = transform.position;
@@ -104,7 +110,14 @@ namespace EdgeParty.Gameplay.Items
             var netObj = GetComponent<NetworkObject>();
             if (netObj != null && netObj.IsSpawned)
             {
-                netObj.Despawn(true);
+                if (EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton != null)
+                {
+                    EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton.ReturnNetworkObject(netObj);
+                }
+                else
+                {
+                    netObj.Despawn(true);
+                }
             }
             else
             {

@@ -3,7 +3,7 @@ using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
 using EdgeParty.Gameplay.Items;
-
+using EdgeParty.ConnectionManagement;
 public class ItemSpawner : MonoBehaviour
 {
     public static ItemSpawner Instance { get; private set; }
@@ -139,18 +139,39 @@ public class ItemSpawner : MonoBehaviour
         NetworkObject prefab = PickItemByWeight();
         if (prefab == null) return;
 
-        var spawned = Instantiate(prefab, point.position + Vector3.up * 0.5f, Quaternion.identity);
-        spawned.Spawn();
-        _activeItemCount++;
-        _pointCooldowns[point] = spawnPointCooldown;
-        _pointOccupants[point] = spawned.gameObject;
+        if (NetworkObjectPool.Singleton != null)
+        {
+            var spawned = NetworkObjectPool.Singleton.GetNetworkObject(prefab.gameObject, point.position + Vector3.up * 0.5f, Quaternion.identity);
+            if (!spawned.IsSpawned) spawned.Spawn();
+            _activeItemCount++;
+            _pointCooldowns[point] = spawnPointCooldown;
+            _pointOccupants[point] = spawned.gameObject;
 
-        // Tự giảm count khi item despawn
-        var tracker = spawned.GetComponent<ItemLifetimeTracker>();
-        if (tracker == null) tracker = spawned.gameObject.AddComponent<ItemLifetimeTracker>();
-        tracker.OnPickedUp += () => _activeItemCount = Mathf.Max(0, _activeItemCount - 1);
+            // Tự giảm count khi item despawn
+            var tracker = spawned.GetComponent<ItemLifetimeTracker>();
+            if (tracker == null) tracker = spawned.gameObject.AddComponent<ItemLifetimeTracker>();
+            
+            // Clean up old listener to avoid double-decrement if pulled from pool
+            tracker.OnPickedUp = null; 
+            tracker.OnPickedUp += () => _activeItemCount = Mathf.Max(0, _activeItemCount - 1);
 
-        Debug.Log($"[ItemSpawner] Spawned {prefab.name} at {point.name} | Active: {_activeItemCount}/{maxItemsOnMap}");
+            Debug.Log($"[ItemSpawner] Pooled Spawn {prefab.name} at {point.name} | Active: {_activeItemCount}/{maxItemsOnMap}");
+        }
+        else
+        {
+            // Fallback nếu chưa khởi tạo Pool
+            var spawned = Instantiate(prefab, point.position + Vector3.up * 0.5f, Quaternion.identity);
+            spawned.Spawn();
+            _activeItemCount++;
+            _pointCooldowns[point] = spawnPointCooldown;
+            _pointOccupants[point] = spawned.gameObject;
+
+            var tracker = spawned.GetComponent<ItemLifetimeTracker>();
+            if (tracker == null) tracker = spawned.gameObject.AddComponent<ItemLifetimeTracker>();
+            tracker.OnPickedUp += () => _activeItemCount = Mathf.Max(0, _activeItemCount - 1);
+
+            Debug.Log($"[ItemSpawner] Instantiate Spawn {prefab.name} at {point.name} | Active: {_activeItemCount}/{maxItemsOnMap}");
+        }
     }
 
     private NetworkObject PickItemByWeight()

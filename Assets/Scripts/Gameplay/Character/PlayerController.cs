@@ -34,7 +34,17 @@ namespace EdgeParty.Gameplay.Character
 
         [Header("Item Held")]
         // Item hiện tại player đang cầm (null = tay trống)
-        public WeaponPickup.ItemType? CurrentHeldItem { get; private set; } = null;
+        public NetworkVariable<int> currentHeldItemNetVar = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        
+        public WeaponPickup.ItemType? CurrentHeldItem 
+        { 
+            get 
+            { 
+                if (currentHeldItemNetVar.Value == -1) return null; 
+                return (WeaponPickup.ItemType)currentHeldItemNetVar.Value; 
+            } 
+        }
+        
         public int heldItemCharges = 0;
 
         [Header("Weapon Hand Offsets")]
@@ -214,6 +224,9 @@ namespace EdgeParty.Gameplay.Character
             headMultiplier.OnValueChanged += OnMultiplierChanged;
             tailMultiplier.OnValueChanged += OnMultiplierChanged;
 
+            currentHeldItemNetVar.OnValueChanged += OnHeldItemChanged;
+            UpdateWeaponVisuals(); // Khởi tạo visual vũ khí cho late-joiners
+
             ApplyBoneMultipliers();
 
             // Wire death/respawn into animator and camera
@@ -253,40 +266,35 @@ namespace EdgeParty.Gameplay.Character
         public void PickupItem(WeaponPickup.ItemType type)
         {
             if (!IsServer) return;
-            CurrentHeldItem = type;
+            currentHeldItemNetVar.Value = (int)type;
             heldItemCharges = 1;
-            NotifyPickupClientRpc((int)type);
             Debug.Log($"[PlayerController] {playerNameSync.Value} picked up {type}");
-        }
-
-        [Rpc(SendTo.ClientsAndHost)]
-        private void NotifyPickupClientRpc(int itemTypeInt)
-        {
-            var type = (WeaponPickup.ItemType)itemTypeInt;
-            CurrentHeldItem = type;
-            UpdateWeaponVisuals();
-
-            // Play pickup sound on all clients
-            var pickupSFX = Resources.Load<AudioClip>("Audios/gun_hit_sfx");
-            if (pickupSFX != null && AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlaySFX(pickupSFX);
-            }
         }
 
         public void ConsumeHeldItem()
         {
             if (!IsServer) return;
-            CurrentHeldItem = null;
-            NotifyConsumeClientRpc();
+            currentHeldItemNetVar.Value = -1;
         }
 
-        [Rpc(SendTo.ClientsAndHost)]
-        private void NotifyConsumeClientRpc()
+        private void OnHeldItemChanged(int oldVal, int newVal)
         {
-            SpawnWeaponDisappearVFX();
-            CurrentHeldItem = null;
-            UpdateWeaponVisuals();
+            if (newVal != -1)
+            {
+                UpdateWeaponVisuals();
+                
+                // Play pickup sound on all clients
+                var pickupSFX = Resources.Load<AudioClip>("Audios/gun_hit_sfx");
+                if (pickupSFX != null && AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlaySFX(pickupSFX);
+                }
+            }
+            else if (newVal == -1 && oldVal != -1)
+            {
+                SpawnWeaponDisappearVFX();
+                UpdateWeaponVisuals();
+            }
         }
 
         private static Material _particleMat;
@@ -424,6 +432,8 @@ namespace EdgeParty.Gameplay.Character
             headMultiplier.OnValueChanged -= OnMultiplierChanged;
             tailMultiplier.OnValueChanged -= OnMultiplierChanged;
             TeamID.OnValueChanged -= OnTeamChanged;
+            
+            currentHeldItemNetVar.OnValueChanged -= OnHeldItemChanged;
 
             if (IsServer && NetworkManager != null && NetworkManager.SceneManager != null)
             {
@@ -665,11 +675,22 @@ namespace EdgeParty.Gameplay.Character
                 Vector3 throwDir = (finalAimDir + Vector3.up * 0.3f).normalized;
                 
                 // Server logical bomb (networked)
-                var bombGo = Instantiate(Resources.Load<GameObject>("BombBall"), spawnPos, Quaternion.identity);
-                var netObj = bombGo.GetComponent<NetworkObject>();
-                netObj.Spawn();
+                var prefab = Resources.Load<GameObject>("BombBall");
+                NetworkObject bombNetObj = null;
 
-                var bombItem = bombGo.GetComponent<BombItem>();
+                if (EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton != null && prefab != null)
+                {
+                    bombNetObj = EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton.GetNetworkObject(prefab, spawnPos, Quaternion.identity);
+                    if (!bombNetObj.IsSpawned) bombNetObj.Spawn();
+                }
+                else
+                {
+                    var bombGo = Instantiate(prefab, spawnPos, Quaternion.identity);
+                    bombNetObj = bombGo.GetComponent<NetworkObject>();
+                    bombNetObj.Spawn();
+                }
+
+                var bombItem = bombNetObj.GetComponent<BombItem>();
                 if (bombItem != null)
                 {
                     bombItem.ThrowBomb(throwDir, 12f, this);
