@@ -75,10 +75,32 @@ namespace EdgeParty.Core
         [SerializeField] private AudioMixerGroup sfxMixerGroup; // (Tùy chọn) Mixer để quản lý nhóm âm thanh, nếu cần thiết.
         [SerializeField] private AudioMixerGroup musicMixerGroup; // (Tùy chọn) Mixer để quản lý nhóm nhạc nền, nếu cần thiết.
 
+        // ─── BGM Per-Scene Config ─────────────────────────────────────
+
+        [System.Serializable]
+        public class SceneBGM
+        {
+            [Tooltip("Tên scene (case-insensitive, dùng Contains)")]
+            public string sceneNameContains;
+            [Tooltip("Tên clip trong soundMap để phát khi vào scene này")]
+            public string bgmClipName;
+        }
+
+        [Header("BGM theo Scene")]
+        [Tooltip("Mỗi entry: scene nào thì phát BGM nào. Để trống để auto-detect.")]
+        [SerializeField] private SceneBGM[] sceneBGMs;
+
+        // Tên clip mặc định cho MainMenu và in-game (auto-detect từ Resources/Audios)
+        private const string MainMenuBGMHint = "Colossal"; // matches "Aylex - Colossal (freetouse.com)"
+        private const string InGameBGMHint   = "goofy";   // matches "goofy ahh bgm"
+
+        // Scene keywords nào thì được coi là in-game (không phải menu)
+        private static readonly string[] InGameSceneKeywords = { "Sample", "Game", "Map", "Forest", "Playground", "Level" };
+
         // ─── Audio Sources ────────────────────────────────────────────
 
         [Header("Volume")]
-        [Range(0f, 1f)] [SerializeField] private float musicVolume = 0.5f;
+        [Range(0f, 1f)] [SerializeField] private float musicVolume = 0.1f;
         [Range(0f, 1f)] [SerializeField] private float sfxVolume    = 1f;
 
         private AudioSource _musicSource;
@@ -164,6 +186,58 @@ namespace EdgeParty.Core
                         _soundMap[clipName] = s;
                     }
                 }
+            }
+
+        }
+
+        private void Start()
+        {
+            // Phát một bài BGM duy nhất suốt cả game, không đổi theo scene
+            PlaySingleBGM();
+        }
+
+        /// <summary>Phát BGM duy nhất (goofy ahh bgm). Nếu đang phát rồi thì không restart.</summary>
+        private void PlaySingleBGM()
+        {
+            if (_soundMap == null || _musicSource == null) return;
+            if (_musicSource.isPlaying) return; // Đã có nhạc rồi, không làm gì
+
+            // Tìm clip theo hint "goofy"
+            AudioClip target = null;
+            foreach (var kv in _soundMap)
+            {
+                if (kv.Value.clip != null &&
+                    kv.Key.IndexOf(InGameBGMHint, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    target = kv.Value.clip;
+                    break;
+                }
+            }
+
+            // Fallback: bất kỳ clip isMusic nào
+            if (target == null)
+            {
+                foreach (var kv in _soundMap)
+                {
+                    if (kv.Value.isMusic && kv.Value.clip != null)
+                    {
+                        target = kv.Value.clip;
+                        break;
+                    }
+                }
+            }
+
+            if (target != null)
+            {
+                _musicSource.clip   = target;
+                _musicSource.pitch  = 1f;
+                _musicSource.volume = musicVolume;
+                _musicSource.Play();
+                Debug.Log($"[AudioManager] BGM bắt đầu: \"{target.name}\"");
+            }
+            else
+            {
+                Debug.LogWarning("[AudioManager] Không tìm thấy clip BGM nào trong Resources/Audios.");
             }
         }
 
@@ -336,9 +410,95 @@ namespace EdgeParty.Core
 
         private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
         {
-            // Always unpause audio when a new scene loads (reset any in-game mute state)
+            // Always unpause audio when a new scene loads
             AudioListener.pause = false;
             StartCoroutine(EnsureAudioListenerDelayed());
+            // Không switch BGM — một bài duy nhất suốt game
+        }
+
+        /// <summary>Chọn và phát BGM phù hợp với tên scene.</summary>
+        private void PlayBGMForScene(string sceneName)
+        {
+            if (_soundMap == null || _musicSource == null) return;
+
+            // 1) Ưu tiên config thủ công trong sceneBGMs
+            if (sceneBGMs != null)
+            {
+                foreach (var entry in sceneBGMs)
+                {
+                    if (!string.IsNullOrEmpty(entry.sceneNameContains) &&
+                        sceneName.IndexOf(entry.sceneNameContains, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        if (_soundMap.TryGetValue(entry.bgmClipName, out var s))
+                        {
+                            PlayBGMClipDirect(s.clip);
+                            Debug.Log($"[AudioManager] BGM → \"{s.clip.name}\" (scene: {sceneName})");
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 2) Auto-detect dùng danh sách InGameSceneKeywords
+            //    Nếu tên scene chứa bất kỳ keyword nào → in-game (goofy ahh bgm)
+            //    Còn lại → menu (Colossal)
+            bool isInGame = false;
+            foreach (var keyword in InGameSceneKeywords)
+            {
+                if (sceneName.IndexOf(keyword, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    isInGame = true;
+                    break;
+                }
+            }
+
+            string hint = isInGame ? InGameBGMHint : MainMenuBGMHint;
+            Debug.Log($"[AudioManager] Scene \"{sceneName}\" → {(isInGame ? "InGame" : "Menu")} BGM (hint: {hint})");
+
+            AudioClip bestClip = null;
+            foreach (var kv in _soundMap)
+            {
+                if (kv.Value.clip != null &&
+                    kv.Key.IndexOf(hint, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    bestClip = kv.Value.clip;
+                    break;
+                }
+            }
+
+            // Fallback: không tìm được theo hint → lấy clip isMusic đầu tiên
+            if (bestClip == null)
+            {
+                foreach (var kv in _soundMap)
+                {
+                    if (kv.Value.isMusic && kv.Value.clip != null)
+                    {
+                        bestClip = kv.Value.clip;
+                        break;
+                    }
+                }
+            }
+
+            if (bestClip != null)
+            {
+                PlayBGMClipDirect(bestClip);
+                Debug.Log($"[AudioManager] BGM → \"{bestClip.name}\" (scene: {sceneName})");
+            }
+            else
+            {
+                Debug.LogWarning($"[AudioManager] Không tìm thấy clip BGM nào cho scene: {sceneName}");
+            }
+        }
+
+        /// <summary>Phát clip nhạc nền trực tiếp, skip nếu đang phát cùng bài.</summary>
+        private void PlayBGMClipDirect(AudioClip clip)
+        {
+            if (clip == null || _musicSource == null) return;
+            if (_musicSource.clip == clip && _musicSource.isPlaying) return;
+            _musicSource.clip   = clip;
+            _musicSource.pitch  = 1f;
+            _musicSource.volume = musicVolume;
+            _musicSource.Play();
         }
 
         private System.Collections.IEnumerator EnsureAudioListenerDelayed()

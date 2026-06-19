@@ -152,7 +152,7 @@ public class SettingsMenu : MonoBehaviour
         }
 
         BindSlider("SliderMaster", "LabelMasterValue", "MasterVolume", 80, "%");
-        BindSlider("SliderMusic", "LabelMusicValue", "MusicVolume", 65, "%");
+        BindSlider("SliderMusic", "LabelMusicValue", "MusicVolume", 5, "%");
         BindSlider("SliderSFX", "LabelSFXValue", "SFXVolume", 100, "%");
         BindSlider("SliderFPSLimit", "LabelFPSLimitValue", "FPSLimit", 144, " FPS");
         BindSlider("SliderSensitivityX", "LabelSensitivityXValue", "CameraSensitivityX", 50, "");
@@ -677,7 +677,14 @@ public class SettingsMenu : MonoBehaviour
     {
         // 1. Audio
         float master = PlayerPrefs.GetFloat("MasterVolume", 80f) / 100f;
-        float music = PlayerPrefs.GetFloat("MusicVolume", 65f) / 100f;
+        // Migration: nếu giá trị cũ quá lớn (default cũ là 65), reset về 5
+        if (PlayerPrefs.HasKey("MusicVolume") && PlayerPrefs.GetFloat("MusicVolume") > 10f)
+        {
+            PlayerPrefs.SetFloat("MusicVolume", 5f);
+            PlayerPrefs.Save();
+        }
+
+        float music = PlayerPrefs.GetFloat("MusicVolume", 5f) / 100f;
         float sfx = PlayerPrefs.GetFloat("SFXVolume", 100f) / 100f;
 
         ApplyMasterVolume(master);
