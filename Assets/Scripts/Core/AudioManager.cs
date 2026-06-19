@@ -61,6 +61,9 @@ namespace EdgeParty.Core
 
         private AudioSource _musicSource;
         private AudioSource _sfxSource;
+        private List<AudioSource> _sfxSourcePool;
+        private int _nextPoolIndex = 0;
+        private const int PoolSize = 6;
 
         // Lookup nhanh bằng Dictionary (O(1))
         private Dictionary<string, Sound> _soundMap;
@@ -85,12 +88,22 @@ namespace EdgeParty.Core
             _musicSource.playOnAwake  = false;
             _musicSource.outputAudioMixerGroup = musicMixerGroup; // (Tùy chọn) Gán vào mixer nếu có
 
-            // Tạo AudioSource cho SFX
-            _sfxSource                = gameObject.AddComponent<AudioSource>();
-            _sfxSource.loop           = false;
-            _sfxSource.volume         = sfxVolume;
-            _sfxSource.outputAudioMixerGroup = sfxMixerGroup; // (Tùy chọn) Gán vào mixer nếu có
-            _sfxSource.playOnAwake    = false;
+            // Tạo pool AudioSource cho SFX
+            _sfxSourcePool = new List<AudioSource>();
+            for (int i = 0; i < PoolSize; i++)
+            {
+                var source = gameObject.AddComponent<AudioSource>();
+                source.loop = false;
+                source.volume = sfxVolume;
+                source.outputAudioMixerGroup = sfxMixerGroup;
+                source.playOnAwake = false;
+                _sfxSourcePool.Add(source);
+            }
+            
+            if (_sfxSourcePool.Count > 0)
+            {
+                _sfxSource = _sfxSourcePool[0];
+            }
 
             // Build Dictionary
             _soundMap = new Dictionary<string, Sound>(StringComparer.OrdinalIgnoreCase);
@@ -113,9 +126,14 @@ namespace EdgeParty.Core
         public void PlaySFX(string soundName)
         {
             if (!TryGetSound(soundName, out var s)) return;
-            _sfxSource.pitch  = s.pitch;
-            _sfxSource.volume = s.volume * sfxVolume;
-            _sfxSource.PlayOneShot(s.clip);
+            if (_sfxSourcePool == null || _sfxSourcePool.Count == 0) return;
+
+            var source = _sfxSourcePool[_nextPoolIndex];
+            _nextPoolIndex = (_nextPoolIndex + 1) % _sfxSourcePool.Count;
+
+            source.pitch  = s.pitch;
+            source.volume = s.volume * sfxVolume;
+            source.PlayOneShot(s.clip);
         }
 
         /// <summary>Phát nhạc nền (tự động dừng bài cũ nếu đang chạy).</summary>
@@ -136,7 +154,16 @@ namespace EdgeParty.Core
         public void StopMusic() => _musicSource.Stop();
 
         /// <summary>Dừng tất cả SFX đang phát.</summary>
-        public void StopAllSFX() => _sfxSource.Stop();
+        public void StopAllSFX()
+        {
+            if (_sfxSourcePool != null)
+            {
+                foreach (var source in _sfxSourcePool)
+                {
+                    if (source != null) source.Stop();
+                }
+            }
+        }
 
         /// <summary>Cập nhật âm lượng nhạc nền (0–1).</summary>
         public void SetMusicVolume(float volume)
@@ -148,8 +175,14 @@ namespace EdgeParty.Core
         /// <summary>Cập nhật âm lượng SFX (0–1).</summary>
         public void SetSFXVolume(float volume)
         {
-            sfxVolume           = Mathf.Clamp01(volume);
-            _sfxSource.volume   = sfxVolume;
+            sfxVolume = Mathf.Clamp01(volume);
+            if (_sfxSourcePool != null)
+            {
+                foreach (var source in _sfxSourcePool)
+                {
+                    if (source != null) source.volume = sfxVolume;
+                }
+            }
         }
 
         /// <summary>Kiểm tra xem nhạc nền có đang phát không.</summary>
@@ -168,7 +201,13 @@ namespace EdgeParty.Core
         private void OnValidate()
         {
             if (_musicSource != null) _musicSource.volume = musicVolume;
-            if (_sfxSource   != null) _sfxSource.volume   = sfxVolume;
+            if (_sfxSourcePool != null)
+            {
+                foreach (var source in _sfxSourcePool)
+                {
+                    if (source != null) source.volume = sfxVolume;
+                }
+            }
         }
     }
 }

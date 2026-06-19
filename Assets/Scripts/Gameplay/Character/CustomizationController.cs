@@ -19,6 +19,9 @@ namespace EdgeParty.Gameplay.Character
         private enum Category { Hats, Glasses, Neck, Faces, Colors }
         private Category currentCategory = Category.Hats;
 
+        private float _lastClickTime = -1f;
+        private float _lastHoverTime = -1f;
+
         void OnEnable()
         {
             // If StitchUIController is missing, we are in a gameplay scene, so disable and deactivate this popup.
@@ -83,14 +86,18 @@ namespace EdgeParty.Gameplay.Character
                 }
             }
 
-            root.Q<Button>("BackButton")?.RegisterCallback<ClickEvent>(evt => {
-                gameObject.SetActive(false);
-                var mainUI = Object.FindAnyObjectByType<StitchUIController>();
-                if (mainUI != null)
-                {
-                    mainUI.HideLocker();
-                }
-            });
+            var btnBack = root.Q<Button>("BackButton");
+            if (btnBack != null)
+            {
+                RegisterHoverAndClick(btnBack, () => {
+                    gameObject.SetActive(false);
+                    var mainUI = Object.FindAnyObjectByType<StitchUIController>();
+                    if (mainUI != null)
+                    {
+                        mainUI.HideLocker();
+                    }
+                });
+            }
             
             SetupCategoryButton("BtnHats", Category.Hats);
             SetupCategoryButton("BtnGlasses", Category.Glasses);
@@ -134,10 +141,49 @@ namespace EdgeParty.Gameplay.Character
         private void SetupCategoryButton(string name, Category cat)
         {
             var btn = root.Q<Button>(name);
-            btn?.RegisterCallback<ClickEvent>(evt => {
-                currentCategory = cat;
-                UpdateCategoryVisuals();
-                RefreshGrid();
+            if (btn != null)
+            {
+                RegisterHoverAndClick(btn, () => {
+                    currentCategory = cat;
+                    UpdateCategoryVisuals();
+                    RefreshGrid();
+                });
+            }
+        }
+
+        private void RegisterHoverAndClick(Button btn, System.Action onClickAction)
+        {
+            if (btn == null) return;
+
+            btn.RegisterCallback<PointerEnterEvent>(_ => {
+                if (Time.unscaledTime - _lastClickTime < 0.2f) return;
+                if (Time.unscaledTime - _lastHoverTime < 0.15f) return;
+                _lastHoverTime = Time.unscaledTime;
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX("Hover");
+            });
+
+            btn.clicked += () => {
+                _lastClickTime = Time.unscaledTime;
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
+                onClickAction?.Invoke();
+            };
+        }
+
+        private void RegisterHoverAndClick(VisualElement el, System.Action onClickAction)
+        {
+            if (el == null) return;
+
+            el.RegisterCallback<PointerEnterEvent>(_ => {
+                if (Time.unscaledTime - _lastClickTime < 0.2f) return;
+                if (Time.unscaledTime - _lastHoverTime < 0.15f) return;
+                _lastHoverTime = Time.unscaledTime;
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX("Hover");
+            });
+
+            el.RegisterCallback<ClickEvent>(_ => {
+                _lastClickTime = Time.unscaledTime;
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
+                onClickAction?.Invoke();
             });
         }
 
@@ -320,13 +366,13 @@ namespace EdgeParty.Gameplay.Character
                 lockIcon.style.color = new StyleColor(new Color(0.4f, 0.3f, 0.2f));
                 card.Add(lockIcon);
 
-                card.RegisterCallback<ClickEvent>(evt => {
+                RegisterHoverAndClick(card, () => {
                     Debug.Log($"[CustomizationController] {itemName} is locked. Purchase it in the Shop!");
                 });
             }
             else
             {
-                card.RegisterCallback<ClickEvent>(evt => ApplySelection(index));
+                RegisterHoverAndClick(card, () => ApplySelection(index));
             }
             
             itemGrid.Add(card);

@@ -34,7 +34,11 @@ public class SettingsMenu : MonoBehaviour
     }
     private bool _isInitialized;
     private VisualElement _root;
+    private VisualElement _settingsOverlay;
     private string _activeTab = "audio";
+
+    private float _lastClickTime = -1f;
+    private float _lastHoverTime = -1f;
 
     private string _rebindingActionName = null;
     private Button _rebindingButton = null;
@@ -97,10 +101,13 @@ public class SettingsMenu : MonoBehaviour
     public void InitializeWithRoot(VisualElement root)
     {
         if (root == null) return;
-        if (_isInitialized)
+        VisualElement overlay = root.Q<VisualElement>("SettingsOverlay");
+        if (overlay == null) return;
+        if (_settingsOverlay == overlay)
             return;
-        _isInitialized = true;
+        _settingsOverlay = overlay;
         _root = root;
+        _toggleStates.Clear();
 
         BindTabButton("TabAudio", "audio"); 
         BindTabButton("TabGraphics", "graphics");
@@ -110,22 +117,19 @@ public class SettingsMenu : MonoBehaviour
         var btnBack = _root.Q<Button>("BtnBack");
         if (btnBack != null)
         {
-            btnBack.clicked -= HandleBackButton;
-            btnBack.clicked += HandleBackButton;
+            RegisterHoverAndClick(btnBack, HandleBackButton);
         }
 
         var btnResetDefaults = _root.Q<Button>("BtnResetDefaults");
         if (btnResetDefaults != null)
         {
-            btnResetDefaults.clicked -= ResetToDefaults;
-            btnResetDefaults.clicked += ResetToDefaults;
+            RegisterHoverAndClick(btnResetDefaults, ResetToDefaults);
         }
 
         var btnSaveChanges = _root.Q<Button>("BtnSaveChanges");
         if (btnSaveChanges != null)
         {
-            btnSaveChanges.clicked -= SaveChanges;
-            btnSaveChanges.clicked += SaveChanges;
+            RegisterHoverAndClick(btnSaveChanges, SaveChanges);
         }
 
         BindSlider("SliderMaster", "LabelMasterValue", "MasterVolume", 80, "%");
@@ -147,8 +151,8 @@ public class SettingsMenu : MonoBehaviour
         var btnModeOpenMic = _root.Q<Button>("BtnModeOpenMic");
         if (btnModePTT != null && btnModeOpenMic != null)
         {
-            btnModePTT.clicked += () => SetTransmissionMode(true);
-            btnModeOpenMic.clicked += () => SetTransmissionMode(false);
+            RegisterHoverAndClick(btnModePTT, () => SetTransmissionMode(true));
+            RegisterHoverAndClick(btnModeOpenMic, () => SetTransmissionMode(false));
         }
 
         SetupDropdowns();
@@ -171,12 +175,43 @@ public class SettingsMenu : MonoBehaviour
         CaptureInitialValues();
     }
 
+    private void RegisterHoverAndClick(Button btn, System.Action onClickAction)
+    {
+        if (btn == null) return;
+
+        btn.RegisterCallback<PointerEnterEvent>(_ =>
+        {
+            if (Time.unscaledTime - _lastClickTime < 0.2f) return;
+            if (Time.unscaledTime - _lastHoverTime < 0.15f) return;
+            _lastHoverTime = Time.unscaledTime;
+            EdgeParty.Core.AudioManager.Instance?.PlaySFX("Hover");
+        });
+
+        if (onClickAction != null)
+        {
+            btn.clicked += () =>
+            {
+                _lastClickTime = Time.unscaledTime;
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
+                onClickAction.Invoke();
+            };
+        }
+        else
+        {
+            btn.clicked += () =>
+            {
+                _lastClickTime = Time.unscaledTime;
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
+            };
+        }
+    }
+
     private void BindTabButton(string buttonName, string tabName)
     {
         var btn = _root.Q<Button>(buttonName);
         if (btn != null)
         {
-            btn.clicked += () => SwitchTab(tabName);
+            RegisterHoverAndClick(btn, () => SwitchTab(tabName));
         }
     }
 
@@ -215,7 +250,16 @@ public class SettingsMenu : MonoBehaviour
                 bool currentVal = _toggleStates.ContainsKey(toggle) ? _toggleStates[toggle] : false;
                 bool newVal = !currentVal;
                 SetToggleVisualState(toggle, newVal);
+                _lastClickTime = Time.unscaledTime;
                 EdgeParty.Core.AudioManager.Instance?.PlaySFX("Click");
+            });
+
+            toggle.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                if (Time.unscaledTime - _lastClickTime < 0.2f) return;
+                if (Time.unscaledTime - _lastHoverTime < 0.15f) return;
+                _lastHoverTime = Time.unscaledTime;
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX("Hover");
             });
         }
     }
@@ -405,7 +449,7 @@ public class SettingsMenu : MonoBehaviour
             string savedKey = PlayerPrefs.GetString(prefKey, defaultKey);
             btn.text = savedKey;
 
-            btn.clicked += () => StartRebinding(prefKey, btn);
+            RegisterHoverAndClick(btn, () => StartRebinding(prefKey, btn));
         }
     }
 

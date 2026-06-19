@@ -80,6 +80,9 @@ namespace EdgeParty.UI
         private const string SoundClick = "Click";
         private const string SoundHover = "Hover";
 
+        private float _lastClickTime = -1f;
+        private float _lastHoverTime = -1f;
+
         // State variables for binding demonstration
         private int _currentCoins = 1240;
         private int _onlineFriendsCount = 5;
@@ -1035,6 +1038,7 @@ namespace EdgeParty.UI
 
                         if (!insideDrawer)
                         {
+                            _lastClickTime = Time.unscaledTime;
                             EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                             drawer.RemoveFromClassList("friends-drawer-open");
                             var area = _root.Q<VisualElement>("platforms-area");
@@ -1257,14 +1261,13 @@ namespace EdgeParty.UI
             okBtn.style.borderBottomLeftRadius = 20;
             okBtn.style.borderBottomRightRadius = 20;
 
-            okBtn.clicked += () => {
-                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+            RegisterHoverAndClick(okBtn, () => {
                 var overlay = _root.Q<VisualElement>("modal-overlay");
                 if (overlay != null)
                 {
                     _root.Remove(overlay);
                 }
-            };
+            });
 
             card.Add(okBtn);
         }
@@ -1349,7 +1352,10 @@ namespace EdgeParty.UI
                     : new StyleColor(new Color(0.56f, 0.30f, 0f, 0.7f)); // rgba(144, 77, 0, 0.7) (inactive)
             }
 
-            RegisterHoverAndClick(tabButton, onClickAction);
+            if (!isActive)
+            {
+                RegisterHoverAndClick(tabButton, onClickAction);
+            }
         }
 
         // Shared header navigation tab bindings
@@ -1363,26 +1369,38 @@ namespace EdgeParty.UI
 
             if (tabHomeHeader != null)
             {
-                if (activeHeaderTab == "tab-home") tabHomeHeader.AddToClassList("active-header-tab");
+                bool isActive = (activeHeaderTab == "tab-home");
+                if (isActive) tabHomeHeader.AddToClassList("active-header-tab");
                 else tabHomeHeader.RemoveFromClassList("active-header-tab");
 
-                RegisterHoverAndClick(tabHomeHeader, ShowHome);
+                if (!isActive)
+                {
+                    RegisterHoverAndClick(tabHomeHeader, ShowHome);
+                }
             }
 
             if (tabMatchmaking != null)
             {
-                if (activeHeaderTab == "tab-matchmaking") tabMatchmaking.AddToClassList("active-header-tab");
+                bool isActive = (activeHeaderTab == "tab-matchmaking");
+                if (isActive) tabMatchmaking.AddToClassList("active-header-tab");
                 else tabMatchmaking.RemoveFromClassList("active-header-tab");
 
-                RegisterHoverAndClick(tabMatchmaking, ShowMatchmaking);
+                if (!isActive)
+                {
+                    RegisterHoverAndClick(tabMatchmaking, ShowMatchmaking);
+                }
             }
 
             if (tabEvents != null)
             {
-                if (activeHeaderTab == "tab-events") tabEvents.AddToClassList("active-header-tab");
+                bool isActive = (activeHeaderTab == "tab-events");
+                if (isActive) tabEvents.AddToClassList("active-header-tab");
                 else tabEvents.RemoveFromClassList("active-header-tab");
 
-                RegisterHoverAndClick(tabEvents, null);
+                if (!isActive)
+                {
+                    RegisterHoverAndClick(tabEvents, null);
+                }
             }
 
             if (btnToll != null)
@@ -1420,11 +1438,16 @@ namespace EdgeParty.UI
             if (btn == null) return;
             
             // PointerEnter (Hover) Trigger
-            btn.RegisterCallback<PointerEnterEvent>(_ =>
-                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundHover));
+            btn.RegisterCallback<PointerEnterEvent>(_ => {
+                if (Time.unscaledTime - _lastClickTime < 0.2f) return;
+                if (Time.unscaledTime - _lastHoverTime < 0.15f) return;
+                _lastHoverTime = Time.unscaledTime;
+                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundHover);
+            });
 
             // Click Trigger
             btn.clicked += () => {
+                _lastClickTime = Time.unscaledTime;
                 EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                 onClickAction?.Invoke();
             };
@@ -1952,9 +1975,8 @@ namespace EdgeParty.UI
                             inviteBtn.style.width = 48;
                             inviteBtn.style.fontSize = 11;
                             
-                            inviteBtn.clicked += async () =>
+                            RegisterHoverAndClick(inviteBtn, async () =>
                             {
-                                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                                 if (FriendLobbyService.Instance != null)
                                 {
                                     bool ok = await FriendLobbyService.Instance.JoinLobbyByCodeAsync(activeInvite.LobbyCode);
@@ -1964,7 +1986,7 @@ namespace EdgeParty.UI
                                         ShowMatchmaking();
                                     }
                                 }
-                            };
+                            });
                         }
                         else
                         {
@@ -1973,14 +1995,13 @@ namespace EdgeParty.UI
                             inviteBtn.AddToClassList("friend-add-btn");
                             inviteBtn.style.width = 32;
                             
-                            inviteBtn.clicked += async () =>
+                            RegisterHoverAndClick(inviteBtn, async () =>
                             {
-                                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                                 if (FriendLobbyService.Instance != null)
                                 {
                                     await FriendLobbyService.Instance.SendLobbyInviteAsync(friend.Id, friend.Username);
                                 }
-                            };
+                            });
                         }
                         row.Add(inviteBtn);
                     }
@@ -2041,11 +2062,10 @@ namespace EdgeParty.UI
                         acceptBtn.AddToClassList("btn-primary-3d");
                         acceptBtn.style.width = 32;
                         acceptBtn.style.height = 32;
-                        acceptBtn.clicked += async () =>
+                        RegisterHoverAndClick(acceptBtn, async () =>
                         {
-                            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                             await FriendLobbyService.Instance.AcceptFriendRequestAsync(req.Id);
-                        };
+                        });
                         actions.Add(acceptBtn);
 
                         Button declineBtn = new Button();
@@ -2055,11 +2075,10 @@ namespace EdgeParty.UI
                         declineBtn.style.width = 32;
                         declineBtn.style.height = 32;
                         declineBtn.style.marginLeft = 4;
-                        declineBtn.clicked += async () =>
+                        RegisterHoverAndClick(declineBtn, async () =>
                         {
-                            EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                             await FriendLobbyService.Instance.DeclineFriendRequestAsync(req.Id);
-                        };
+                        });
                         actions.Add(declineBtn);
 
                         row.Add(actions);
@@ -2252,11 +2271,10 @@ namespace EdgeParty.UI
             closeBtn.style.paddingLeft = 0;
             closeBtn.style.paddingRight = 0;
             
-            closeBtn.clicked += () => {
-                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+            RegisterHoverAndClick(closeBtn, () => {
                 _root.Remove(overlay);
                 onClose?.Invoke();
-            };
+            });
             header.Add(closeBtn);
             card.Add(header);
 
@@ -2362,9 +2380,7 @@ namespace EdgeParty.UI
                 buyBtn.style.paddingTop = 0;
                 buyBtn.style.paddingBottom = 0;
                 
-                buyBtn.clicked += async () => {
-                    EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
-                    
+                RegisterHoverAndClick(buyBtn, async () => {
                     var csm = CloudSaveManager.Instance;
                     if (csm != null)
                     {
@@ -2380,7 +2396,7 @@ namespace EdgeParty.UI
                     }
                     
                     Debug.Log($"Simulated recharge: added {pkg.coins} coins. New total: {_currentCoins}");
-                };
+                });
                 
                 pkgCard.Add(buyBtn);
                 grid.Add(pkgCard);
@@ -2445,8 +2461,7 @@ namespace EdgeParty.UI
             submitBtn.style.borderBottomLeftRadius = 24;
             submitBtn.style.borderBottomRightRadius = 24;
 
-            submitBtn.clicked += async () => {
-                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+            RegisterHoverAndClick(submitBtn, async () => {
                 string username = inputField.value;
                 if (string.IsNullOrEmpty(username))
                 {
@@ -2476,7 +2491,7 @@ namespace EdgeParty.UI
                     statusLabel.text = "Failed to send request.";
                     statusLabel.style.color = new StyleColor(new Color(0.7f, 0.1f, 0.1f));
                 }
-            };
+            });
 
             card.Add(submitBtn);
         }
@@ -2560,15 +2575,14 @@ namespace EdgeParty.UI
                     acceptBtn.style.paddingBottom = 0;
                     acceptBtn.style.paddingLeft = 0;
                     acceptBtn.style.paddingRight = 0;
-                    acceptBtn.clicked += async () => {
-                        EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                    RegisterHoverAndClick(acceptBtn, async () => {
                         bool ok = await FriendLobbyService.Instance.AcceptFriendRequestAsync(req.Id);
                         if (ok)
                         {
                             populateList();
                             ApplyDataBindings();
                         }
-                    };
+                    });
                     actions.Add(acceptBtn);
 
                     Button declineBtn = new Button();
@@ -2583,15 +2597,14 @@ namespace EdgeParty.UI
                     declineBtn.style.paddingBottom = 0;
                     declineBtn.style.paddingLeft = 0;
                     declineBtn.style.paddingRight = 0;
-                    declineBtn.clicked += async () => {
-                        EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
+                    RegisterHoverAndClick(declineBtn, async () => {
                         bool ok = await FriendLobbyService.Instance.DeclineFriendRequestAsync(req.Id);
                         if (ok)
                         {
                             populateList();
                             ApplyDataBindings();
                         }
-                    };
+                    });
                     actions.Add(declineBtn);
 
                     row.Add(actions);
@@ -2653,13 +2666,12 @@ namespace EdgeParty.UI
                         acceptBtn.AddToClassList("btn-primary-3d");
                         acceptBtn.style.flexGrow = 1;
                          bool isJoining = false;
-                        acceptBtn.clicked += async () => {
+                        RegisterHoverAndClick(acceptBtn, async () => {
                             if (isJoining) return;
                             isJoining = true;
                             acceptBtn.SetEnabled(false);
                             try
                             {
-                                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                                 if (FriendLobbyService.Instance != null)
                                 {
                                     bool ok = await FriendLobbyService.Instance.JoinLobbyByCodeAsync(activeInvite.LobbyCode);
@@ -2679,7 +2691,7 @@ namespace EdgeParty.UI
                                 isJoining = false;
                                 acceptBtn.SetEnabled(true);
                             }
-                        };
+                        });
                         buttonsRow.Add(acceptBtn);
  
                         var declineBtn = new Button();
@@ -2702,10 +2714,9 @@ namespace EdgeParty.UI
                         declineBtn.style.borderLeftColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
                         declineBtn.style.borderRightColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
                         declineBtn.style.color = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
-                        declineBtn.clicked += () => {
+                        RegisterHoverAndClick(declineBtn, () => {
                             try
                             {
-                                EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                                 if (FriendLobbyService.Instance != null)
                                 {
                                     FriendLobbyService.Instance.ClearInvite();
@@ -2715,7 +2726,7 @@ namespace EdgeParty.UI
                             {
                                 Debug.LogWarning($"[StitchUIController] Error declining sidebar invite: {ex.Message}");
                             }
-                        };
+                        });
                         buttonsRow.Add(declineBtn);
                     }
 
@@ -2802,13 +2813,12 @@ namespace EdgeParty.UI
                 acceptBtn.style.borderBottomRightRadius = 12;
                 acceptBtn.style.marginRight = 6;
                 bool isJoiningPopup = false;
-                acceptBtn.clicked += async () => {
+                RegisterHoverAndClick(acceptBtn, async () => {
                     if (isJoiningPopup) return;
                     isJoiningPopup = true;
                     acceptBtn.SetEnabled(false);
                     try
                     {
-                        EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                         if (FriendLobbyService.Instance != null)
                         {
                             bool ok = await FriendLobbyService.Instance.JoinLobbyByCodeAsync(activeInvite.LobbyCode);
@@ -2828,7 +2838,7 @@ namespace EdgeParty.UI
                         isJoiningPopup = false;
                         acceptBtn.SetEnabled(true);
                     }
-                };
+                });
                 pButtonsRow.Add(acceptBtn);
  
                 var declineBtn = new Button();
@@ -2848,10 +2858,9 @@ namespace EdgeParty.UI
                 declineBtn.style.borderLeftColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
                 declineBtn.style.borderRightColor = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
                 declineBtn.style.color = new StyleColor(new Color(0.73f, 0.1f, 0.1f));
-                declineBtn.clicked += () => {
+                RegisterHoverAndClick(declineBtn, () => {
                     try
                     {
-                        EdgeParty.Core.AudioManager.Instance?.PlaySFX(SoundClick);
                         if (FriendLobbyService.Instance != null)
                         {
                             FriendLobbyService.Instance.ClearInvite();
@@ -2861,7 +2870,7 @@ namespace EdgeParty.UI
                     {
                         Debug.LogWarning($"[StitchUIController] Error declining bottom invite: {ex.Message}");
                     }
-                };
+                });
                 pButtonsRow.Add(declineBtn);
 
                 popupInvite.Add(pButtonsRow);
