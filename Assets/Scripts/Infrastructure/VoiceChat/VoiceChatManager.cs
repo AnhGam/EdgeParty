@@ -244,7 +244,8 @@ namespace EdgeParty.Infrastructure.VoiceChat
                 string pttKeyName = PlayerPrefs.GetString("KeybindPTT", "V");
                 string mappedPTTKey = MapKeyCodeToKeyName(pttKeyName);
                 if (UnityEngine.InputSystem.Keyboard.current != null && 
-                    System.Enum.TryParse(mappedPTTKey, true, out UnityEngine.InputSystem.Key pttKey))
+                    System.Enum.TryParse(mappedPTTKey, true, out UnityEngine.InputSystem.Key pttKey) &&
+                    pttKey != UnityEngine.InputSystem.Key.None)
                 {
                     bool isPressed = UnityEngine.InputSystem.Keyboard.current[pttKey].isPressed;
                     if (isPressed)

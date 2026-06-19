@@ -70,8 +70,8 @@ namespace EdgeParty.Gameplay.Camera
                 return; // Skip locking logic below
             }
 
-            // Toggle cursor lock with Escape
-            if (Keyboard.current.escapeKey.wasPressedThisFrame)
+            // Toggle cursor lock with Escape (delegated to HUDController if present)
+            if (Keyboard.current.escapeKey.wasPressedThisFrame && HUDController.Instance == null)
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;

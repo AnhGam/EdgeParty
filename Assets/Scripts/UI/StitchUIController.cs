@@ -412,6 +412,10 @@ namespace EdgeParty.UI
         public void ShowSettings()
         {
             if (_lockerInstance != null) _lockerInstance.SetActive(false);
+            if (settingsVisualTree == null)
+            {
+                settingsVisualTree = Resources.Load<VisualTreeAsset>("SettingsMenu");
+            }
             if (settingsVisualTree == null) return;
             SetNewScreen(settingsVisualTree.CloneTree());
 

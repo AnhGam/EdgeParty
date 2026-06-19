@@ -5,6 +5,8 @@ using System.Collections.Generic;
 
 public class HUDController : MonoBehaviour
 {
+    public static HUDController Instance { get; private set; }
+
     [SerializeField] private UIDocument uiDocument;
     [SerializeField] private Texture2D customCursor;
     
@@ -35,6 +37,8 @@ public class HUDController : MonoBehaviour
     private int fpsCount = 0;
     private float lastFps = 0f;
 
+    public bool IsSettingsOpen => (settingsMenu != null && settingsMenu.IsOpen) || (settingsPanel != null && settingsPanel.style.display == DisplayStyle.Flex);
+
     private void Start()
     {
         float musicVol = PlayerPrefs.GetFloat("MusicVolume", 1f);
@@ -48,6 +52,7 @@ public class HUDController : MonoBehaviour
 
     void OnEnable()
     {
+        Instance = this;
         if (uiDocument == null) uiDocument = GetComponent<UIDocument>();
         if (uiDocument == null) return;
 
@@ -138,9 +143,12 @@ public class HUDController : MonoBehaviour
                 SetCursorState(true);
             }
         }
-        else if (Keyboard.current != null && Keyboard.current.leftAltKey.wasReleasedThisFrame)
+        else
         {
-            SetCursorState(false);
+            if (UnityEngine.Cursor.visible || UnityEngine.Cursor.lockState != CursorLockMode.Locked)
+            {
+                SetCursorState(false);
+            }
         }
 
         // Update Ping and FPS counter if enabled
@@ -372,5 +380,10 @@ public class HUDController : MonoBehaviour
             if (AudioManager.Instance.sfxSource != null)
                 AudioManager.Instance.sfxSource.volume = sfxVol;
         }
+    }
+
+    private void OnDisable()
+    {
+        if (Instance == this) Instance = null;
     }
 }

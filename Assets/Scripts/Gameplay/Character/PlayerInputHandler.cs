@@ -153,6 +153,7 @@ namespace EdgeParty.Gameplay.Character
             
             if (System.Enum.TryParse(mappedName, true, out Key resultKey))
             {
+                if (resultKey == Key.None) return false;
                 return Keyboard.current[resultKey].isPressed;
             }
             return false;
@@ -166,6 +167,7 @@ namespace EdgeParty.Gameplay.Character
 
             if (System.Enum.TryParse(mappedName, true, out Key resultKey))
             {
+                if (resultKey == Key.None) return false;
                 return Keyboard.current[resultKey].wasPressedThisFrame;
             }
             return false;

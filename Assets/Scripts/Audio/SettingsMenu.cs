@@ -62,7 +62,8 @@ public class SettingsMenu : MonoBehaviour
 
     private void Start()
     {
-        if (uiDocument != null && uiDocument.rootVisualElement != null)
+        bool isSubMenu = GetComponent("StitchUIController") != null || GetComponent("HUDController") != null;
+        if (!isSubMenu && uiDocument != null && uiDocument.rootVisualElement != null)
         {
             InitializeWithRoot(uiDocument.rootVisualElement);
         }
@@ -73,7 +74,8 @@ public class SettingsMenu : MonoBehaviour
 
     private void OnEnable()
     {
-        if (uiDocument != null && uiDocument.rootVisualElement != null)
+        bool isSubMenu = GetComponent("StitchUIController") != null || GetComponent("HUDController") != null;
+        if (!isSubMenu && uiDocument != null && uiDocument.rootVisualElement != null)
         {
             InitializeWithRoot(uiDocument.rootVisualElement);
         }
@@ -101,9 +103,26 @@ public class SettingsMenu : MonoBehaviour
     public void InitializeWithRoot(VisualElement root)
     {
         if (root == null) return;
-        VisualElement overlay = root.Q<VisualElement>("SettingsOverlay");
+        VisualElement overlay = null;
+        if (root.name == "SettingsOverlay" || root.ClassListContains("settings-overlay"))
+        {
+            overlay = root;
+        }
+        else
+        {
+            overlay = root.Q<VisualElement>("SettingsOverlay");
+            if (overlay == null && root.childCount > 0)
+            {
+                var firstChild = root.hierarchy[0];
+                if (firstChild.name == "SettingsOverlay" || firstChild.ClassListContains("settings-overlay"))
+                {
+                    overlay = firstChild;
+                }
+            }
+        }
+
         if (overlay == null) return;
-        if (_settingsOverlay == overlay)
+        if (_settingsOverlay == overlay && _root == root)
             return;
         _settingsOverlay = overlay;
         _root = root;
@@ -139,7 +158,6 @@ public class SettingsMenu : MonoBehaviour
         BindSlider("SliderSensitivityX", "LabelSensitivityXValue", "CameraSensitivityX", 50, "");
         BindSlider("SliderSensitivityY", "LabelSensitivityYValue", "CameraSensitivityY", 50, "");
         BindCustomToggle("ToggleVoiceChat", "VoiceChatEnabled", true);
-        BindCustomToggle("ToggleMuteUnfocused", "MuteUnfocused", false);
         BindCustomToggle("ToggleVSync", "VSyncEnabled", true);
         BindCustomToggle("ToggleInvertX", "InvertCameraX", false);
         BindCustomToggle("ToggleInvertY", "InvertCameraY", false);
@@ -338,14 +356,7 @@ public class SettingsMenu : MonoBehaviour
                 dropdownInput.value = dropdownInput.choices[savedIndex];
         }
 
-        // 5. Voice Chat Playback Devices
-        var dropdownOutput = _root.Q<DropdownField>("DropdownOutputDevice");
-        if (dropdownOutput != null)
-        {
-            dropdownOutput.choices = new List<string> { "Default System Speakers", "Headphones (Rumble Pro)", "HDMI Audio Device" };
-            int savedIndex = PlayerPrefs.GetInt("VoiceOutputDeviceIndex", 0);
-            dropdownOutput.value = dropdownOutput.choices[savedIndex];
-        }
+
 
         // Dynamically fetch and populate voice devices from Vivox if possible
         PopulateVoiceDevicesAsync();
@@ -387,34 +398,7 @@ public class SettingsMenu : MonoBehaviour
                     dropdownInput.value = micChoices[0];
             }
 
-            // 2. Output Devices (Playback)
-            var dropdownOutput = _root?.Q<DropdownField>("DropdownOutputDevice");
-            if (dropdownOutput != null)
-            {
-                var outputDevices = VivoxService.Instance.AvailableOutputDevices;
-                var speakerChoices = new List<string>();
-                int selectedIndex = 0;
-                string savedName = PlayerPrefs.GetString("VoiceOutputDeviceName", "Default System Speakers");
 
-                speakerChoices.Add("Default System Speakers");
-                if (outputDevices != null)
-                {
-                    for (int i = 0; i < outputDevices.Count; i++)
-                    {
-                        string devName = outputDevices[i].DeviceName;
-                        speakerChoices.Add(devName);
-                        if (devName == savedName)
-                        {
-                            selectedIndex = i + 1; // 1-based index
-                        }
-                    }
-                }
-                dropdownOutput.choices = speakerChoices;
-                if (selectedIndex < speakerChoices.Count)
-                    dropdownOutput.value = speakerChoices[selectedIndex];
-                else
-                    dropdownOutput.value = speakerChoices[0];
-            }
         }
         catch (System.Exception ex)
         {
@@ -595,9 +579,7 @@ public class SettingsMenu : MonoBehaviour
         SaveSliderValue("SliderSensitivityX", "CameraSensitivityX");
         SaveSliderValue("SliderSensitivityY", "CameraSensitivityY");
 
-        // Save toggle states
         SaveToggleValue("ToggleVoiceChat", "VoiceChatEnabled");
-        SaveToggleValue("ToggleMuteUnfocused", "MuteUnfocused");
         SaveToggleValue("ToggleVSync", "VSyncEnabled");
         SaveToggleValue("ToggleInvertX", "InvertCameraX");
         SaveToggleValue("ToggleInvertY", "InvertCameraY");
@@ -616,12 +598,7 @@ public class SettingsMenu : MonoBehaviour
             PlayerPrefs.SetString("VoiceInputDeviceName", dropdownInput.value);
         }
 
-        var dropdownOutput = _root.Q<DropdownField>("DropdownOutputDevice");
-        if (dropdownOutput != null)
-        {
-            PlayerPrefs.SetInt("VoiceOutputDeviceIndex", dropdownOutput.index);
-            PlayerPrefs.SetString("VoiceOutputDeviceName", dropdownOutput.value);
-        }
+
 
         // Apply immediately
         LoadAndApplyAllSettings();
@@ -680,9 +657,7 @@ public class SettingsMenu : MonoBehaviour
         PlayerPrefs.DeleteKey("ResolutionIndex");
         PlayerPrefs.DeleteKey("RegionIndex");
         PlayerPrefs.DeleteKey("VoiceInputDeviceIndex");
-        PlayerPrefs.DeleteKey("VoiceOutputDeviceIndex");
         PlayerPrefs.DeleteKey("VoiceInputDeviceName");
-        PlayerPrefs.DeleteKey("VoiceOutputDeviceName");
         PlayerPrefs.DeleteKey("TransmissionModePTT");
         PlayerPrefs.DeleteKey("KeybindPTT");
         PlayerPrefs.DeleteKey("KeybindForward");
@@ -788,36 +763,6 @@ public class SettingsMenu : MonoBehaviour
                     }
                 }
             }
-
-            // Set Output device
-            string outputDevName = PlayerPrefs.GetString("VoiceOutputDeviceName", "Default System Speakers");
-            var outputDevices = VivoxService.Instance.AvailableOutputDevices;
-            if (outputDevices != null)
-            {
-                if (outputDevName == "Default System Speakers")
-                {
-                    foreach (var dev in outputDevices)
-                    {
-                        if (dev.DeviceName.IndexOf("default", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                            dev.DeviceName.IndexOf("system", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            await VivoxService.Instance.SetActiveOutputDeviceAsync(dev);
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (var dev in outputDevices)
-                    {
-                        if (dev.DeviceName == outputDevName)
-                        {
-                            await VivoxService.Instance.SetActiveOutputDeviceAsync(dev);
-                            break;
-                        }
-                    }
-                }
-            }
         }
         catch (System.Exception ex)
         {
@@ -827,23 +772,32 @@ public class SettingsMenu : MonoBehaviour
 
     private void ApplyMasterVolume(float value)
     {
-        if (mixer == null) return;
-        float db = Mathf.Log10(Mathf.Max(value, 0.0001f)) * 20f;
-        mixer.SetFloat("MasterVolume", db);
+        AudioListener.volume = value;
+        if (mixer != null)
+        {
+            float db = Mathf.Log10(Mathf.Max(value, 0.0001f)) * 20f;
+            mixer.SetFloat("MasterVolume", db);
+        }
     }
 
     private void ApplyMusicVolume(float value)
     {
-        if (mixer == null) return;
-        float db = Mathf.Log10(Mathf.Max(value, 0.0001f)) * 20f;
-        mixer.SetFloat("MusicVolume", db);
+        EdgeParty.Core.AudioManager.Instance?.SetMusicVolume(value);
+        if (mixer != null)
+        {
+            float db = Mathf.Log10(Mathf.Max(value, 0.0001f)) * 20f;
+            mixer.SetFloat("MusicVolume", db);
+        }
     }
 
     private void ApplySFXVolume(float value)
     {
-        if (mixer == null) return;
-        float db = Mathf.Log10(Mathf.Max(value, 0.0001f)) * 20f;
-        mixer.SetFloat("SFXVolume", db);
+        EdgeParty.Core.AudioManager.Instance?.SetSFXVolume(value);
+        if (mixer != null)
+        {
+            float db = Mathf.Log10(Mathf.Max(value, 0.0001f)) * 20f;
+            mixer.SetFloat("SFXVolume", db);
+        }
     }
     private void ReloadUIFromPrefs()
     {
@@ -890,7 +844,6 @@ public class SettingsMenu : MonoBehaviour
         CaptureSlider("SliderSensitivityY");
 
         CaptureToggle("ToggleVoiceChat");
-        CaptureToggle("ToggleMuteUnfocused");
         CaptureToggle("ToggleVSync");
         CaptureToggle("ToggleInvertX");
         CaptureToggle("ToggleInvertY");
@@ -901,7 +854,6 @@ public class SettingsMenu : MonoBehaviour
         CaptureDropdown("DropdownResolution");
         CaptureDropdown("DropdownRegion");
         CaptureDropdown("DropdownInputDevice");
-        CaptureDropdown("DropdownOutputDevice");
 
         var btnModePTT = _root.Q<Button>("BtnModePTT");
         if (btnModePTT != null)
@@ -956,7 +908,6 @@ public class SettingsMenu : MonoBehaviour
         if (CheckSliderChanged("SliderSensitivityY")) return true;
 
         if (CheckToggleChanged("ToggleVoiceChat")) return true;
-        if (CheckToggleChanged("ToggleMuteUnfocused")) return true;
         if (CheckToggleChanged("ToggleVSync")) return true;
         if (CheckToggleChanged("ToggleInvertX")) return true;
         if (CheckToggleChanged("ToggleInvertY")) return true;
@@ -967,7 +918,6 @@ public class SettingsMenu : MonoBehaviour
         if (CheckDropdownChanged("DropdownResolution")) return true;
         if (CheckDropdownChanged("DropdownRegion")) return true;
         if (CheckDropdownChanged("DropdownInputDevice")) return true;
-        if (CheckDropdownChanged("DropdownOutputDevice")) return true;
 
         var btnModePTT = _root.Q<Button>("BtnModePTT");
         if (btnModePTT != null && _initialValues.ContainsKey("TransmissionModePTT"))

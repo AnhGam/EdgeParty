@@ -1,62 +1,75 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Audio;
 
 public class AudioManager : MonoBehaviour
 {
-    public static AudioManager Instance;
+    public static AudioManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+#if UNITY_2023_1_OR_NEWER
+                _instance = FindFirstObjectByType<AudioManager>();
+#else
+                _instance = FindObjectOfType<AudioManager>();
+#endif
+                if (_instance == null)
+                {
+                    GameObject go = new GameObject("GlobalAudioManagerProxy");
+                    _instance = go.AddComponent<AudioManager>();
+                    DontDestroyOnLoad(go);
+                }
+            }
+            return _instance;
+        }
+    }
+    private static AudioManager _instance;
 
-    [Header("Audio Sources")]
-    public AudioSource sfxSource;
-    public AudioSource bgmSource;
-
-    [Header("Audio Mixer Groups")]
-    // Kéo AudioMixerGroup "SFX" và "Music" từ AudioMixer vào đây trong Inspector
+    [Header("Audio Mixer Groups (Proxy to Core)")]
     public AudioMixerGroup sfxMixerGroup;
     public AudioMixerGroup bgmMixerGroup;
 
+    public AudioSource sfxSource
+    {
+        get => EdgeParty.Core.AudioManager.Instance != null ? EdgeParty.Core.AudioManager.Instance.sfxSourceExposed : null;
+    }
+
+    public AudioSource bgmSource
+    {
+        get => EdgeParty.Core.AudioManager.Instance != null ? EdgeParty.Core.AudioManager.Instance.bgmSourceExposed : null;
+    }
+
     private void Awake()
     {
-        // Singleton + tồn tại xuyên scene
-        if (Instance == null)
+        if (_instance == null)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject); // Giữ lại khi chuyển scene
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
         }
-        else
+        else if (_instance != this)
         {
             Destroy(gameObject);
-            return;
         }
-
-        // Gán AudioMixerGroup để Volume Slider có tác dụng
-        if (sfxSource != null && sfxMixerGroup != null)
-            sfxSource.outputAudioMixerGroup = sfxMixerGroup;
-
-        if (bgmSource != null && bgmMixerGroup != null)
-            bgmSource.outputAudioMixerGroup = bgmMixerGroup;
     }
 
     /// <summary>Phát một SFX một lần (không loop)</summary>
     public void PlaySFX(AudioClip clip)
     {
         if (clip == null) return;
-        sfxSource.PlayOneShot(clip);
+        EdgeParty.Core.AudioManager.Instance?.PlaySFX(clip);
     }
 
     /// <summary>Phát BGM (loop)</summary>
     public void PlayBGM(AudioClip clip)
     {
         if (clip == null) return;
-        if (bgmSource.clip == clip && bgmSource.isPlaying) return; // Tránh restart nếu đang phát
-
-        bgmSource.clip = clip;
-        bgmSource.loop = true;
-        bgmSource.Play();
+        EdgeParty.Core.AudioManager.Instance?.PlayMusic(clip);
     }
 
     /// <summary>Dừng BGM</summary>
     public void StopBGM()
     {
-        bgmSource.Stop();
+        EdgeParty.Core.AudioManager.Instance?.StopMusic();
     }
 }

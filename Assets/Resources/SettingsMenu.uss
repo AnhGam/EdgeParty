@@ -1,0 +1,346 @@
+/* SettingsMenu.uss - Custom style for Gummy Bop settings screen */
+
+.settings-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--color-background);
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+}
+
+.settings-container {
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+}
+
+.settings-sidebar {
+    width: 300px;
+    height: 100%;
+    margin-right: 24px;
+    flex-shrink: 0;
+}
+
+.settings-canvas {
+    flex-grow: 1;
+    height: 100%;
+}
+
+.tab-content {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.settings-section {
+    background-color: var(--color-surface-container-low);
+    border-width: 2px;
+    border-color: var(--color-surface-container-highest);
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.settings-section-title-container {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.settings-section-title {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: var(--color-on-surface-variant);
+    margin-left: 10px;
+}
+
+.setting-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.setting-label-col {
+    flex-direction: column;
+    flex-grow: 1;
+    margin-right: 16px;
+}
+
+.setting-label {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: var(--color-on-surface);
+}
+
+.setting-desc {
+    font-size: 13px;
+    color: var(--color-on-surface-variant);
+    white-space: normal;
+}
+
+/* Gummy Toggle Switch */
+.gummy-toggle {
+    width: 56px;
+    height: 32px;
+    border-radius: 16px;
+    background-color: var(--color-surface-variant);
+    border-width: 2px;
+    border-color: var(--color-outline-variant);
+    flex-direction: row;
+    align-items: center;
+    padding: 2px;
+    transition: background-color 0.1s, border-color 0.1s;
+}
+
+.gummy-toggle-knob {
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: var(--color-on-surface-variant);
+    transition: translate 0.1s, background-color 0.1s;
+}
+
+.gummy-toggle--checked {
+    background-color: var(--color-primary-container);
+    border-color: var(--color-secondary-container);
+}
+
+.gummy-toggle--checked .gummy-toggle-knob {
+    translate: 24px 0;
+    background-color: white;
+}
+
+/* UI Toolkit Dropdown styling */
+.gummy-dropdown {
+    width: 260px;
+}
+
+.gummy-dropdown .unity-popup-field__input {
+    background-color: var(--color-surface-bright);
+    border-width: 2px;
+    border-color: var(--color-outline-variant);
+    border-radius: 12px;
+    padding: 8px 16px;
+    color: var(--color-on-surface);
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.gummy-dropdown .unity-popup-field__input:hover {
+    background-color: var(--color-surface-container-lowest);
+}
+
+/* Slider styling */
+.gummy-slider-container {
+    flex-direction: row;
+    align-items: center;
+    width: 260px;
+}
+
+.gummy-slider {
+    flex-grow: 1;
+}
+
+.gummy-slider .unity-slider__input {
+    min-height: 24px;
+}
+
+.gummy-slider .unity-slider__tracker {
+    height: 12px;
+    background-color: var(--color-surface-container);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: var(--color-outline-variant);
+}
+
+.gummy-slider .unity-slider__dragger {
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: var(--color-primary-container);
+    border-width: 2px;
+    border-color: var(--color-secondary-container);
+    border-bottom-width: 4px;
+    margin-top: -6px;
+}
+
+.gummy-slider .unity-slider__dragger:hover {
+    background-color: #ffe16d;
+}
+
+.slider-value-badge {
+    background-color: var(--color-primary-fixed-dim);
+    color: var(--color-primary);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    -unity-font-style: bold;
+    margin-left: 10px;
+    min-width: 45px;
+    align-items: center;
+    justify-content: center;
+    -unity-text-align: middle-center;
+}
+
+/* Navigation Tabs inside Settings */
+.settings-nav-tabs {
+    flex-direction: column;
+}
+
+.settings-nav-tab {
+    margin-bottom: 10px;
+    padding: 12px 18px;
+    font-size: 16px;
+    align-items: flex-start;
+    justify-content: center;
+    -unity-text-align: middle-left;
+    border-radius: 16px;
+}
+
+.settings-nav-tab:hover {
+    background-color: var(--color-surface-variant);
+}
+
+.settings-nav-tab.active-tab {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+    border-bottom-color: var(--color-secondary);
+}
+
+/* Icon + text layout inside nav tabs */
+.settings-nav-tab-with-icon {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Back button with icon layout */
+.settings-back-btn {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* Save button with icon layout */
+.settings-save-btn {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Radio buttons container for Transmission Mode */
+.transmission-mode-container {
+    flex-direction: row;
+    background-color: var(--color-surface-container-high);
+    border-radius: 16px;
+    padding: 4px;
+    width: 260px;
+}
+
+.transmission-mode-btn {
+    flex-grow: 1;
+    -unity-text-align: middle-center;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    border-width: 0;
+    background-color: transparent;
+    color: var(--color-on-surface-variant);
+}
+
+.transmission-mode-btn.active-mode {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+    border-bottom-width: 2px;
+    border-bottom-color: var(--color-secondary-container);
+}
+
+/* Keybindings grid */
+.keybind-grid {
+    flex-direction: column;
+}
+
+.keybind-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-surface-bright);
+    border-width: 1px;
+    border-color: var(--color-outline-variant);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+}
+
+.keybind-label {
+    font-size: 15px;
+    color: var(--color-on-surface);
+}
+
+.keybind-btn {
+    min-width: 80px;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+/* ===================== MATERIAL SYMBOLS ICON STYLES ===================== */
+
+.icon-arrow-back {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/arrow_back.svg');
+}
+.icon-settings {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/settings.svg');
+}
+.icon-volume-up {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/volume_up.svg');
+}
+.icon-monitor {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/monitor.svg');
+}
+.icon-videogame-asset {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/videogame_asset.svg');
+}
+.icon-language {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/language.svg');
+}
+.icon-save {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/save.svg');
+}
+.icon-restart-alt {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/restart_alt.svg');
+}
+.icon-graphic-eq {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/graphic_eq.svg');
+}
+.icon-music-note {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/music_note.svg');
+}
+.icon-notifications-active {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/notifications_active.svg');
+}
+.icon-mic {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/mic.svg');
+}
+.icon-keyboard {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/keyboard.svg');
+}
+.icon-speaker {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/speaker.svg');
+}
+.icon-desktop-windows {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/desktop_windows.svg');
+}
+.icon-mouse {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/mouse.svg');
+}
+.icon-public {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/public.svg');
+}
+.icon-arrow-drop-down {
+    background-image: url('project://database/Assets/UI/Textures/MaterialSymbols/arrow_drop_down.svg');
+}
+
