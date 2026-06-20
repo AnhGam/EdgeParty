@@ -14,6 +14,11 @@ namespace EdgeParty.Gameplay.Character
         private PlayerController _controller;
         private Transform _camTransform;
 
+        // Hold-to-grab: giữ chuột trái quá ngưỡng này (giây) mới trigger Grab
+        private const float GrabHoldThreshold = 0.2f;
+        private float _leftButtonHeldTime = 0f;
+        private bool _isHoldGrabActive = false; // Grab đang active do giữ chuột trái
+
         private void Awake()
         {
             FindReferences();
@@ -119,7 +124,25 @@ namespace EdgeParty.Gameplay.Character
             bool isRunning = keyboard.leftShiftKey.isPressed;
             Vector3 worldMoveDir = GetCameraRelativeDirection(input);
 
-            bool isAttackPressed = (mouse != null && mouse.leftButton.wasPressedThisFrame) || keyboard.jKey.wasPressedThisFrame;
+            bool leftMouseHeld    = mouse != null && mouse.leftButton.isPressed;
+            bool leftMouseReleased = mouse != null && mouse.leftButton.wasReleasedThisFrame;
+
+            // Track how long left mouse button has been held
+            // Lưu lại trước khi reset để dùng cho wasReleasedThisFrame check
+            float heldTimePrevFrame = _leftButtonHeldTime;
+            if (leftMouseHeld)
+                _leftButtonHeldTime += Time.deltaTime;
+            else
+                _leftButtonHeldTime = 0f;
+
+            // Grab: giữ chuột trái quá ngưỡng → bắt đầu Grab
+            bool grabShouldBeActive = leftMouseHeld && _leftButtonHeldTime >= GrabHoldThreshold;
+
+            // Attack: chỉ fire khi click đơn (nhả nhanh, chưa vượt hold threshold) hoặc phím J
+            // Dùng heldTimePrevFrame để biết trước khi thả đã giữ bao lâu
+            bool isAttackPressed = keyboard.jKey.wasPressedThisFrame;
+            if (leftMouseReleased && !_isHoldGrabActive && heldTimePrevFrame < GrabHoldThreshold)
+                isAttackPressed = true;
 
             Vector3 aimDirection = _camTransform != null ? _camTransform.forward : _controller.transform.forward;
 
@@ -128,8 +151,20 @@ namespace EdgeParty.Gameplay.Character
                 _controller.OnInputReceived_Server(worldMoveDir, isRunning);
                 if (WasKeyPressedThisFrame(jumpKey)) _controller.OnJumpTriggered_Server(worldMoveDir);
                 if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) _controller.OnDashTriggered_Server();
-                if (isAttackPressed) _controller.OnAttackTriggered_Server(aimDirection);
-                if (keyboard.eKey.wasPressedThisFrame) _controller.OnGrabTriggered_Server();
+
+                // Grab hold logic (offline)
+                if (grabShouldBeActive && !_isHoldGrabActive)
+                {
+                    _isHoldGrabActive = true;
+                    _controller.OnGrabStarted_Server();
+                }
+                else if (!grabShouldBeActive && _isHoldGrabActive)
+                {
+                    _isHoldGrabActive = false;
+                    _controller.OnGrabReleased_Server();
+                }
+
+                if (!_isHoldGrabActive && isAttackPressed) _controller.OnAttackTriggered_Server(aimDirection);
             }
             else
             {
@@ -138,10 +173,21 @@ namespace EdgeParty.Gameplay.Character
 
                 // Individual triggers to ensure no frames are missed
                 if (WasKeyPressedThisFrame(jumpKey)) TriggerJumpServerRpc(worldMoveDir);
-                
                 if (keyboard.leftShiftKey.wasPressedThisFrame && input.sqrMagnitude < 0.01f) TriggerDashServerRpc();
-                if (isAttackPressed) TriggerAttackServerRpc(aimDirection);
-                if (keyboard.eKey.wasPressedThisFrame) TriggerGrabServerRpc();
+
+                // Grab hold logic (online)
+                if (grabShouldBeActive && !_isHoldGrabActive)
+                {
+                    _isHoldGrabActive = true;
+                    TriggerGrabStartServerRpc();
+                }
+                else if (!grabShouldBeActive && _isHoldGrabActive)
+                {
+                    _isHoldGrabActive = false;
+                    TriggerGrabReleaseServerRpc();
+                }
+
+                if (!_isHoldGrabActive && isAttackPressed) TriggerAttackServerRpc(aimDirection);
             }
         }
 
@@ -219,9 +265,15 @@ namespace EdgeParty.Gameplay.Character
         }
 
         [ServerRpc]
-        private void TriggerGrabServerRpc()
+        private void TriggerGrabStartServerRpc()
         {
-            _controller.OnGrabTriggered_Server();
+            _controller.OnGrabStarted_Server();
+        }
+
+        [ServerRpc]
+        private void TriggerGrabReleaseServerRpc()
+        {
+            _controller.OnGrabReleased_Server();
         }
     }
 }

@@ -948,26 +948,33 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
-        public void OnGrabTriggered_Server()
+        public void OnGrabStarted_Server()
         {
             if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
-            if (animController != null)
-            {
-                animController.TriggerGrab();
-                
-                // Sync grab handlers with the state
-                bool isGrabbing = animController.CurrentState == PlayerState.Grab;
+            if (animController == null) return;
+            if (animController.IsGrabbing) return; // đã đang grab
 
-                if (_grabHandlers == null || _grabHandlers.Length == 0)
-                    _grabHandlers = GetComponentsInChildren<GrabHandler>();
+            animController.StartGrab();
 
-                if (_grabHandlers != null)
-                {
-                    foreach (var h in _grabHandlers) h.SetActive(isGrabbing);
-                }
-            }
+            if (_grabHandlers == null || _grabHandlers.Length == 0)
+                _grabHandlers = GetComponentsInChildren<GrabHandler>();
+
+            if (_grabHandlers != null)
+                foreach (var h in _grabHandlers) h.SetActive(true);
+        }
+
+        public void OnGrabReleased_Server()
+        {
+            if (animController == null) return;
+            animController.StopGrab();
+
+            if (_grabHandlers == null || _grabHandlers.Length == 0)
+                _grabHandlers = GetComponentsInChildren<GrabHandler>();
+
+            if (_grabHandlers != null)
+                foreach (var h in _grabHandlers) h.SetActive(false);
         }
 
         public void SetRagdollStrength(float factor)
@@ -989,12 +996,8 @@ namespace EdgeParty.Gameplay.Character
 
             if (animController != null)
             {
-                if (animController.CurrentState == PlayerState.Grab)
-                {
-                    armBoost = combatBoostMultiplier * 10f; // High stiffness for correct height
-                    torsoBoost = 3f; // Stable torso
-                }
-                else if (animController.IsAttacking)
+                // Không boost arm/torso khi Grab để tránh việc spring khắng ragdoll dựng đứng
+                if (animController.IsAttacking)
                 {
                     armBoost = combatBoostMultiplier;
                 }
