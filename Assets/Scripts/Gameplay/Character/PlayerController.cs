@@ -616,6 +616,12 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnInputReceived_Server(Vector3 moveDir, bool isRunning)
         {
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive)
+            {
+                motor?.SetMovementInput(Vector3.zero, false);
+                animController?.SetMovementInput(Vector3.zero, false);
+                return;
+            }
             if (stats != null && stats.IsDead.Value) return;
             // Block input sau khi vừa hồi (cho nhân vật đứng ổn)
             if (_isInputBlocked) return;
@@ -633,8 +639,11 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnJumpTriggered_Server(Vector3 moveDir)
         {
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
+            // Only allow jumping when grounded to prevent infinite spam
+            if (motor != null && !motor.IsGrounded) return;
             if (motor != null && animController != null)
             {
                 motor.ApplyJump(moveDir);
@@ -644,6 +653,7 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnDashTriggered_Server()
         {
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
             if (animController == null || !animController.CanDash()) return;
@@ -655,6 +665,7 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnAttackTriggered_Server(Vector3 aimDirection = default)
         {
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
 
@@ -939,6 +950,7 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnGrabTriggered_Server()
         {
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
             if (animController != null)

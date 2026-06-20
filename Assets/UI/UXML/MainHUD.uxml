@@ -47,12 +47,8 @@
 
         <!-- Dynamic Bottom Area -->
         <ui:VisualElement name="BottomArea" class="bottom-center-area">
-            <ui:VisualElement name="DynamicBar" class="dynamic-bar">
+            <ui:VisualElement name="DynamicBar" class="dynamic-bar" style="display: none;">
                 <!-- Populated via script -->
-                <ui:Label text="CTRL" class="key-cap" />
-                <ui:Label text="J" class="key-cap" />
-                <ui:Label text="F" class="key-cap" />
-                <ui:Label text="BOOST" class="instruction-label" />
             </ui:VisualElement>
         </ui:VisualElement>
 

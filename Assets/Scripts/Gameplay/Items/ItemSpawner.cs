@@ -42,8 +42,6 @@ public class ItemSpawner : MonoBehaviour
     private List<Transform> _spawnPoints = new List<Transform>();
     private Dictionary<Transform, float> _pointCooldowns = new Dictionary<Transform, float>();
     private Dictionary<Transform, GameObject> _pointOccupants = new Dictionary<Transform, GameObject>();
-    private int _activeItemCount = 0;
-    private float _nextSpawnTime = 0f;
     private bool _spawnEnabled = false;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────
@@ -79,33 +77,63 @@ public class ItemSpawner : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
         }
 
-        // Delay trước khi bắt đầu spawn (cho map load xong)
-        _nextSpawnTime = Time.time + spawnCheckInterval + 5f;
         _spawnEnabled = true;
-        Debug.Log($"[ItemSpawner] Server ready. First spawn check at t={_nextSpawnTime:F1}s");
+        StartCoroutine(SpawnCycleCoroutine());
+        Debug.Log("[ItemSpawner] Server ready. Spawn cycle coroutine started.");
     }
 
     private void Update()
     {
         if (!_spawnEnabled) return;
 
-        // Chỉ server mới spawn item
+        // Chỉ server mới cập nhật cooldowns
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
 
-        // Cập nhật cooldowns
         UpdateCooldowns();
+    }
 
-        if (Time.time < _nextSpawnTime) return;
+    private IEnumerator SpawnCycleCoroutine()
+    {
+        // Đợi trận bắt đầu
+        while (ForestGameManager.Instance == null || !ForestGameManager.Instance.IsMatchActive)
+        {
+            yield return new WaitForSeconds(0.5f);
+        }
 
-        // Tính interval theo pha match
-        float matchTime = ForestGameManager.Instance != null
-            ? Time.time - ForestGameManager.Instance.MatchStartTime
-            : 0f;
+        // Đợi một khoảng thời gian đầu trận trước khi bắt đầu sinh vũ khí
+        yield return new WaitForSeconds(spawnCheckInterval);
 
-        float interval = matchTime >= lateGameThreshold ? lateGameInterval : spawnCheckInterval;
-        _nextSpawnTime = Time.time + interval;
+        while (true)
+        {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer &&
+                ForestGameManager.Instance != null && ForestGameManager.Instance.IsMatchActive)
+            {
+                TrySpawnItem();
+            }
 
-        TrySpawnItem();
+            // Tính toán interval linh hoạt theo pha trận đấu
+            float matchTime = ForestGameManager.Instance != null
+                ? Time.time - ForestGameManager.Instance.MatchStartTime
+                : 0f;
+            float interval = matchTime >= lateGameThreshold ? lateGameInterval : spawnCheckInterval;
+
+            yield return new WaitForSeconds(interval);
+        }
+    }
+
+    private int GetActiveItemCount()
+    {
+        int count = 0;
+        var allPickups = Object.FindObjectsByType<WeaponPickup>(FindObjectsSortMode.None);
+        foreach (var pickup in allPickups)
+        {
+            var netObj = pickup.GetComponent<NetworkObject>();
+            if (netObj != null && netObj.IsSpawned && pickup.gameObject.activeInHierarchy)
+            {
+                count++;
+            }
+        }
+        return count;
     }
 
     // ─── Spawn Logic ──────────────────────────────────────────────────────
@@ -122,9 +150,10 @@ public class ItemSpawner : MonoBehaviour
             }
         }
 
-        if (_activeItemCount >= maxItemsOnMap)
+        int activeCount = GetActiveItemCount();
+        if (activeCount >= maxItemsOnMap)
         {
-            Debug.Log($"[ItemSpawner] Skipped spawn — max items on map ({maxItemsOnMap}) reached.");
+            Debug.Log($"[ItemSpawner] Skipped spawn — active items in scene ({activeCount}) >= max items ({maxItemsOnMap})");
             return;
         }
 
@@ -143,34 +172,20 @@ public class ItemSpawner : MonoBehaviour
         {
             var spawned = NetworkObjectPool.Singleton.GetNetworkObject(prefab.gameObject, point.position + Vector3.up * 0.5f, Quaternion.identity);
             if (!spawned.IsSpawned) spawned.Spawn();
-            _activeItemCount++;
             _pointCooldowns[point] = spawnPointCooldown;
             _pointOccupants[point] = spawned.gameObject;
 
-            // Tự giảm count khi item despawn
-            var tracker = spawned.GetComponent<ItemLifetimeTracker>();
-            if (tracker == null) tracker = spawned.gameObject.AddComponent<ItemLifetimeTracker>();
-            
-            // Clean up old listener to avoid double-decrement if pulled from pool
-            tracker.OnPickedUp = null; 
-            tracker.OnPickedUp += () => _activeItemCount = Mathf.Max(0, _activeItemCount - 1);
-
-            Debug.Log($"[ItemSpawner] Pooled Spawn {prefab.name} at {point.name} | Active: {_activeItemCount}/{maxItemsOnMap}");
+            Debug.Log($"[ItemSpawner] Pooled Spawn {prefab.name} at {point.name} | Active: {activeCount + 1}/{maxItemsOnMap}");
         }
         else
         {
             // Fallback nếu chưa khởi tạo Pool
             var spawned = Instantiate(prefab, point.position + Vector3.up * 0.5f, Quaternion.identity);
             spawned.Spawn();
-            _activeItemCount++;
             _pointCooldowns[point] = spawnPointCooldown;
             _pointOccupants[point] = spawned.gameObject;
 
-            var tracker = spawned.GetComponent<ItemLifetimeTracker>();
-            if (tracker == null) tracker = spawned.gameObject.AddComponent<ItemLifetimeTracker>();
-            tracker.OnPickedUp += () => _activeItemCount = Mathf.Max(0, _activeItemCount - 1);
-
-            Debug.Log($"[ItemSpawner] Instantiate Spawn {prefab.name} at {point.name} | Active: {_activeItemCount}/{maxItemsOnMap}");
+            Debug.Log($"[ItemSpawner] Instantiate Spawn {prefab.name} at {point.name} | Active: {activeCount + 1}/{maxItemsOnMap}");
         }
     }
 

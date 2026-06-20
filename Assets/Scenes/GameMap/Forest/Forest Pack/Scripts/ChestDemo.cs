@@ -55,9 +55,20 @@ public class ForestChestController : NetworkBehaviour
     {
         while (true)
         {
+            // Wait until match is active
+            while (ForestGameManager.Instance == null || !ForestGameManager.Instance.IsMatchActive)
+            {
+                yield return new WaitForSeconds(0.5f);
+            }
+
             // Wait before opening
             yield return new WaitForSeconds(respawnInterval);
-            OpenChest();
+
+            // Double check match is still active before opening
+            if (ForestGameManager.Instance != null && ForestGameManager.Instance.IsMatchActive)
+            {
+                OpenChest();
+            }
         }
     }
 

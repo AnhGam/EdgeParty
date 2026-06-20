@@ -90,6 +90,19 @@ namespace EdgeParty.Gameplay.Character
                 if (_controller == null) return; 
             }
 
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive)
+            {
+                if (isOffline)
+                {
+                    _controller.OnInputReceived_Server(Vector3.zero, false);
+                }
+                else
+                {
+                    SubmitInputServerRpc(Vector3.zero, false);
+                }
+                return;
+            }
+
             // Load keybinds from PlayerPrefs
             string forwardKey = PlayerPrefs.GetString("KeybindForward", "W");
             string backwardKey = PlayerPrefs.GetString("KeybindBackward", "S");
