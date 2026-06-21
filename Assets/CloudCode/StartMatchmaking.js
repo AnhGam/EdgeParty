@@ -231,6 +231,7 @@ module.exports.params = {
   pings: "JSON",
   ticketId: "String",
   cancel: "Boolean",
-  players: "JSON"
+  players: "JSON",
+  playerIp: "String"
 };
 
