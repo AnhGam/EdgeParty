@@ -236,11 +236,10 @@ namespace EdgeParty.Infrastructure.VoiceChat
             if (!_isInitialized || _vivoxService == null) return;
             try
             {
-                await _vivoxService.JoinPositionalChannelAsync(
+                await _vivoxService.JoinGroupChannelAsync(
                     channelName,
-                    ChatCapability.AudioOnly,
-                    new Channel3DProperties());
-                Debug.Log($"[VoiceChat] Joined channel: {channelName}");
+                    ChatCapability.AudioOnly);
+                Debug.Log($"[VoiceChat] Joined group channel: {channelName}");
             }
             catch (Exception e)
             {
@@ -270,10 +269,9 @@ namespace EdgeParty.Infrastructure.VoiceChat
 
         public bool IsReady => _isInitialized;
 
+        [Obsolete("Positional audio is disabled, this method does nothing.")]
         public void UpdateParticipantPosition(GameObject participant, string channelName)
         {
-            if (!_isInitialized || _vivoxService == null || !_vivoxService.IsLoggedIn) return;
-            _vivoxService.Set3DPosition(participant, channelName);
         }
 
         public HashSet<string> GetActiveSpeakers() => _activeSpeakers;
