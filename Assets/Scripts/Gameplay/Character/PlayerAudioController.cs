@@ -16,7 +16,7 @@ namespace EdgeParty.Gameplay.Character
         public AudioClip jumpClip;
         public AudioClip dashClip;
 
-        private PlayerController _playerController;
+        public PlayerController _playerController;
         private Animator _animator;
 
         private AudioSource _loopSource;

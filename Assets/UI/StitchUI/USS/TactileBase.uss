@@ -65,7 +65,6 @@
 
 .bouncy-btn:hover {
     scale: 1.02 1.02;
-    translate: 0 -2px;
 }
 
 .bouncy-btn:active {

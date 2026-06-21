@@ -11,6 +11,11 @@ namespace EdgeParty.Gameplay.Camera
         public float distance = 5f;
         public float smoothSpeed = 10f;
 
+        [Header("Dynamic Zoom (Feel)")]
+        public float runZoomOffset = 0.8f;      // Lùi ra xa khi chạy
+        public float inputZoomOffset = -0.3f;   // Tiến lại gần một chút khi mới bấm nút (để có cảm giác phản hồi)
+        public float zoomSmoothSpeed = 4f;
+
         [Header("Orbit Settings")]
         public float sensitivity = 0.2f;
         public float minPitch = -20f;
@@ -19,9 +24,12 @@ namespace EdgeParty.Gameplay.Camera
         private float _yaw;
         private float _pitch;
         private Transform _prevTarget;
+        private float _baseDistance;
+        private float _currentZoomOffset;
 
         private void Start()
         {
+            _baseDistance = distance;
             if (target != null)
             {
                 InitializeRotationFromPosition();
@@ -70,8 +78,8 @@ namespace EdgeParty.Gameplay.Camera
                 return; // Skip locking logic below
             }
 
-            // Toggle cursor lock with Escape
-            if (Keyboard.current.escapeKey.wasPressedThisFrame)
+            // Toggle cursor lock with Escape (delegated to HUDController if present)
+            if (Keyboard.current.escapeKey.wasPressedThisFrame && HUDController.Instance == null)
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
@@ -130,12 +138,42 @@ namespace EdgeParty.Gameplay.Camera
                 _pitch = Mathf.Clamp(_pitch, minPitch, maxPitch);
             }
 
-            // 2. Calculate Target Rotation & Position
+            // 2. Dynamic Zoom Logic
+            float targetZoomOffset = 0f;
+            
+            bool hasInput = false;
+            bool isSprinting = false;
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.wKey.isPressed || Keyboard.current.aKey.isPressed || 
+                    Keyboard.current.sKey.isPressed || Keyboard.current.dKey.isPressed)
+                {
+                    hasInput = true;
+                }
+                if (Keyboard.current.leftShiftKey.isPressed)
+                {
+                    isSprinting = true;
+                }
+            }
+
+            if (hasInput && isSprinting)
+            {
+                targetZoomOffset = runZoomOffset;
+            }
+            else if (hasInput)
+            {
+                targetZoomOffset = inputZoomOffset;
+            }
+
+            _currentZoomOffset = Mathf.Lerp(_currentZoomOffset, targetZoomOffset, zoomSmoothSpeed * Time.deltaTime);
+            float currentDistance = _baseDistance + _currentZoomOffset;
+
+            // 3. Calculate Target Rotation & Position
             Quaternion rotation = Quaternion.Euler(_pitch, _yaw, 0f);
             Vector3 targetPos = target.position + lookAtOffset;
-            Vector3 desiredPosition = targetPos - (rotation * Vector3.forward * distance);
+            Vector3 desiredPosition = targetPos - (rotation * Vector3.forward * currentDistance);
 
-            // 3. Apply smooth movement
+            // 4. Apply smooth movement
             transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
             transform.LookAt(targetPos);
         }

@@ -180,33 +180,6 @@
                             </ui:VisualElement>
                         </ui:VisualElement>
 
-                        <!-- Output & Focus Card -->
-                        <ui:VisualElement class="settings-section">
-                            <ui:VisualElement class="settings-section-title-container">
-                                <ui:VisualElement class="icon-speaker" style="width: 24px; height: 24px; margin-right: 8px; -unity-background-image-tint-color: #795741;" />
-                                <ui:Label text="Output &amp; Focus" class="settings-section-title" />
-                            </ui:VisualElement>
-
-                            <!-- Playback Device -->
-                            <ui:VisualElement class="setting-row">
-                                <ui:VisualElement class="setting-label-col">
-                                    <ui:Label text="Playback Device" class="setting-label" />
-                                    <ui:Label text="Where you hear the game audio" class="setting-desc" />
-                                </ui:VisualElement>
-                                <ui:DropdownField name="DropdownOutputDevice" class="gummy-dropdown" />
-                            </ui:VisualElement>
-
-                            <!-- Mute when Unfocused -->
-                            <ui:VisualElement class="setting-row">
-                                <ui:VisualElement class="setting-label-col">
-                                    <ui:Label text="Mute when Unfocused" class="setting-label" />
-                                    <ui:Label text="Mute game audio when tabbed out" class="setting-desc" />
-                                </ui:VisualElement>
-                                <ui:VisualElement name="ToggleMuteUnfocused" class="gummy-toggle">
-                                    <ui:VisualElement class="gummy-toggle-knob" />
-                                </ui:VisualElement>
-                            </ui:VisualElement>
-                        </ui:VisualElement>
                     </ui:VisualElement>
 
                     <!-- Graphics Tab Content -->

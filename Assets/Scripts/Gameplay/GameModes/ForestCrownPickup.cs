@@ -25,6 +25,12 @@ public class ForestCrownPickup : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         _originLocalPos = transform.localPosition;
+
+        // Notify all clients that the crown has appeared (server fires the RPC)
+        if (IsServer && ForestGameManager.Instance != null)
+        {
+            ForestGameManager.Instance.NotifyCrownSpawnedClientRpc();
+        }
     }
 
     private void Update()

@@ -59,6 +59,9 @@ public class ForestHUD : MonoBehaviour
                 Debug.LogWarning("[ForestHUD] Premium HUD Prefab not assigned and not found in Resources. Please assign HUD_Preview prefab in ForestHUD component.");
             }
         }
+
+        // Note: DynamicBar (bottom-center guide) and StaminaBar are managed via HUDController (UIToolkit)
+
     }
 
     private void EnforceAspectRatio()

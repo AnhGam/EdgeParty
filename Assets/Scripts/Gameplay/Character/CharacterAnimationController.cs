@@ -7,6 +7,11 @@ namespace EdgeParty.Gameplay.Character
     /// <summary>
     /// Drives the Ghost animator locomotion states and attack hitboxes.
     /// Simplified and cleaned version: no procedural blending or test overrides.
+    ///
+    /// Grab design:
+    ///   _isGrabbing  = cờ PHYSICS/LOGIC (GrabHandler active hay không)
+    ///   CurrentState = trạng thái ANIMATION (có thể là Walk/Run ngay cả khi _isGrabbing = true)
+    ///   → Cho phép locomotion animation chạy bình thường khi đang grab + di chuyển.
     /// </summary>
     public class CharacterAnimationController : MonoBehaviour
     {
@@ -50,7 +55,12 @@ namespace EdgeParty.Gameplay.Character
 
         public PlayerState CurrentState { get; private set; } = PlayerState.Idle;
         public bool IsPlayingOneShot { get; private set; }
-        public bool IsGrabbing => CurrentState == PlayerState.Grab;
+
+        // _isGrabbing là cờ PHYSICS: true khi người chơi đang giữ chuột trái.
+        // Tách biệt hoàn toàn với CurrentState để locomotion animation không bị block.
+        private bool _isGrabbing;
+        public bool IsGrabbing => _isGrabbing;
+
         public bool IsAttacking => _upperBodyActive;
         public bool AttackMirror => _attackMirror;
         public bool CanAttack() => _attackCooldownTimer <= 0f && !_isDead;
@@ -143,6 +153,8 @@ namespace EdgeParty.Gameplay.Character
         public bool TriggerAttack()
         {
             if (_isDead) return false;
+            // Server-side Input Validation: Attack spam macro prevention
+            if (!CanAttack()) return false;
             if (_stats != null && !_stats.HasStaminaForAttack) return false;
 
             if (!_upperBodyActive)
@@ -279,30 +291,62 @@ namespace EdgeParty.Gameplay.Character
             if (leftFistHitbox != null) leftFistHitbox.Deactivate();
         }
 
+        // ──────────────────────────────────────────────────────────────────────
+        // GRAB API
+        // ──────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Gọi khi người chơi BẮT ĐẦU giữ chuột trái (quá ngưỡng hold).
+        /// Chỉ bật cờ physics _isGrabbing. Animation sẽ chuyển về locomotion tự nhiên
+        /// theo DetermineBaseState() — tránh "bị kéo lê" khi di chuyển.
+        /// </summary>
+        public void StartGrab()
+        {
+            if (_isGrabbing) return;
+            _isGrabbing = true;
+
+            // Chỉ play grab animation một lần khi bắt đầu grab (tư thế giơ tay).
+            // Ngay frame sau, DetermineBaseState() sẽ tự chuyển về Walk/Run/Idle
+            // nếu người chơi đang di chuyển — chân sẽ bước bình thường.
+            PlayBaseState(grabState, restart: true);
+            _activeBaseState = grabState; // force reset để DetermineBaseState có thể override
+        }
+
+        /// <summary>
+        /// Gọi khi người chơi THẢ chuột trái.
+        /// </summary>
+        public void StopGrab()
+        {
+            if (!_isGrabbing) return;
+            _isGrabbing = false;
+
+            // Về idle ngay lập tức; DetermineBaseState sẽ override nếu đang di chuyển
+            CurrentState = PlayerState.Idle;
+            IsPlayingOneShot = false;
+            PlayBaseState(idleState, restart: true);
+        }
+
+        // Giữ lại để tương thích nếu vẫn còn nơi nào gọi
         public void TriggerGrab()
         {
-            if (CurrentState == PlayerState.Grab)
-            {
-                CurrentState = PlayerState.Idle;
-                IsPlayingOneShot = false;
-                PlayBaseState(idleState, true);
-            }
-            else
-            {
-                PlayBaseState(grabState, true);
-                CurrentState = PlayerState.Grab;
-                IsPlayingOneShot = true;
-            }
+            if (_isGrabbing) StopGrab();
+            else StartGrab();
         }
+
+        // ──────────────────────────────────────────────────────────────────────
+        // STATE MACHINE
+        // ──────────────────────────────────────────────────────────────────────
 
         private void DetermineBaseState()
         {
+            // KHÔNG block khi đang grab — locomotion animation (Walk/Run/Idle) vẫn chạy bình thường.
+            // _isGrabbing chỉ ảnh hưởng đến GrabHandlers (physics), không lock animation.
+
             if (IsPlayingOneShot)
             {
-                if (CurrentState == PlayerState.Grab) return;
-
                 bool landedFromJump = CurrentState == PlayerState.InAir
-                                      && _motor != null && _motor.pelvisRigidbody != null && Mathf.Abs(_motor.pelvisRigidbody.linearVelocity.y) < 0.1f;
+                                      && _motor != null && _motor.pelvisRigidbody != null
+                                      && Mathf.Abs(_motor.pelvisRigidbody.linearVelocity.y) < 0.1f;
 
                 bool oneShotDone = false;
 
@@ -329,7 +373,8 @@ namespace EdgeParty.Gameplay.Character
                 }
             }
 
-            bool inAir = _motor != null && _motor.pelvisRigidbody != null && Mathf.Abs(_motor.pelvisRigidbody.linearVelocity.y) > 1.5f;
+            bool inAir = _motor != null && _motor.pelvisRigidbody != null
+                         && Mathf.Abs(_motor.pelvisRigidbody.linearVelocity.y) > 1.5f;
             if (inAir)
             {
                 CurrentState = PlayerState.InAir;
@@ -348,18 +393,22 @@ namespace EdgeParty.Gameplay.Character
 
         private void UpdateBaseAnimator()
         {
-            bool isSpecialAction = IsPlayingOneShot && (CurrentState == PlayerState.Dash || CurrentState == PlayerState.InAir || CurrentState == PlayerState.Attack || CurrentState == PlayerState.Grab);
+            // Khi đang Grab + IsPlayingOneShot: không override (tránh interrupt Dash/Attack)
+            bool isSpecialAction = IsPlayingOneShot &&
+                                   (CurrentState == PlayerState.Dash ||
+                                    CurrentState == PlayerState.InAir ||
+                                    CurrentState == PlayerState.Attack);
             if (isSpecialAction) return;
 
+            // Locomotion animation thuần: Walk/Run/Idle/InAir — không còn Grab case ở đây
             string target = CurrentState switch
             {
-                PlayerState.Walk => walkState,
-                PlayerState.Run => runState,
-                PlayerState.InAir => inAirState,
-                PlayerState.Idle => idleState,
+                PlayerState.Walk   => walkState,
+                PlayerState.Run    => runState,
+                PlayerState.InAir  => inAirState,
+                PlayerState.Idle   => idleState,
                 PlayerState.Attack => _currentAtkState,
-                PlayerState.Grab => grabState,
-                _ => idleState
+                _                  => idleState
             };
 
             PlayBaseState(target);
@@ -382,6 +431,7 @@ namespace EdgeParty.Gameplay.Character
         public void OnDeath()
         {
             _isDead = true;
+            _isGrabbing = false;
             _upperBodyActive = false;
             CloseHitbox();
         }

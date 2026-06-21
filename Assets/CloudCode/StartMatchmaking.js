@@ -24,6 +24,7 @@ module.exports = async ({ params, context, logger, secretManager }) => {
   const ticketId = params.ticketId || params.TicketId || params.TICKETID;
   const cancel = params.cancel || params.Cancel || params.CANCEL;
   const players = params.players || params.Players || params.PLAYERS;
+  const playerIp = params.playerIp || params.PlayerIp || params.PLAYERIP || null;
 
   // Print process.env keys to help debug environment variable configuration
   try {
@@ -167,12 +168,15 @@ module.exports = async ({ params, context, logger, secretManager }) => {
       const tickets = [];
       for (let i = 0; i < finalPlayers.length; i++) {
         const p = finalPlayers[i];
-        const response = await axios.post(`${OM_BASE_URL}/tickets`, {
+        const payload = {
           profile: MATCHMAKING_PROFILE,
           attributes: {
             beacons: finalBeacons || {}
           }
-        }, {
+        };
+        if (playerIp) payload.player_ip = playerIp;
+
+        const response = await axios.post(`${OM_BASE_URL}/tickets`, payload, {
           headers,
           timeout: 10000,
         });
@@ -198,8 +202,10 @@ module.exports = async ({ params, context, logger, secretManager }) => {
     const body = {
       profile: MATCHMAKING_PROFILE,
       attributes,
-      // player_ip: null  // null = Edgegap auto-detects from request IP (recommended)
     };
+    if (playerIp) {
+      body.player_ip = playerIp;
+    }
 
     try {
       const response = await axios.post(`${OM_BASE_URL}/tickets`, body, {
@@ -225,6 +231,7 @@ module.exports.params = {
   pings: "JSON",
   ticketId: "String",
   cancel: "Boolean",
-  players: "JSON"
+  players: "JSON",
+  playerIp: "String"
 };
 

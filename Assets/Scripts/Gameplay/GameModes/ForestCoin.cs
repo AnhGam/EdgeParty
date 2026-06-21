@@ -18,7 +18,7 @@ public class ForestCoin : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsServer) return;
+        if (!IsServer) return; // Only server handles collection
         if (_collected) return;
 
         // Try to get player
@@ -35,7 +35,7 @@ public class ForestCoin : NetworkBehaviour
             ForestGameManager.Instance.AddScoreServerRpc(teamID, 1);
 
         // Notify all clients for SFX/VFX/Deactivation
-        CollectClientRpc();
+        CollectClientRpc(pc.OwnerClientId);
 
         // Despawn coin on server without destroying (since it is an in-scene object)
         if (NetworkObject != null)
@@ -45,10 +45,9 @@ public class ForestCoin : NetworkBehaviour
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void CollectClientRpc()
+    private void CollectClientRpc(ulong collectorClientId)
     {
         gameObject.SetActive(false);
-        // Play SFX
         AudioManager.Instance?.PlaySFX(collectSound);
     }
 }

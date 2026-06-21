@@ -1,10 +1,13 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.InputSystem;
+using System.Collections;
 using System.Collections.Generic;
 
 public class HUDController : MonoBehaviour
 {
+    public static HUDController Instance { get; private set; }
+
     [SerializeField] private UIDocument uiDocument;
     [SerializeField] private Texture2D customCursor;
     
@@ -35,6 +38,21 @@ public class HUDController : MonoBehaviour
     private int fpsCount = 0;
     private float lastFps = 0f;
 
+    // ── Guide panel (DynamicBar) state ──────────────────────────────────────
+    private bool _guideIsCountdown  = false;  // True while showing countdown
+    private bool _guideIsWaiting    = true;   // True while waiting for players
+    private Coroutine _guideHideCoroutine;
+    private Label _staminaValueLabel;
+    private VisualElement _staminaFill;
+
+    // ── Team colors (match HUDStyle.uss) ───────────────────────────────────
+    private const string Team1Hex = "#FF5252";
+    private const string Team2Hex = "#40C4FF";
+    private static readonly Color RedTeamColor = new Color(1f, 82f/255f, 82f/255f);
+    private static readonly Color BlueTeamColor = new Color(64f/255f, 196f/255f, 1f);
+
+    public bool IsSettingsOpen => (settingsMenu != null && settingsMenu.IsOpen) || (settingsPanel != null && settingsPanel.style.display == DisplayStyle.Flex);
+
     private void Start()
     {
         float musicVol = PlayerPrefs.GetFloat("MusicVolume", 1f);
@@ -44,10 +62,25 @@ public class HUDController : MonoBehaviour
         InitSliderVisuals(sfxFill, sfxThumb, sfxVol);
 
         ApplyVolumes(musicVol, sfxVol);
+        StartCoroutine(SubscribeToGameManagerEvents());
+    }
+
+    private IEnumerator SubscribeToGameManagerEvents()
+    {
+        while (ForestGameManager.Instance == null)
+            yield return null;
+
+        var gm = ForestGameManager.Instance;
+        gm.OnWaitingForPlayers += OnWaiting;
+        gm.OnCountdown         += OnCountdown;
+        gm.OnMatchStarted      += OnMatchStarted;
+        gm.OnCrownSpawned      += OnCrownSpawned;
+        gm.OnScoreAdded        += OnScoreAdded;
     }
 
     void OnEnable()
     {
+        Instance = this;
         if (uiDocument == null) uiDocument = GetComponent<UIDocument>();
         if (uiDocument == null) return;
 
@@ -88,9 +121,231 @@ public class HUDController : MonoBehaviour
             settingsMenu.OnCloseSettingsEvent += SyncCursorOnClose;
         }
         
-        UpdateInstructionBar("BOOST", new string[] { "CTRL", "J", "F" });
+        // Start with waiting message instead of hardcoded BOOST
+        ShowWaitingMessage(0);
         SetCursorState(false);
+
+        // ── Build stamina bar inside the existing BottomArea ───────────────
+        BuildStaminaBar();
     }
+
+    // ─── Stamina Bar (UIToolkit, bottom-left) ──────────────────────────────
+
+    private void BuildStaminaBar()
+    {
+        if (root == null) return;
+
+        // Container anchored bottom-left (same style as .bottom-center-area)
+        var container = new VisualElement();
+        container.name = "StaminaBarContainer";
+        container.style.position   = Position.Absolute;
+        container.style.bottom     = 20;
+        container.style.left       = 20;
+        container.style.minWidth   = 180;
+
+        // Label row: "STAMINA" text matching instruction-label style
+        var labelRow = new VisualElement();
+        labelRow.style.flexDirection = FlexDirection.Row;
+        labelRow.style.alignItems    = Align.Center;
+        labelRow.style.marginBottom  = 4;
+
+        var staminaTitle = new Label("STAMINA");
+        staminaTitle.AddToClassList("instruction-label");
+        staminaTitle.style.marginRight = 0;
+        staminaTitle.style.fontSize    = 11;
+        labelRow.Add(staminaTitle);
+
+        _staminaValueLabel = new Label("100");
+        _staminaValueLabel.style.color      = new StyleColor(new UnityEngine.Color(1f, 0.85f, 0.15f)); // gold
+        _staminaValueLabel.style.fontSize   = 10;
+        _staminaValueLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        _staminaValueLabel.style.marginLeft = 6;
+        labelRow.Add(_staminaValueLabel);
+
+        container.Add(labelRow);
+
+        // Track bar (same dark bg as .dynamic-bar)
+        var track = new VisualElement();
+        track.name = "StaminaTrack";
+        track.style.width           = 160;
+        track.style.height          = 6;
+        track.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.1f, 0.1f, 0.1f, 0.7f));
+        track.style.borderTopLeftRadius     = 3;
+        track.style.borderTopRightRadius    = 3;
+        track.style.borderBottomLeftRadius  = 3;
+        track.style.borderBottomRightRadius = 3;
+
+        // Fill bar
+        _staminaFill = new VisualElement();
+        _staminaFill.name = "StaminaFill";
+        _staminaFill.style.width            = Length.Percent(100);
+        _staminaFill.style.height           = Length.Percent(100);
+        _staminaFill.style.backgroundColor  = new StyleColor(new UnityEngine.Color(1f, 0.85f, 0.15f)); // gold — matches --color-primary
+        _staminaFill.style.borderTopLeftRadius     = 3;
+        _staminaFill.style.borderTopRightRadius    = 3;
+        _staminaFill.style.borderBottomLeftRadius  = 3;
+        _staminaFill.style.borderBottomRightRadius = 3;
+
+        track.Add(_staminaFill);
+        container.Add(track);
+
+        root.Add(container);
+        StartCoroutine(PollStamina());
+    }
+
+    private IEnumerator PollStamina()
+    {
+        EdgeParty.Gameplay.Character.PlayerStats localStats = null;
+
+        while (localStats == null)
+        {
+            yield return new WaitForSeconds(0.3f);
+            var all = Object.FindObjectsByType<EdgeParty.Gameplay.Character.PlayerStats>(FindObjectsSortMode.None);
+            foreach (var ps in all)
+            {
+                var nb = ps.GetComponent<Unity.Netcode.NetworkBehaviour>();
+                if (nb != null && nb.IsLocalPlayer) { localStats = ps; break; }
+            }
+        }
+
+        while (localStats != null)
+        {
+            float pct  = localStats.StaminaPct;
+            int   val  = Mathf.RoundToInt(pct * localStats.maxStamina);
+
+            if (_staminaFill  != null) _staminaFill.style.width  = Length.Percent(pct * 100f);
+            if (_staminaValueLabel != null) _staminaValueLabel.text = val.ToString();
+
+            yield return new WaitForSeconds(0.05f);
+        }
+    }
+
+    // ─── Guide Panel Event Handlers ────────────────────────────────────────
+
+    private void OnWaiting(int currentPlayers)
+    {
+        if (currentPlayers == -1) return;  // waiting over, countdown will come next
+        if (_guideIsCountdown) return;
+        _guideIsWaiting = true;
+        ShowWaitingMessage(currentPlayers);
+    }
+
+    private void OnCountdown(int secondsLeft)
+    {
+        _guideIsWaiting    = false;
+        _guideIsCountdown  = secondsLeft > 0;
+        CancelGuideHide();
+
+        if (secondsLeft > 0)
+        {
+            // Show the countdown number as the instruction label, no key-caps
+            SetGuideText(secondsLeft.ToString());
+        }
+        else
+        {
+            // GO!
+            SetGuideText("GO!");
+            ScheduleGuideHide(1.2f);
+        }
+    }
+
+    private void OnMatchStarted()
+    {
+        _guideIsCountdown = false;
+        _guideIsWaiting   = false;
+        // Do not show any fallback guide when match starts; let GO! fade out naturally.
+    }
+
+    private void OnCrownSpawned()
+    {
+        if (_guideIsCountdown || _guideIsWaiting) return;
+        SetGuideText("Vương miện đã xuất hiện!", new Color(1f, 0.85f, 0.15f));
+        ScheduleGuideHide(3f);
+    }
+
+    private void OnScoreAdded(int teamID, int points)
+    {
+        if (_guideIsCountdown || _guideIsWaiting) return;
+        string teamName = teamID == 1 ? "Đội Đỏ" : "Đội Xanh";
+        Color teamColor = teamID == 1 ? RedTeamColor : BlueTeamColor;
+        SetScoreGuideText(teamName, teamColor, $"+{points}");
+        ScheduleGuideHide(2f);
+    }
+
+    private void ShowWaitingMessage(int current)
+    {
+        int needed = ForestGameManager.Instance != null ? ForestGameManager.Instance.requiredPlayers : 2;
+        SetGuideText($"Đang chờ người chơi... {current}/{needed}");
+    }
+
+    private void SetGuideVisible(bool visible)
+    {
+        if (dynamicBar != null)
+        {
+            dynamicBar.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+    }
+
+    /// <summary>Sets the DynamicBar to show a single centered text message (no key-caps).</summary>
+    private void SetGuideText(string message, Color? textColor = null)
+    {
+        if (dynamicBar == null) return;
+        SetGuideVisible(true);
+        dynamicBar.Clear();
+        var lbl = new Label(message);
+        lbl.AddToClassList("instruction-label");
+        lbl.style.fontSize   = 16;
+        lbl.style.marginLeft = 0;
+        lbl.style.marginRight= 0;
+        if (textColor.HasValue)
+        {
+            lbl.style.color = new StyleColor(textColor.Value);
+        }
+        dynamicBar.Add(lbl);
+    }
+
+    private void SetScoreGuideText(string teamName, Color teamColor, string scoreText)
+    {
+        if (dynamicBar == null) return;
+        SetGuideVisible(true);
+        dynamicBar.Clear();
+
+        var teamLbl = new Label(teamName);
+        teamLbl.AddToClassList("instruction-label");
+        teamLbl.style.fontSize = 16;
+        teamLbl.style.marginLeft = 0;
+        teamLbl.style.marginRight = 0;
+        teamLbl.style.color = new StyleColor(teamColor);
+        dynamicBar.Add(teamLbl);
+
+        var scoreLbl = new Label(scoreText);
+        scoreLbl.AddToClassList("instruction-label");
+        scoreLbl.style.fontSize = 16;
+        scoreLbl.style.marginLeft = 4;
+        scoreLbl.style.marginRight = 0;
+        scoreLbl.style.color = new StyleColor(Color.white);
+        dynamicBar.Add(scoreLbl);
+    }
+
+    private void ScheduleGuideHide(float delay)
+    {
+        CancelGuideHide();
+        _guideHideCoroutine = StartCoroutine(HideGuideAfter(delay));
+    }
+
+    private void CancelGuideHide()
+    {
+        if (_guideHideCoroutine != null) { StopCoroutine(_guideHideCoroutine); _guideHideCoroutine = null; }
+    }
+
+    private IEnumerator HideGuideAfter(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        SetGuideVisible(false);
+        _guideHideCoroutine = null;
+    }
+
+
 
     void Update()
     {
@@ -138,9 +393,12 @@ public class HUDController : MonoBehaviour
                 SetCursorState(true);
             }
         }
-        else if (Keyboard.current != null && Keyboard.current.leftAltKey.wasReleasedThisFrame)
+        else
         {
-            SetCursorState(false);
+            if (UnityEngine.Cursor.visible || UnityEngine.Cursor.lockState != CursorLockMode.Locked)
+            {
+                SetCursorState(false);
+            }
         }
 
         // Update Ping and FPS counter if enabled
@@ -371,6 +629,19 @@ public class HUDController : MonoBehaviour
                 AudioManager.Instance.bgmSource.volume = musicVol;
             if (AudioManager.Instance.sfxSource != null)
                 AudioManager.Instance.sfxSource.volume = sfxVol;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (Instance == this) Instance = null;
+        if (ForestGameManager.Instance != null)
+        {
+            ForestGameManager.Instance.OnWaitingForPlayers -= OnWaiting;
+            ForestGameManager.Instance.OnCountdown         -= OnCountdown;
+            ForestGameManager.Instance.OnMatchStarted      -= OnMatchStarted;
+            ForestGameManager.Instance.OnCrownSpawned      -= OnCrownSpawned;
+            ForestGameManager.Instance.OnScoreAdded        -= OnScoreAdded;
         }
     }
 }

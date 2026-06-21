@@ -27,48 +27,25 @@ namespace EdgeParty.Infrastructure.VoiceChat
             string fromUserUri = null,
             string realm = null)
         {
+            UnityEngine.Debug.Log($"[VivoxTokenProvider] GetTokenAsync: action='{action}', fromUserUri='{fromUserUri}', channelUri='{channelUri}', targetUserUri='{targetUserUri}'");
+
             string token;
 
             if (action == "login")
             {
-                token = VivoxTokenGenerator.CreateLoginToken(_playerId);
+                token = VivoxTokenGenerator.CreateLoginToken(fromUserUri);
             }
             else if (action == "join")
             {
-                // Extract just the channel name from the channelUri
-                // Format: sip:confctl-g-issuer.channelName@domain
-                string channelName = ParseChannelName(channelUri);
-                token = VivoxTokenGenerator.CreateJoinToken(_playerId, channelName);
+                token = VivoxTokenGenerator.CreateJoinToken(fromUserUri, channelUri);
             }
             else
             {
-                // For other actions (mute, kick, etc.) fall back to a basic token
-                token = VivoxTokenGenerator.CreateLoginToken(_playerId);
+                token = VivoxTokenGenerator.CreateLoginToken(fromUserUri);
             }
 
             return Task.FromResult(token);
         }
 
-        private string ParseChannelName(string channelUri)
-        {
-            if (string.IsNullOrEmpty(channelUri)) return "MainLobby";
-
-            // sip:confctl-g-issuer.channelName@domain  =>  extract channelName
-            try
-            {
-                // Find the dot after "confctl-g-issuer"
-                int prefixEnd = channelUri.IndexOf(".", StringComparison.Ordinal);
-                int atSign = channelUri.IndexOf("@", StringComparison.Ordinal);
-                if (prefixEnd >= 0 && atSign > prefixEnd)
-                {
-                    return channelUri.Substring(prefixEnd + 1, atSign - prefixEnd - 1);
-                }
-            }
-            catch
-            {
-                // ignored
-            }
-            return "MainLobby";
-        }
     }
 }

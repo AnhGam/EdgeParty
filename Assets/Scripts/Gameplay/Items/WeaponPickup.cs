@@ -25,6 +25,12 @@ namespace EdgeParty.Gameplay.Items
         private Vector3 _startPos;
         private bool _picked = false;
 
+        private void OnEnable()
+        {
+            _picked = false;
+            _startPos = transform.position;
+        }
+
         private void Start()
         {
             _startPos = transform.position;
@@ -101,15 +107,32 @@ namespace EdgeParty.Gameplay.Items
 
             pc.PickupItem(itemType);
 
+            CollectClientRpc();
+
             var netObj = GetComponent<NetworkObject>();
             if (netObj != null && netObj.IsSpawned)
             {
-                netObj.Despawn(true);
+                if (EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton != null)
+                {
+                    EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton.ReturnNetworkObject(netObj);
+                }
+                else
+                {
+                    netObj.Despawn(true);
+                }
             }
             else
             {
                 Destroy(gameObject);
             }
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void CollectClientRpc()
+        {
+            gameObject.SetActive(false);
+            // Play SFX
+            AudioManager.Instance?.PlaySFX(pickupSFX);
         }
     }
 }

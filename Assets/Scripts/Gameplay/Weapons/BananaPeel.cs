@@ -26,6 +26,9 @@ namespace EdgeParty.Gameplay.Items
 
         public override void OnNetworkSpawn()
         {
+            _isTriggered = false;
+            _lifetimeTimer = 0f;
+
             if (IsServer)
             {
                 PlayPlaceSFXClientRpc(transform.position);
@@ -38,7 +41,13 @@ namespace EdgeParty.Gameplay.Items
             _lifetimeTimer += Time.deltaTime;
             if (_lifetimeTimer >= trapLifetime)
             {
-                if (IsSpawned) GetComponent<NetworkObject>().Despawn(true);
+                if (IsSpawned) 
+                {
+                    if (EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton != null)
+                        EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton.ReturnNetworkObject(GetComponent<NetworkObject>());
+                    else
+                        GetComponent<NetworkObject>().Despawn(true);
+                }
             }
         }
 
@@ -56,7 +65,13 @@ namespace EdgeParty.Gameplay.Items
 
             TriggerSlideClientRpc(victimId, transform.position);
 
-            if (IsSpawned) GetComponent<NetworkObject>().Despawn(true);
+            if (IsSpawned) 
+            {
+                if (EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton != null)
+                    EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton.ReturnNetworkObject(GetComponent<NetworkObject>());
+                else
+                    GetComponent<NetworkObject>().Despawn(true);
+            }
         }
 
         [ClientRpc]

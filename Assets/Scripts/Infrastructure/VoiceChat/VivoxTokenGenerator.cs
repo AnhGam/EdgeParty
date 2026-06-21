@@ -12,30 +12,38 @@ namespace EdgeParty.Infrastructure.VoiceChat
     /// </summary>
     public static class VivoxTokenGenerator
     {
-        private static readonly string Header = "{\"typ\":\"JWT\",\"alg\":\"HS256\"}";
+        private static readonly string Header = "{}"; // Encodes to "e30" as required by Vivox
+        private static int _vxi = 1;
 
-        public static string CreateLoginToken(string playerId)
+        private static int GetNextVxi()
+        {
+            return System.Threading.Interlocked.Increment(ref _vxi);
+        }
+
+        public static string CreateLoginToken(string fromUserUri)
         {
             var claims = new Dictionary<string, object>
             {
                 { "iss", VivoxConfig.TokenIssuer },
                 { "exp", GetExpiry() },
                 { "vxa", "login" },
-                { "f", $"sip:.{VivoxConfig.TokenIssuer}.{playerId}.@{VivoxConfig.Domain}" }
+                { "f", fromUserUri },
+                { "vxi", GetNextVxi() }
             };
 
             return GenerateToken(claims);
         }
 
-        public static string CreateJoinToken(string playerId, string channelName)
+        public static string CreateJoinToken(string fromUserUri, string channelUri)
         {
             var claims = new Dictionary<string, object>
             {
                 { "iss", VivoxConfig.TokenIssuer },
                 { "exp", GetExpiry() },
                 { "vxa", "join" },
-                { "f", $"sip:.{VivoxConfig.TokenIssuer}.{playerId}.@{VivoxConfig.Domain}" },
-                { "t", $"sip:confctl-g-{VivoxConfig.TokenIssuer}.{channelName}@{VivoxConfig.Domain}" }
+                { "f", fromUserUri },
+                { "t", channelUri },
+                { "vxi", GetNextVxi() }
             };
 
             return GenerateToken(claims);

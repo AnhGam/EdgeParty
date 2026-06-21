@@ -38,15 +38,21 @@ namespace EdgeParty.Gameplay.Items
 
         public override void OnNetworkSpawn()
         {
-            isPickup.OnValueChanged += OnPickupStateChanged;
-            if (isPickup.Value) SetupAsPickup();
-            else SetupAsProjectile();
+            _hasExploded = false;
+            _isThrown = false;
+            _timer = 0f;
+            if (_rb != null) _rb.linearVelocity = Vector3.zero;
 
             if (IsServer)
             {
+                isPickup.Value = true; // Default to pickup when pulled from pool
                 _netPosition.Value = transform.position;
                 _netRotation.Value = transform.rotation;
             }
+
+            isPickup.OnValueChanged += OnPickupStateChanged;
+            if (isPickup.Value) SetupAsPickup();
+            else SetupAsProjectile();
         }
 
         public override void OnNetworkDespawn()
@@ -303,7 +309,16 @@ namespace EdgeParty.Gameplay.Items
             TriggerExplosionEffectsClientRpc(explosionPos);
 
             if (IsSpawned)
-                GetComponent<NetworkObject>().Despawn(true);
+            {
+                if (EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton != null)
+                {
+                    EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton.ReturnNetworkObject(GetComponent<NetworkObject>());
+                }
+                else
+                {
+                    GetComponent<NetworkObject>().Despawn(true);
+                }
+            }
         }
 
         [Rpc(SendTo.ClientsAndHost)]

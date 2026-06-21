@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
+using Unity.Services.Vivox;
 using UnityEngine;
 
 namespace EdgeParty.Auth
@@ -69,6 +70,7 @@ namespace EdgeParty.Auth
         {
             try
             {
+                RunRegistryDiagnostics("Before Init");
                 if (UnityServices.State == ServicesInitializationState.Uninitialized)
                 {
                     var options = new InitializationOptions();
@@ -107,8 +109,21 @@ namespace EdgeParty.Auth
                     }
 #endif
                     options.SetProfile(profile);
+                    options.SetVivoxCredentials(
+                        EdgeParty.Infrastructure.VoiceChat.VivoxConfig.Server,
+                        EdgeParty.Infrastructure.VoiceChat.VivoxConfig.Domain,
+                        EdgeParty.Infrastructure.VoiceChat.VivoxConfig.TokenIssuer,
+                        EdgeParty.Infrastructure.VoiceChat.VivoxConfig.TokenKey
+                    );
+
                     await UnityServices.InitializeAsync(options);
                     Debug.Log($"Unity Services Initialized successfully with profile: {profile}");
+                    RunRegistryDiagnostics("After Init");
+                    
+                    // ── DIAGNOSTIC: Xác nhận VivoxService.Instance sau UGS init ──
+                    // Nếu log dưới in "null" → VivoxPackageInitializer.Initialize() bị throw
+                    // hoặc SDK không được đăng ký đúng cách.
+                    Debug.Log($"[AuthService] VivoxService.Instance after UGS init: {(Unity.Services.Vivox.VivoxService.Instance != null ? "NOT NULL ✓" : "NULL ✗")}");
                     
                     AuthenticationService.Instance.SignedIn += () =>
                     {
@@ -132,12 +147,16 @@ namespace EdgeParty.Auth
             }
         }
 
-        private async Task EnsureInitializedAsync()
+        private Task _initTask;
+
+        public Task EnsureInitializedAsync()
         {
-            if (!IsInitialized)
+            if (IsInitialized) return Task.CompletedTask;
+            if (_initTask == null)
             {
-                await InitializeServicesAsync();
+                _initTask = InitializeServicesAsync();
             }
+            return _initTask;
         }
 
         public async Task SignUpAsync(string username, string email, string password)
@@ -294,6 +313,7 @@ namespace EdgeParty.Auth
 
                     Debug.Log($"Already signed in. Player ID: {AuthenticationService.Instance.PlayerId}, Name: {CachedUsername}");
                     await CloudSaveManager.Instance.LoadAllAsync();
+                    OnSignInSuccess?.Invoke();
                     return true;
                 }
 
@@ -309,6 +329,7 @@ namespace EdgeParty.Auth
 
                     Debug.Log($"Auto-login successful. Player ID: {AuthenticationService.Instance.PlayerId}, Name: {CachedUsername}");
                     await CloudSaveManager.Instance.LoadAllAsync();
+                    OnSignInSuccess?.Invoke();
                     return true;
                 }
             }
@@ -347,6 +368,125 @@ namespace EdgeParty.Auth
             {
                 Debug.LogWarning($"[MOCK OTP] OTP Verification failed. Entered: {otp}, Expected: {_lastSentOtp}");
                 return Task.FromResult(false);
+            }
+        }
+
+        private void RunRegistryDiagnostics(string stage)
+        {
+            try
+            {
+                Debug.Log($"[RegistryDiagnostics] Stage: {stage}");
+                
+                // Print active platform / preprocessor settings
+                string activePlatform = "";
+#if UNITY_EDITOR
+                activePlatform += "UNITY_EDITOR ";
+#endif
+#if UNITY_STANDALONE_WIN
+                activePlatform += "UNITY_STANDALONE_WIN ";
+#endif
+#if UNITY_STANDALONE_LINUX
+                activePlatform += "UNITY_STANDALONE_LINUX ";
+#endif
+#if UNITY_SERVER
+                activePlatform += "UNITY_SERVER ";
+#endif
+#if UNITY_STANDALONE
+                activePlatform += "UNITY_STANDALONE ";
+#endif
+#if !UNITY_STANDALONE_LINUX
+                activePlatform += "!UNITY_STANDALONE_LINUX ";
+#else
+                activePlatform += "UNITY_STANDALONE_LINUX_DEFINED ";
+#endif
+                Debug.Log($"[RegistryDiagnostics] Compilation Preprocessors: {activePlatform}");
+                Debug.Log($"[RegistryDiagnostics] Application Platform: {Application.platform}");
+
+                var coreRegistryType = typeof(Unity.Services.Core.UnityServices).Assembly.GetType("Unity.Services.Core.Internal.CorePackageRegistry");
+                if (coreRegistryType == null)
+                {
+                    Debug.LogWarning("[RegistryDiagnostics] Could not find CorePackageRegistry type.");
+                    return;
+                }
+                var instanceProp = coreRegistryType.GetProperty("Instance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (instanceProp == null)
+                {
+                    Debug.LogWarning("[RegistryDiagnostics] Could not find Instance property on CorePackageRegistry.");
+                    return;
+                }
+                var registryInstance = instanceProp.GetValue(null);
+                if (registryInstance == null)
+                {
+                    Debug.LogWarning("[RegistryDiagnostics] CorePackageRegistry.Instance is null.");
+                    return;
+                }
+                var registryProp = coreRegistryType.GetProperty("Registry", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (registryProp == null)
+                {
+                    Debug.LogWarning("[RegistryDiagnostics] Could not find Registry property on CorePackageRegistry.");
+                    return;
+                }
+                var registryObj = registryProp.GetValue(registryInstance);
+                if (registryObj == null)
+                {
+                    Debug.LogWarning("[RegistryDiagnostics] CorePackageRegistry.Instance.Registry is null.");
+                    return;
+                }
+                Debug.Log($"[RegistryDiagnostics] Registry type: {registryObj.GetType().FullName}");
+                var treeProp = registryObj.GetType().GetProperty("Tree", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (treeProp == null)
+                {
+                    var registryField = registryObj.GetType().GetProperty("Registry", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    if (registryField != null)
+                    {
+                        var innerRegistry = registryField.GetValue(registryObj);
+                        if (innerRegistry != null)
+                        {
+                            treeProp = innerRegistry.GetType().GetProperty("Tree", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                            registryObj = innerRegistry;
+                        }
+                    }
+                }
+                if (treeProp == null)
+                {
+                    Debug.LogWarning("[RegistryDiagnostics] Could not find Tree property.");
+                    return;
+                }
+                var treeObj = treeProp.GetValue(registryObj);
+                if (treeObj == null)
+                {
+                    Debug.LogWarning("[RegistryDiagnostics] DependencyTree is null.");
+                    return;
+                }
+                var packageHashField = treeObj.GetType().GetField("PackageTypeHashToInstance", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (packageHashField == null)
+                {
+                    Debug.LogWarning("[RegistryDiagnostics] Could not find PackageTypeHashToInstance field.");
+                    return;
+                }
+                var dict = packageHashField.GetValue(treeObj) as System.Collections.IDictionary;
+                if (dict == null)
+                {
+                    Debug.LogWarning("[RegistryDiagnostics] PackageTypeHashToInstance is null or not a dictionary.");
+                    return;
+                }
+                Debug.Log($"[RegistryDiagnostics] Total registered packages: {dict.Count}");
+                foreach (System.Collections.DictionaryEntry entry in dict)
+                {
+                    var val = entry.Value;
+                    if (val != null)
+                    {
+                        Debug.Log($"  - Package: {val.GetType().FullName}");
+                    }
+                    else
+                    {
+                        Debug.Log($"  - Package: [null] with hash {entry.Key}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[RegistryDiagnostics] Error running diagnostics: {ex.Message}\n{ex.StackTrace}");
             }
         }
     }

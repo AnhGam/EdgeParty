@@ -15,6 +15,37 @@ public class NameplateUI : MonoBehaviour
     public static readonly Color Team2Color = new Color(0.2f, 0.5f, 0.9f, 0.85f); // Xanh
     public static readonly Color DefaultColor = new Color(0.1f, 0.1f, 0.1f, 0.7f);
 
+    private void Awake()
+    {
+        // Fix khẩn cấp: Xóa EventSystem nếu vô tình bị dính vào NameplateUI prefab
+        // (Đây chính là nguyên nhân làm liệt input và hỏng nhân vật)
+        Transform esObj = transform.Find("EventSystem");
+        if (esObj != null) Destroy(esObj.gameObject);
+
+        // Tự động tìm cục Background nếu bạn quên kéo vào (để chống lỗi Type Mismatch)
+        if (backgroundImage == null)
+        {
+            Transform bgTransform = transform.Find("Background");
+            if (bgTransform != null)
+            {
+                backgroundImage = bgTransform.GetComponent<Image>();
+            }
+            else
+            {
+                // Nếu tên khác, tìm đại cái Image nào đó nằm ngay dưới gốc
+                foreach (Transform child in transform)
+                {
+                    Image img = child.GetComponent<Image>();
+                    if (img != null && img.gameObject.name.Contains("Background"))
+                    {
+                        backgroundImage = img;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     public void SetPlayerName(string playerName)
     {
         if (playerNameText != null)
@@ -44,5 +75,16 @@ public class NameplateUI : MonoBehaviour
         Color maxColor = new Color(0f, 1f, 0f);
 
         micImage.color = Color.Lerp(minColor, maxColor, t);
+    }
+
+    private void LateUpdate()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) cam = Object.FindFirstObjectByType<Camera>();
+        if (cam != null)
+        {
+            // Luôn xoay Nameplate về phía Camera để chữ luôn dựng đứng và nhìn rõ (Billboard)
+            transform.forward = cam.transform.forward;
+        }
     }
 }

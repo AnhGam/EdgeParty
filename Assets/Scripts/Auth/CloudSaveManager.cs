@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudSave;
 using Unity.Services.CloudSave.Models;
@@ -47,6 +48,9 @@ namespace EdgeParty.Auth
         public EquippedOutfit CachedEquipped { get; private set; } = new EquippedOutfit();
 
         public bool IsLoaded { get; private set; } = false;
+
+        // Prevents concurrent CloudSave writes that cause HTTP 409 Conflict
+        private readonly SemaphoreSlim _saveLock = new SemaphoreSlim(1, 1);
 
         public event Action OnDataLoaded;
         public event Action OnDataSaved;
@@ -129,6 +133,7 @@ namespace EdgeParty.Auth
         {
             CachedCoins      = coins;
             CachedOwnedItems = ownedItems ?? new List<string>();
+            await _saveLock.WaitAsync();
             try
             {
                 await EnsureServicesReady();
@@ -146,6 +151,10 @@ namespace EdgeParty.Auth
                 Debug.LogError($"[CloudSaveManager] SaveCoinsAndItems failed: {ex.Message}");
                 StitchUIController.Instance?.ShowErrorPopup("Lỗi Lưu Trữ", $"Không thể lưu xu và vật phẩm lên đám mây: {ex.Message}");
             }
+            finally
+            {
+                _saveLock.Release();
+            }
         }
 
         /// <summary>
@@ -161,6 +170,7 @@ namespace EdgeParty.Auth
                 emotion  = emotion,
                 color    = color
             };
+            await _saveLock.WaitAsync();
             try
             {
                 await EnsureServicesReady();
@@ -177,6 +187,10 @@ namespace EdgeParty.Auth
                 Debug.LogError($"[CloudSaveManager] SaveEquippedOutfit failed: {ex.Message}");
                 StitchUIController.Instance?.ShowErrorPopup("Lỗi Lưu Trữ", $"Không thể lưu trang phục được trang bị lên đám mây: {ex.Message}");
             }
+            finally
+            {
+                _saveLock.Release();
+            }
         }
 
         public bool OwnsItem(string itemId) => CachedOwnedItems.Contains(itemId);
@@ -184,7 +198,7 @@ namespace EdgeParty.Auth
         private async Task EnsureServicesReady()
         {
             if (UnityServices.State != ServicesInitializationState.Initialized)
-                await UnityServices.InitializeAsync();
+                await EdgeParty.Auth.AuthService.Instance.EnsureInitializedAsync();
         }
     }
 }

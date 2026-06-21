@@ -5,6 +5,8 @@ using System.Collections;
 using EdgeParty.Auth;
 using EdgeParty.Gameplay.Camera;
 using EdgeParty.Gameplay.Items;
+using EdgeParty.Infrastructure.VoiceChat;
+using Unity.Services.Authentication;
 
 namespace EdgeParty.Gameplay.Character
 {
@@ -34,7 +36,17 @@ namespace EdgeParty.Gameplay.Character
 
         [Header("Item Held")]
         // Item hiện tại player đang cầm (null = tay trống)
-        public WeaponPickup.ItemType? CurrentHeldItem { get; private set; } = null;
+        public NetworkVariable<int> currentHeldItemNetVar = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        
+        public WeaponPickup.ItemType? CurrentHeldItem 
+        { 
+            get 
+            { 
+                if (currentHeldItemNetVar.Value == -1) return null; 
+                return (WeaponPickup.ItemType)currentHeldItemNetVar.Value; 
+            } 
+        }
+        
         public int heldItemCharges = 0;
 
         [Header("Weapon Hand Offsets")]
@@ -48,6 +60,12 @@ namespace EdgeParty.Gameplay.Character
         // Player display name – synced once at spawn, read by all clients for nameplates
         public NetworkVariable<FixedString64Bytes> playerNameSync = new NetworkVariable<FixedString64Bytes>(
             new FixedString64Bytes("Player"),
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+            
+        // UGS PlayerId - used to map Voice Chat events (Vivox) to this specific player
+        public NetworkVariable<FixedString64Bytes> ugsPlayerIdSync = new NetworkVariable<FixedString64Bytes>(
+            new FixedString64Bytes(""),
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Owner);
         
@@ -102,12 +120,14 @@ namespace EdgeParty.Gameplay.Character
             SyncLegacyReferences();
             IgnoreInternalCollisions();
 
-            // Dynamically attach NetworkPlayerAppearance to replicate cosmetics in multiplayer
+            // NetworkPlayerAppearance được add động để đảm bảo luôn có kể cả khi quên add vào prefab.
+            // LƯU Ý: Nếu gặp OverflowException khi join server, kiểm tra xem có GameObject mới nào
+            // được thêm vào hierarchy của prefab làm thay đổi thứ tự NetworkBehaviour không.
             var appearance = GetComponentInChildren<NetworkPlayerAppearance>(true);
             if (appearance == null)
             {
                 appearance = gameObject.AddComponent<NetworkPlayerAppearance>();
-                Debug.Log("[PlayerController] Dynamically attached NetworkPlayerAppearance to player!");
+                Debug.Log("[PlayerController] Dynamically attached NetworkPlayerAppearance to player.");
             }
 
             // Prevent active ragdoll limbs from sinking into the ground or jittering
@@ -155,7 +175,18 @@ namespace EdgeParty.Gameplay.Character
                 if (animController.ghostAnimator == null)
                     animController.ghostAnimator = GetComponentInChildren<Animator>();
             }
+
+            // Auto-fill ghostAnimator trên chính PlayerController để các component khác
+            // (như PlayerAudioController) có thể tìm thấy mà không cần kéo tay vào Inspector.
+            if (ghostAnimator == null)
+            {
+                if (ghostRoot != null)
+                    ghostAnimator = ghostRoot.GetComponentInChildren<Animator>();
+                if (ghostAnimator == null)
+                    ghostAnimator = GetComponentInChildren<Animator>();
+            }
         }
+
 
 
         public override void OnNetworkSpawn()
@@ -172,14 +203,14 @@ namespace EdgeParty.Gameplay.Character
                 nameplateInstance = Instantiate(nameplatePrefab, headAnchor);
                 nameplateInstance.transform.localPosition = Vector3.zero;
                 // Show current synced name (may already be set for late-joiners)
-                nameplateInstance?.SetPlayerName(playerNameSync.Value.ToString());
+                UpdateNameplateName(playerNameSync.Value.ToString());
                 nameplateInstance?.SetTeamColor(TeamID.Value);
                 nameplateInstance.SetMicLevel(0);
             }
 
             playerNameSync.OnValueChanged += (_, newName) =>
             {
-                nameplateInstance?.SetPlayerName(newName.ToString());
+                UpdateNameplateName(newName.ToString());
             };
 
             if (IsLocalPlayer)
@@ -187,6 +218,46 @@ namespace EdgeParty.Gameplay.Character
                 // Write username into the network variable so all clients see it
                 string myName = AuthService.Instance != null ? AuthService.Instance.CachedUsername : $"Player {OwnerClientId}";
                 playerNameSync.Value = new FixedString64Bytes(myName);
+                
+                try 
+                {
+                    if (AuthenticationService.Instance.IsSignedIn)
+                    {
+                        ugsPlayerIdSync.Value = new FixedString64Bytes(AuthenticationService.Instance.PlayerId);
+                    }
+                }
+                catch (System.Exception e) { Debug.LogWarning($"[VoiceChat] Could not sync UGS PlayerId: {e.Message}"); }
+            }
+            
+            // Subscribe to VoiceChat events to light up the mic icon
+            if (VoiceChatManager.Instance != null)
+            {
+                VoiceChatManager.Instance.OnParticipantSpeaking += OnParticipantSpeaking;
+
+                if (IsLocalPlayer)
+                {
+                    // Nếu đang test local / direct connect (không dùng Matchmaking)
+                    // thì tự động join 1 channel mặc định để test Mic
+                    bool hasMatchmaking = false;
+                    var matchMgr = Object.FindFirstObjectByType<EdgeParty.ConnectionManagement.MatchmakingManager>();
+                    if (matchMgr != null && !string.IsNullOrEmpty(matchMgr._lastMatchId))
+                    {
+                        hasMatchmaking = true;
+                    }
+
+                    // Nếu Guest join qua FriendLobbyService thì kiểm tra thêm trong FriendLobbyService
+                    var lobbySvc = Object.FindFirstObjectByType<EdgeParty.Social.FriendLobbyService>();
+                    if (lobbySvc != null && !string.IsNullOrEmpty(lobbySvc.CurrentLobbyId))
+                    {
+                        hasMatchmaking = true; // Đang trong chế độ chơi online qua lobby
+                    }
+
+                    if (!hasMatchmaking)
+                    {
+                        Debug.Log("[PlayerController] No Matchmaking/Lobby active. Joining local Vivox channel.");
+                        _ = VoiceChatManager.Instance.JoinMatchChannel("LocalTestChannel");
+                    }
+                }
             }
 
             if (IsServer)
@@ -213,6 +284,9 @@ namespace EdgeParty.Gameplay.Character
             torsoMultiplier.OnValueChanged += OnMultiplierChanged;
             headMultiplier.OnValueChanged += OnMultiplierChanged;
             tailMultiplier.OnValueChanged += OnMultiplierChanged;
+
+            currentHeldItemNetVar.OnValueChanged += OnHeldItemChanged;
+            UpdateWeaponVisuals(); // Khởi tạo visual vũ khí cho late-joiners
 
             ApplyBoneMultipliers();
 
@@ -241,6 +315,36 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
+        private void UpdateNameplateName(string rawName)
+        {
+            if (nameplateInstance == null) return;
+
+            if (IsLocalPlayer)
+            {
+                nameplateInstance.SetPlayerName("You");
+            }
+            else
+            {
+                int hashIndex = rawName.IndexOf('#');
+                if (hashIndex > 0)
+                {
+                    rawName = rawName.Substring(0, hashIndex);
+                }
+                nameplateInstance.SetPlayerName(rawName);
+            }
+        }
+
+        private void OnParticipantSpeaking(string participantId, bool isSpeaking)
+        {
+            if (nameplateInstance == null) return;
+            
+            // If the person speaking matches this monkey's UGS ID, light up the mic!
+            if (ugsPlayerIdSync.Value.ToString() == participantId)
+            {
+                nameplateInstance.SetMicLevel(isSpeaking ? 100f : 0f);
+            }
+        }
+
         private void OnTeamChanged(int oldTeam, int newTeam)
         {
             nameplateInstance?.SetTeamColor(newTeam);
@@ -253,40 +357,36 @@ namespace EdgeParty.Gameplay.Character
         public void PickupItem(WeaponPickup.ItemType type)
         {
             if (!IsServer) return;
-            CurrentHeldItem = type;
+            currentHeldItemNetVar.Value = (int)type;
             heldItemCharges = 1;
-            NotifyPickupClientRpc((int)type);
             Debug.Log($"[PlayerController] {playerNameSync.Value} picked up {type}");
         }
 
-        [Rpc(SendTo.ClientsAndHost)]
-        private void NotifyPickupClientRpc(int itemTypeInt)
-        {
-            var type = (WeaponPickup.ItemType)itemTypeInt;
-            CurrentHeldItem = type;
-            UpdateWeaponVisuals();
-
-            // Play pickup sound on all clients
-            var pickupSFX = Resources.Load<AudioClip>("Audios/gun_hit_sfx");
-            if (pickupSFX != null && AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlaySFX(pickupSFX);
-            }
-        }
 
         public void ConsumeHeldItem()
         {
             if (!IsServer) return;
-            CurrentHeldItem = null;
-            NotifyConsumeClientRpc();
+            currentHeldItemNetVar.Value = -1;
         }
 
-        [Rpc(SendTo.ClientsAndHost)]
-        private void NotifyConsumeClientRpc()
+        private void OnHeldItemChanged(int oldVal, int newVal)
         {
-            SpawnWeaponDisappearVFX();
-            CurrentHeldItem = null;
-            UpdateWeaponVisuals();
+            if (newVal != -1)
+            {
+                UpdateWeaponVisuals();
+                
+                // Play pickup sound on all clients
+                var pickupSFX = Resources.Load<AudioClip>("Audios/Gameplay/Item_pickup");
+                if (pickupSFX != null && AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlaySFX(pickupSFX);
+                }
+            }
+            else if (newVal == -1 && oldVal != -1)
+            {
+                SpawnWeaponDisappearVFX();
+                UpdateWeaponVisuals();
+            }
         }
 
         private static Material _particleMat;
@@ -418,12 +518,18 @@ namespace EdgeParty.Gameplay.Character
 
         public override void OnNetworkDespawn()
         {
+            if (VoiceChatManager.Instance != null)
+            {
+                VoiceChatManager.Instance.OnParticipantSpeaking -= OnParticipantSpeaking;
+            }
             legMultiplier.OnValueChanged -= OnMultiplierChanged;
             armMultiplier.OnValueChanged -= OnMultiplierChanged;
             torsoMultiplier.OnValueChanged -= OnMultiplierChanged;
             headMultiplier.OnValueChanged -= OnMultiplierChanged;
             tailMultiplier.OnValueChanged -= OnMultiplierChanged;
             TeamID.OnValueChanged -= OnTeamChanged;
+            
+            currentHeldItemNetVar.OnValueChanged -= OnHeldItemChanged;
 
             if (IsServer && NetworkManager != null && NetworkManager.SceneManager != null)
             {
@@ -605,6 +711,15 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnInputReceived_Server(Vector3 moveDir, bool isRunning)
         {
+            // Server-side Input Validation: Speed Hack prevention
+            moveDir = Vector3.ClampMagnitude(moveDir, 1f);
+
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive)
+            {
+                motor?.SetMovementInput(Vector3.zero, false);
+                animController?.SetMovementInput(Vector3.zero, false);
+                return;
+            }
             if (stats != null && stats.IsDead.Value) return;
             // Block input sau khi vừa hồi (cho nhân vật đứng ổn)
             if (_isInputBlocked) return;
@@ -620,10 +735,21 @@ namespace EdgeParty.Gameplay.Character
             animController?.SetMovementInput(moveDir, canRun);
         }
 
+        private float _lastJumpTime = -99f;
         public void OnJumpTriggered_Server(Vector3 moveDir)
         {
+            // Server-side Input Validation
+            moveDir = Vector3.ClampMagnitude(moveDir, 1f);
+
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
+            // Only allow jumping when grounded to prevent infinite spam
+            if (motor != null && !motor.IsGrounded) return;
+            
+            // Prevent bunny hop macro spam (cooldown 0.75s)
+            if (Time.time - _lastJumpTime < 0.75f) return;
+            _lastJumpTime = Time.time;
             if (motor != null && animController != null)
             {
                 motor.ApplyJump(moveDir);
@@ -633,6 +759,7 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnDashTriggered_Server()
         {
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
             if (animController == null || !animController.CanDash()) return;
@@ -644,6 +771,7 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnAttackTriggered_Server(Vector3 aimDirection = default)
         {
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
 
@@ -665,11 +793,22 @@ namespace EdgeParty.Gameplay.Character
                 Vector3 throwDir = (finalAimDir + Vector3.up * 0.3f).normalized;
                 
                 // Server logical bomb (networked)
-                var bombGo = Instantiate(Resources.Load<GameObject>("BombBall"), spawnPos, Quaternion.identity);
-                var netObj = bombGo.GetComponent<NetworkObject>();
-                netObj.Spawn();
+                var prefab = Resources.Load<GameObject>("BombBall");
+                NetworkObject bombNetObj = null;
 
-                var bombItem = bombGo.GetComponent<BombItem>();
+                if (EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton != null && prefab != null)
+                {
+                    bombNetObj = EdgeParty.ConnectionManagement.NetworkObjectPool.Singleton.GetNetworkObject(prefab, spawnPos, Quaternion.identity);
+                    if (!bombNetObj.IsSpawned) bombNetObj.Spawn();
+                }
+                else
+                {
+                    var bombGo = Instantiate(prefab, spawnPos, Quaternion.identity);
+                    bombNetObj = bombGo.GetComponent<NetworkObject>();
+                    bombNetObj.Spawn();
+                }
+
+                var bombItem = bombNetObj.GetComponent<BombItem>();
                 if (bombItem != null)
                 {
                     bombItem.ThrowBomb(throwDir, 12f, this);
@@ -915,25 +1054,33 @@ namespace EdgeParty.Gameplay.Character
             }
         }
 
-        public void OnGrabTriggered_Server()
+        public void OnGrabStarted_Server()
         {
+            if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
-            if (animController != null)
-            {
-                animController.TriggerGrab();
-                
-                // Sync grab handlers with the state
-                bool isGrabbing = animController.CurrentState == PlayerState.Grab;
+            if (animController == null) return;
+            if (animController.IsGrabbing) return; // đã đang grab
 
-                if (_grabHandlers == null || _grabHandlers.Length == 0)
-                    _grabHandlers = GetComponentsInChildren<GrabHandler>();
+            animController.StartGrab();
 
-                if (_grabHandlers != null)
-                {
-                    foreach (var h in _grabHandlers) h.SetActive(isGrabbing);
-                }
-            }
+            if (_grabHandlers == null || _grabHandlers.Length == 0)
+                _grabHandlers = GetComponentsInChildren<GrabHandler>();
+
+            if (_grabHandlers != null)
+                foreach (var h in _grabHandlers) h.SetActive(true);
+        }
+
+        public void OnGrabReleased_Server()
+        {
+            if (animController == null) return;
+            animController.StopGrab();
+
+            if (_grabHandlers == null || _grabHandlers.Length == 0)
+                _grabHandlers = GetComponentsInChildren<GrabHandler>();
+
+            if (_grabHandlers != null)
+                foreach (var h in _grabHandlers) h.SetActive(false);
         }
 
         public void SetRagdollStrength(float factor)
@@ -955,12 +1102,8 @@ namespace EdgeParty.Gameplay.Character
 
             if (animController != null)
             {
-                if (animController.CurrentState == PlayerState.Grab)
-                {
-                    armBoost = combatBoostMultiplier * 10f; // High stiffness for correct height
-                    torsoBoost = 3f; // Stable torso
-                }
-                else if (animController.IsAttacking)
+                // Không boost arm/torso khi Grab để tránh việc spring khắng ragdoll dựng đứng
+                if (animController.IsAttacking)
                 {
                     armBoost = combatBoostMultiplier;
                 }
@@ -968,6 +1111,7 @@ namespace EdgeParty.Gameplay.Character
 
             foreach (var f in _followers)
             {
+                if (f == null) continue;
                 float mult = f.category switch
                 {
                     BoneCategory.Leg => legMultiplier.Value,
@@ -1035,6 +1179,7 @@ namespace EdgeParty.Gameplay.Character
             
             foreach (var f in _followers)
             {
+                if (f == null) continue;
                 f.SetSpringMultiplier(0f);
                 // Unlock limits on the root pelvis bone only, to let the player fall over naturally
                 // while keeping limb joint limits intact to prevent them from crumpling/collapsing.
@@ -1066,6 +1211,7 @@ namespace EdgeParty.Gameplay.Character
                 _followers = GetComponentsInChildren<RagdollBoneFollower>();
             foreach (var f in _followers)
             {
+                if (f == null) continue;
                 f.SetSpringMultiplier(1f);
                 f.RestoreLimits();
             }
@@ -1140,7 +1286,9 @@ namespace EdgeParty.Gameplay.Character
             if (_followers == null || _followers.Length == 0)
                 _followers = GetComponentsInChildren<RagdollBoneFollower>();
             foreach (var f in _followers)
-                f.SetSpringMultiplier(0.15f);
+            {
+                if (f != null) f.SetSpringMultiplier(0.15f);
+            }
 
             GameObject vfxInstance = SpawnBuiltinElectricVFX(transform);
 
@@ -1161,7 +1309,9 @@ namespace EdgeParty.Gameplay.Character
 
             _isLocallyDead = false;
             foreach (var f in _followers)
-                f.SetSpringMultiplier(1f);
+            {
+                if (f != null) f.SetSpringMultiplier(1f);
+            }
 
             if (vfxInstance != null) Destroy(vfxInstance);
             
