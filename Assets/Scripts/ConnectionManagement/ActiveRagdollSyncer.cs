@@ -18,6 +18,7 @@ namespace EdgeParty.ConnectionManagement
 
     public struct RagdollFrameState : INetworkSerializable
     {
+        public double ServerTime;
         public int AnimatorStateHash;
         public float AnimatorNormalizedTime;
         public ulong SyncMask;
@@ -25,6 +26,7 @@ namespace EdgeParty.ConnectionManagement
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
+            serializer.SerializeValue(ref ServerTime);
             serializer.SerializeValue(ref AnimatorStateHash);
             serializer.SerializeValue(ref AnimatorNormalizedTime);
             serializer.SerializeValue(ref SyncMask);
@@ -59,7 +61,12 @@ namespace EdgeParty.ConnectionManagement
     {
         [Header("Interpolation")]
         public float syncRate = 20f;
-        public float smoothSpeed = 15f;
+        [Tooltip("Độ trễ nội suy cơ bản. Tăng lên nếu mạng chập chờn hơn.")]
+        public float baseInterpolationDelay = 0.03f; 
+        
+        // Snapshot Buffer
+        private List<RagdollFrameState> _snapshotBuffer = new List<RagdollFrameState>();
+        private const int MAX_BUFFER_SIZE = 32;
 
         [Header("Delta Compression")]
         public float positionThreshold = 0.05f;
@@ -71,14 +78,13 @@ namespace EdgeParty.ConnectionManagement
         private Transform[] _bones;
         
         private RagdollFrameState _targetState;
-        private RagdollFrameState _prevState;
         
         private float _lastSendTime;
         private float _lastKeyframeTime;
         private RagdollFrameState _lastSentState;
         private float[] _lastBoneChangeTime;
 
-        private float _interpolationParam;
+        // _interpolationParam removed
 
         private Animator _ghostAnimator;
         private EdgeParty.Gameplay.Character.PlayerController _playerController;
@@ -143,12 +149,11 @@ namespace EdgeParty.ConnectionManagement
             }
 
             _targetState.Bones = new BoneState[_bones.Length];
-            _prevState.Bones = new BoneState[_bones.Length];
             _lastSentState.Bones = new BoneState[_bones.Length];
             _lastBoneChangeTime = new float[_bones.Length];
             
             CaptureState(ref _targetState);
-            CaptureState(ref _prevState);
+            // removed prevState capture
             CaptureState(ref _lastSentState);
         }
 
@@ -167,6 +172,7 @@ namespace EdgeParty.ConnectionManagement
                     if (isKeyframe) _lastKeyframeTime = Time.time;
 
                     RagdollFrameState stateToSend = new RagdollFrameState();
+                    stateToSend.ServerTime = NetworkManager.Singleton.ServerTime.Time;
                     stateToSend.Bones = new BoneState[_bones.Length];
                     stateToSend.SyncMask = 0;
 
@@ -223,26 +229,67 @@ namespace EdgeParty.ConnectionManagement
             bool isPureClient = IsClient && !IsServer;
             if (isPureClient)
             {
-                // Ở Client, nội hàm interpolation kéo bù nhìn chạy theo Server
-                _interpolationParam += Time.deltaTime * smoothSpeed;
-                _interpolationParam = Mathf.Clamp01(_interpolationParam);
+                if (_snapshotBuffer.Count == 0) return;
 
-                for (int i = 0; i < _bones.Length && i < _targetState.Bones.Length && i < _prevState.Bones.Length; i++)
+                // Tính toán thời gian hiển thị: ServerTime hiện tại lùi lại một khoảng delay
+                // Có thể tích hợp RTT vào đây nếu muốn Adaptive Delay, hiện tại dùng baseDelay
+                double renderTime = NetworkManager.Singleton.ServerTime.Time - baseInterpolationDelay;
+
+                // Tìm 2 snapshot bao quanh renderTime
+                int fromIndex = -1;
+                int toIndex = -1;
+
+                for (int i = _snapshotBuffer.Count - 1; i >= 0; i--)
                 {
-                    Vector3 pos = Vector3.Lerp(_prevState.Bones[i].Position, _targetState.Bones[i].Position, _interpolationParam);
+                    if (_snapshotBuffer[i].ServerTime <= renderTime)
+                    {
+                        fromIndex = i;
+                        toIndex = Mathf.Min(i + 1, _snapshotBuffer.Count - 1);
+                        break;
+                    }
+                }
+
+                if (fromIndex == -1) // Tất cả snapshot đều ở tương lai -> lấy cái cũ nhất
+                {
+                    fromIndex = 0;
+                    toIndex = 0;
+                }
+
+                RagdollFrameState fromState = _snapshotBuffer[fromIndex];
+                RagdollFrameState toState = _snapshotBuffer[toIndex];
+
+                float t = 0f;
+                if (fromIndex != toIndex && toState.ServerTime > fromState.ServerTime)
+                {
+                    t = (float)((renderTime - fromState.ServerTime) / (toState.ServerTime - fromState.ServerTime));
+                    t = Mathf.Clamp01(t);
+                }
+
+                // Nội suy vị trí và góc quay
+                for (int i = 0; i < _bones.Length && i < fromState.Bones.Length && i < toState.Bones.Length; i++)
+                {
+                    Vector3 pos = Vector3.Lerp(fromState.Bones[i].Position, toState.Bones[i].Position, t);
                     _bones[i].position = pos;
                     
-                    Quaternion rot = Quaternion.Slerp(_prevState.Bones[i].Rotation, _targetState.Bones[i].Rotation, _interpolationParam);
+                    Quaternion rot = Quaternion.Slerp(fromState.Bones[i].Rotation, toState.Bones[i].Rotation, t);
                     _bones[i].rotation = rot;
                 }
 
-                if (_ghostAnimator != null && _targetState.AnimatorStateHash != 0)
+                // Đồng bộ Animator
+                if (_ghostAnimator != null && fromState.AnimatorStateHash != 0)
                 {
                     var info = _ghostAnimator.GetCurrentAnimatorStateInfo(0);
-                    if (info.shortNameHash != _targetState.AnimatorStateHash)
+                    if (info.shortNameHash != fromState.AnimatorStateHash)
                     {
-                        _ghostAnimator.Play(_targetState.AnimatorStateHash, 0, _targetState.AnimatorNormalizedTime);
+                        _ghostAnimator.Play(fromState.AnimatorStateHash, 0, fromState.AnimatorNormalizedTime);
                     }
+                }
+
+                // Dọn dẹp buffer cũ (chỉ giữ lại 1 snapshot trước renderTime để nội suy tiếp theo)
+                while (fromIndex > 0)
+                {
+                    _snapshotBuffer.RemoveAt(0);
+                    fromIndex--;
                 }
             }
         }
@@ -253,15 +300,13 @@ namespace EdgeParty.ConnectionManagement
             // Máy chủ Server từ chối nhận lệnh RPC vì nó là cội nguồn của dữ liệu
             if (IsServer) return;
 
-            // Chuyển target hiện tại thành prev để nội suy
-            _prevState = _targetState;
-
+            _targetState.ServerTime = state.ServerTime;
             _targetState.AnimatorStateHash = state.AnimatorStateHash;
             _targetState.AnimatorNormalizedTime = state.AnimatorNormalizedTime;
             _targetState.SyncMask = state.SyncMask;
 
             // Cập nhật giá trị mới cho những xương được gửi trong Frame này
-            for (int i = 0; i < state.Bones.Length; i++)
+            for (int i = 0; i < state.Bones.Length && i < _targetState.Bones.Length; i++)
             {
                 if ((state.SyncMask & (1UL << i)) != 0)
                 {
@@ -270,7 +315,29 @@ namespace EdgeParty.ConnectionManagement
                 }
             }
 
-            _interpolationParam = 0f;
+            // Clone target state và đưa vào Buffer
+            RagdollFrameState snapshot = new RagdollFrameState
+            {
+                ServerTime = _targetState.ServerTime,
+                AnimatorStateHash = _targetState.AnimatorStateHash,
+                AnimatorNormalizedTime = _targetState.AnimatorNormalizedTime,
+                SyncMask = _targetState.SyncMask,
+                Bones = new BoneState[_targetState.Bones.Length]
+            };
+            for (int i = 0; i < _targetState.Bones.Length; i++)
+            {
+                snapshot.Bones[i] = _targetState.Bones[i];
+            }
+
+            _snapshotBuffer.Add(snapshot);
+            
+            // Sắp xếp lại nếu packet đến không đúng thứ tự UDP
+            _snapshotBuffer.Sort((a, b) => a.ServerTime.CompareTo(b.ServerTime));
+
+            if (_snapshotBuffer.Count > MAX_BUFFER_SIZE)
+            {
+                _snapshotBuffer.RemoveAt(0);
+            }
         }
 
         private void CaptureState(ref RagdollFrameState state)

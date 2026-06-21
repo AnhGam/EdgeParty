@@ -1,0 +1,162 @@
+commit 874b4b7d53d8579579f4e0b14086cfd4f583f8d8
+Author: AnhGam <guardalex8@gmail.com>
+Date:   Sat Jun 13 20:23:30 2026 +0700
+
+    settings page, + fix matchmaking + login + logout + fix preview for shop/locker
+
+diff --git a/Assets/Scenes/SampleScene.unity b/Assets/Scenes/SampleScene.unity
+index 2b2c01e..1c932ce 100644
+--- a/Assets/Scenes/SampleScene.unity
++++ b/Assets/Scenes/SampleScene.unity
+@@ -751,6 +751,50 @@ PhysicsMaterial:
+   m_Bounciness: 0
+   m_FrictionCombine: 0
+   m_BounceCombine: 0
++--- !u!1 &1034166788
++GameObject:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  serializedVersion: 6
++  m_Component:
++  - component: {fileID: 1034166790}
++  - component: {fileID: 1034166789}
++  m_Layer: 0
++  m_Name: AuthService
++  m_TagString: Untagged
++  m_Icon: {fileID: 0}
++  m_NavMeshLayer: 0
++  m_StaticEditorFlags: 0
++  m_IsActive: 1
++--- !u!114 &1034166789
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 1034166788}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: cae0d6d1255c01d45870127e9722b618, type: 3}
++  m_Name: 
++  m_EditorClassIdentifier: Assembly-CSharp::EdgeParty.Auth.AuthService
++--- !u!4 &1034166790
++Transform:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 1034166788}
++  serializedVersion: 2
++  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
++  m_LocalPosition: {x: 0, y: 0, z: 0}
++  m_LocalScale: {x: 1, y: 1, z: 1}
++  m_ConstrainProportionsScale: 0
++  m_Children: []
++  m_Father: {fileID: 0}
++  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+ --- !u!134 &1072679245
+ PhysicsMaterial:
+   m_ObjectHideFlags: 0
+@@ -988,6 +1032,74 @@ Transform:
+   m_Children: []
+   m_Father: {fileID: 0}
+   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
++--- !u!1001 &1557565914
++PrefabInstance:
++  m_ObjectHideFlags: 0
++  serializedVersion: 2
++  m_Modification:
++    serializedVersion: 3
++    m_TransformParent: {fileID: 0}
++    m_Modifications:
++    - target: {fileID: 1181059533951075499, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_Name
++      value: NetworkManager
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalPosition.x
++      value: -19.32514
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalPosition.y
++      value: -0.054
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalPosition.z
++      value: -31.47312
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalRotation.w
++      value: 1
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalRotation.x
++      value: 0
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalRotation.y
++      value: 0
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalRotation.z
++      value: 0
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalEulerAnglesHint.x
++      value: 0
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalEulerAnglesHint.y
++      value: 0
++      objectReference: {fileID: 0}
++    - target: {fileID: 1405165438422428152, guid: f89c951400c61a24da00212d043b4e8d,
++        type: 3}
++      propertyPath: m_LocalEulerAnglesHint.z
++      value: 0
++      objectReference: {fileID: 0}
++    m_RemovedComponents: []
++    m_RemovedGameObjects: []
++    m_AddedGameObjects: []
++    m_AddedComponents: []
++  m_SourcePrefab: {fileID: 100100000, guid: f89c951400c61a24da00212d043b4e8d, type: 3}
+ --- !u!1 &1628985291
+ GameObject:
+   m_ObjectHideFlags: 0
+@@ -1030,6 +1142,19 @@ MonoBehaviour:
+     type: 3}
+   matchmakingVisualTree: {fileID: 9197481963319205126, guid: 96e7cd2e970873a45b650ba87a666c3d,
+     type: 3}
++  lockerVisualTree: {fileID: 9197481963319205126, guid: 0b292a01ee963944b88d9055583e7b05,
++    type: 3}
++  settingsVisualTree: {fileID: 9197481963319205126, guid: 3490b422a31f8534da2402dd72eb204b,
++    type: 3}
++  customizationData: {fileID: 11400000, guid: a9879148b1ebe974fabd765d34b6db3e, type: 2}
++  lockerPrefab: {fileID: 2431026438211302177, guid: 818402c0cf4136f49a88218c05ea8042,
++    type: 3}
++  singleCoinTex: {fileID: 2800000, guid: 62a791631ad28b94cab4d8393e8d8ff9, type: 3}
++  pouchTex: {fileID: 2800000, guid: 574d44d17ee11084aa7b8644a48f46ca, type: 3}
++  smallPileTex: {fileID: 2800000, guid: e850d17cef73f1d40a7a0ea7b5673e37, type: 3}
++  decentPileTex: {fileID: 2800000, guid: 93bbbf5cf857f8d44b0b85dcba25c5bc, type: 3}
++  fullChestTex: {fileID: 2800000, guid: 946a8b6bf1fe5c9419e45219a1e60e1c, type: 3}
++  massiveChestTex: {fileID: 2800000, guid: 6c83236db6957b747ad1633541f61192, type: 3}
+ --- !u!114 &1628985293
+ MonoBehaviour:
+   m_ObjectHideFlags: 0
+@@ -1309,3 +1434,5 @@ SceneRoots:
+   - {fileID: 538618366}
+   - {fileID: 1628985294}
+   - {fileID: 566334758}
++  - {fileID: 1034166790}
++  - {fileID: 1557565914}
