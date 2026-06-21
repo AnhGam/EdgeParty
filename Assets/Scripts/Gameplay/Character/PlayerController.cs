@@ -1005,6 +1005,7 @@ namespace EdgeParty.Gameplay.Character
 
             foreach (var f in _followers)
             {
+                if (f == null) continue;
                 float mult = f.category switch
                 {
                     BoneCategory.Leg => legMultiplier.Value,
@@ -1072,6 +1073,7 @@ namespace EdgeParty.Gameplay.Character
             
             foreach (var f in _followers)
             {
+                if (f == null) continue;
                 f.SetSpringMultiplier(0f);
                 // Unlock limits on the root pelvis bone only, to let the player fall over naturally
                 // while keeping limb joint limits intact to prevent them from crumpling/collapsing.
@@ -1103,6 +1105,7 @@ namespace EdgeParty.Gameplay.Character
                 _followers = GetComponentsInChildren<RagdollBoneFollower>();
             foreach (var f in _followers)
             {
+                if (f == null) continue;
                 f.SetSpringMultiplier(1f);
                 f.RestoreLimits();
             }
@@ -1177,7 +1180,9 @@ namespace EdgeParty.Gameplay.Character
             if (_followers == null || _followers.Length == 0)
                 _followers = GetComponentsInChildren<RagdollBoneFollower>();
             foreach (var f in _followers)
-                f.SetSpringMultiplier(0.15f);
+            {
+                if (f != null) f.SetSpringMultiplier(0.15f);
+            }
 
             GameObject vfxInstance = SpawnBuiltinElectricVFX(transform);
 
@@ -1198,7 +1203,9 @@ namespace EdgeParty.Gameplay.Character
 
             _isLocallyDead = false;
             foreach (var f in _followers)
-                f.SetSpringMultiplier(1f);
+            {
+                if (f != null) f.SetSpringMultiplier(1f);
+            }
 
             if (vfxInstance != null) Destroy(vfxInstance);
             

@@ -30,7 +30,7 @@ public class ForestGameManager : NetworkBehaviour
     [Tooltip("Điểm để thắng sớm (0 = không giới hạn điểm, chỉ tính giờ)")]
     public int scoreToWin = 0;
     [Tooltip("Đếm ngược trước khi bắt đầu (giây)")]
-    public float countdownDuration = 3f;
+    public float countdownDuration = 15f;
     [Tooltip("Giây chờ sau khi match kết thúc trước khi reset")]
     public float delayAfterEnd = 8f;
 
@@ -67,6 +67,12 @@ public class ForestGameManager : NetworkBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+
+        countdownDuration = 15f; // Force 15 seconds countdown preparation time
+        maxWaitForPlayersSeconds = 300f; // Force 5 minutes timeout to prevent starting with 0 players during cold start
+
+        // Initialize with generated beep immediately so there is always a sound
+        _countdownBeepClip = GenerateBeepClip(880f, 0.15f);
 
         if (GetComponent<ItemSpawner>() == null)
         {
@@ -162,6 +168,10 @@ public class ForestGameManager : NetworkBehaviour
             yield return new WaitForSeconds(1f);
             waitTimer += 1f;
         }
+
+        // Add 3 seconds delay to allow all players to finish loading the scene before starting the countdown
+        yield return new WaitForSeconds(3f);
+
         // Signal waiting is over (value -1 = all ready)
         NotifyWaitingClientRpc(-1, requiredPlayers);
 

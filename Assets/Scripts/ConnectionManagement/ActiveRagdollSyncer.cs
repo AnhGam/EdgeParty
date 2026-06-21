@@ -20,17 +20,19 @@ namespace EdgeParty.ConnectionManagement
     {
         public int AnimatorStateHash;
         public float AnimatorNormalizedTime;
+        public ulong SyncMask;
         public BoneState[] Bones;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref AnimatorStateHash);
             serializer.SerializeValue(ref AnimatorNormalizedTime);
+            serializer.SerializeValue(ref SyncMask);
             
-            int length = 0;
+            byte length = 0;
             if (!serializer.IsReader)
             {
-                length = Bones != null ? Bones.Length : 0;
+                length = (byte)(Bones != null ? Bones.Length : 0);
             }
             serializer.SerializeValue(ref length);
 
@@ -44,8 +46,11 @@ namespace EdgeParty.ConnectionManagement
 
             for (int i = 0; i < length; i++)
             {
-                serializer.SerializeValue(ref Bones[i].Position);
-                serializer.SerializeValue(ref Bones[i].Rotation);
+                if ((SyncMask & (1UL << i)) != 0)
+                {
+                    serializer.SerializeValue(ref Bones[i].Position);
+                    serializer.SerializeValue(ref Bones[i].Rotation);
+                }
             }
         }
     }
@@ -56,6 +61,12 @@ namespace EdgeParty.ConnectionManagement
         public float syncRate = 20f;
         public float smoothSpeed = 15f;
 
+        [Header("Delta Compression")]
+        public float positionThreshold = 0.05f;
+        public float rotationThreshold = 2.0f;
+        public float redundantSendDuration = 0.5f;
+        public float keyframeInterval = 1.5f;
+
         private Rigidbody[] _rigidbodies;
         private Transform[] _bones;
         
@@ -63,6 +74,10 @@ namespace EdgeParty.ConnectionManagement
         private RagdollFrameState _prevState;
         
         private float _lastSendTime;
+        private float _lastKeyframeTime;
+        private RagdollFrameState _lastSentState;
+        private float[] _lastBoneChangeTime;
+
         private float _interpolationParam;
 
         private Animator _ghostAnimator;
@@ -129,9 +144,12 @@ namespace EdgeParty.ConnectionManagement
 
             _targetState.Bones = new BoneState[_bones.Length];
             _prevState.Bones = new BoneState[_bones.Length];
+            _lastSentState.Bones = new BoneState[_bones.Length];
+            _lastBoneChangeTime = new float[_bones.Length];
             
             CaptureState(ref _targetState);
             CaptureState(ref _prevState);
+            CaptureState(ref _lastSentState);
         }
 
         private void Update()
@@ -144,11 +162,61 @@ namespace EdgeParty.ConnectionManagement
                 if (Time.time - _lastSendTime >= (1f / syncRate))
                 {
                     _lastSendTime = Time.time;
-                    RagdollFrameState state = new RagdollFrameState();
-                    state.Bones = new BoneState[_bones.Length];
-                    CaptureState(ref state);
                     
-                    UpdateStateClientRpc(state);
+                    bool isKeyframe = (Time.time - _lastKeyframeTime >= keyframeInterval);
+                    if (isKeyframe) _lastKeyframeTime = Time.time;
+
+                    RagdollFrameState stateToSend = new RagdollFrameState();
+                    stateToSend.Bones = new BoneState[_bones.Length];
+                    stateToSend.SyncMask = 0;
+
+                    if (_ghostAnimator != null && _ghostAnimator.layerCount > 0)
+                    {
+                        var info = _ghostAnimator.GetCurrentAnimatorStateInfo(0);
+                        stateToSend.AnimatorStateHash = info.shortNameHash;
+                        stateToSend.AnimatorNormalizedTime = info.normalizedTime % 1f;
+                    }
+
+                    bool hasChanges = isKeyframe;
+
+                    for (int i = 0; i < _bones.Length; i++)
+                    {
+                        Vector3 currentPos = _bones[i].position;
+                        Quaternion currentRot = _bones[i].rotation;
+
+                        bool boneChanged = isKeyframe;
+                        if (!isKeyframe)
+                        {
+                            float posDiff = Vector3.Distance(_lastSentState.Bones[i].Position, currentPos);
+                            float rotDiff = Quaternion.Angle(_lastSentState.Bones[i].Rotation, currentRot);
+
+                            if (posDiff > positionThreshold || rotDiff > rotationThreshold)
+                            {
+                                boneChanged = true;
+                            }
+                        }
+
+                        if (boneChanged)
+                        {
+                            _lastBoneChangeTime[i] = Time.time;
+                            _lastSentState.Bones[i].Position = currentPos;
+                            _lastSentState.Bones[i].Rotation = currentRot;
+                        }
+
+                        // Gửi nếu vừa thay đổi, hoặc đang trong giai đoạn redundant (đảm bảo tới đích), hoặc là Keyframe
+                        if (isKeyframe || Time.time - _lastBoneChangeTime[i] <= redundantSendDuration)
+                        {
+                            stateToSend.SyncMask |= (1UL << i);
+                            stateToSend.Bones[i].Position = _lastSentState.Bones[i].Position;
+                            stateToSend.Bones[i].Rotation = _lastSentState.Bones[i].Rotation;
+                            hasChanges = true;
+                        }
+                    }
+
+                    if (hasChanges)
+                    {
+                        UpdateStateClientRpc(stateToSend);
+                    }
                 }
             }
             
@@ -162,9 +230,9 @@ namespace EdgeParty.ConnectionManagement
                 for (int i = 0; i < _bones.Length && i < _targetState.Bones.Length && i < _prevState.Bones.Length; i++)
                 {
                     Vector3 pos = Vector3.Lerp(_prevState.Bones[i].Position, _targetState.Bones[i].Position, _interpolationParam);
-                    Quaternion rot = Quaternion.Slerp(_prevState.Bones[i].Rotation, _targetState.Bones[i].Rotation, _interpolationParam);
-                    
                     _bones[i].position = pos;
+                    
+                    Quaternion rot = Quaternion.Slerp(_prevState.Bones[i].Rotation, _targetState.Bones[i].Rotation, _interpolationParam);
                     _bones[i].rotation = rot;
                 }
 
@@ -185,8 +253,23 @@ namespace EdgeParty.ConnectionManagement
             // Máy chủ Server từ chối nhận lệnh RPC vì nó là cội nguồn của dữ liệu
             if (IsServer) return;
 
+            // Chuyển target hiện tại thành prev để nội suy
             _prevState = _targetState;
-            _targetState = state;
+
+            _targetState.AnimatorStateHash = state.AnimatorStateHash;
+            _targetState.AnimatorNormalizedTime = state.AnimatorNormalizedTime;
+            _targetState.SyncMask = state.SyncMask;
+
+            // Cập nhật giá trị mới cho những xương được gửi trong Frame này
+            for (int i = 0; i < state.Bones.Length; i++)
+            {
+                if ((state.SyncMask & (1UL << i)) != 0)
+                {
+                    _targetState.Bones[i].Position = state.Bones[i].Position;
+                    _targetState.Bones[i].Rotation = state.Bones[i].Rotation;
+                }
+            }
+
             _interpolationParam = 0f;
         }
 

@@ -8,6 +8,7 @@ using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Services.CloudCode;
 using UnityEngine;
+using UnityEngine.Networking;
 using EdgeParty.Infrastructure.VoiceChat;
 using EdgeParty.Social;
 
@@ -66,11 +67,42 @@ namespace EdgeParty.ConnectionManagement
             pingService = new Edgegap.Ping(this);
         }
 
+        private string _cachedPublicIp = null;
+
         public void StartMatchmakingFlow()
         {
             Debug.Log("[MatchmakingManager] Starting matchmaking flow via UGS Cloud Code...");
             MatchmakingStartTime = Time.time;
             OnMatchmakingStarted?.Invoke();
+            StartCoroutine(FetchPublicIpThenMatchmake());
+        }
+
+        private IEnumerator FetchPublicIpThenMatchmake()
+        {
+            // Nếu đã cache IP rồi thì dùng luôn
+            if (!string.IsNullOrEmpty(_cachedPublicIp))
+            {
+                Debug.Log($"[MatchmakingManager] Using cached public IP: {_cachedPublicIp}");
+                _ = GetBeaconsAndPingAsync();
+                yield break;
+            }
+
+            // Lấy public IP thật của client để tránh Edgegap dùng IP của GCP Cloud Code server
+            using var req = UnityWebRequest.Get("https://api.ipify.org");
+            req.timeout = 5;
+            yield return req.SendWebRequest();
+
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                _cachedPublicIp = req.downloadHandler.text.Trim();
+                Debug.Log($"[MatchmakingManager] Public IP fetched: {_cachedPublicIp}");
+            }
+            else
+            {
+                Debug.LogWarning($"[MatchmakingManager] Failed to fetch public IP ({req.error}). Edgegap will auto-detect (may use GCP IP).");
+                _cachedPublicIp = null;
+            }
+
             _ = GetBeaconsAndPingAsync();
         }
 
@@ -215,7 +247,8 @@ namespace EdgeParty.ConnectionManagement
                 var args = new Dictionary<string, object>
                 {
                     { "pings", pings },
-                    { "players", playersList }
+                    { "players", playersList },
+                    { "playerIp", _cachedPublicIp ?? "" }  // IP thật của client, tránh Edgegap detect từ GCP IP
                 };
 
                 var jsonResponse = await CloudCodeService.Instance.CallEndpointAsync(
@@ -429,6 +462,11 @@ namespace EdgeParty.ConnectionManagement
             // Allow up to 10 minutes for on-demand container initialization (e.g. cold start/image pull)
             utp.MaxConnectAttempts = 600;
             utp.ConnectTimeoutMS = 1000;
+
+            networkManager.NetworkConfig.ConnectionApproval = false;
+            networkManager.NetworkConfig.ForceSamePrefabs = true;
+
+            EdgegapServerStarter.LogNetworkConfig("Client Connection");
 
             Debug.Log($"[MatchmakingManager] Netcode connecting to {host}:{port}... (Will retry up to 600 seconds for container startup)");
             try
