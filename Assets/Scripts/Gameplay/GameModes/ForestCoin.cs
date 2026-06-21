@@ -18,25 +18,12 @@ public class ForestCoin : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!IsServer) return; // Only server handles collection
+        if (_collected) return;
+
         // Try to get player
         var pc = other.GetComponentInParent<PlayerController>();
         if (pc == null) return;
-
-        // On client, if it is the local player, we can play the sound instantly for responsive feedback!
-        if (pc.IsLocalPlayer)
-        {
-            if (!_collected)
-            {
-                if (!IsServer)
-                {
-                    _collected = true;
-                    AudioManager.Instance?.PlaySFX(collectSound);
-                }
-            }
-        }
-
-        if (!IsServer) return;
-        if (_collected) return;
 
         int teamID = pc.TeamID.Value;
         if (teamID <= 0) return; // not yet assigned
@@ -61,16 +48,6 @@ public class ForestCoin : NetworkBehaviour
     private void CollectClientRpc(ulong collectorClientId)
     {
         gameObject.SetActive(false);
-
-        bool isCollector = (NetworkManager.Singleton != null && NetworkManager.Singleton.LocalClientId == collectorClientId);
-
-        // Play SFX if:
-        // - We are not the collector (we need to hear other players collect it)
-        // - Or we are the collector AND we are the Host/Server (since host bypasses early client play)
-        if (!isCollector || IsServer)
-        {
-            _collected = true;
-            AudioManager.Instance?.PlaySFX(collectSound);
-        }
+        AudioManager.Instance?.PlaySFX(collectSound);
     }
 }

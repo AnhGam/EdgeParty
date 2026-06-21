@@ -10,7 +10,30 @@ namespace EdgeParty.Infrastructure.VoiceChat
 {
     public class VoiceChatManager : MonoBehaviour
     {
-        public static VoiceChatManager Instance { get; private set; }
+        private static VoiceChatManager _instance;
+        public static VoiceChatManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+#if UNITY_2023_1_OR_NEWER
+                    _instance = FindFirstObjectByType<VoiceChatManager>();
+#else
+                    _instance = FindObjectOfType<VoiceChatManager>();
+#endif
+                    if (_instance == null)
+                    {
+                        GameObject go = new GameObject("VoiceChatManager");
+                        _instance = go.AddComponent<VoiceChatManager>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+            private set => _instance = value;
+        }
+
         public event Action OnVoiceReady;
         [Header("Settings")]
         [SerializeField] private string defaultChannelName = "MainLobby";
@@ -20,35 +43,65 @@ namespace EdgeParty.Infrastructure.VoiceChat
         public event Action<string> OnParticipantLeft;
 
         private bool _isInitialized = false;
+        private IVivoxService _vivoxService; // cached from GetService or VivoxService.Instance
         private HashSet<string> _activeSpeakers = new HashSet<string>();
         private string _currentGameChannel = "";  // channel đang join trong game
+        private float _nextDebugLogTime = 0f;
 
         public string CurrentGameChannel => _currentGameChannel;
 
         private void Awake()
         {
-            if (Instance == null)
+            if (_instance != null && _instance != this)
             {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
+                Destroy(gameObject);
+                return;
+            }
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+
+        // AfterSceneLoad: scene đã load, AuthService đã Awake, UGS có thể init
+        // (BeforeSceneLoad cũ chạy TRƯỚC khi UGS init → VivoxService.Instance luôn null)
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureInstanceExists()
+        {
+            // Chỉ tạo GameObject nếu chưa có — không gọi Vivox ở đây
+            var _ = Instance;
+        }
+
+        private void Start()
+        {
+            if (EdgeParty.Auth.AuthService.Instance == null)
+            {
+                Debug.LogWarning("[VoiceChat] AuthService not found. VoiceChat will not initialize.");
+                return;
+            }
+
+            // Nếu đã đăng nhập rồi thì khởi tạo luôn
+            if (EdgeParty.Auth.AuthService.Instance.IsSignedIn)
+            {
+                _ = InitializeVoiceChat();
             }
             else
             {
-                Destroy(gameObject);
+                // Nếu chưa, thì "link" thẳng vào event của AuthService, khi nào đăng nhập xong nó sẽ tự gọi
+                EdgeParty.Auth.AuthService.Instance.OnSignInSuccess += OnAuthSuccess;
             }
         }
 
-        private async void Start()
+        private void OnAuthSuccess()
         {
-            await InitializeVoiceChat();
+            EdgeParty.Auth.AuthService.Instance.OnSignInSuccess -= OnAuthSuccess;
+            _ = InitializeVoiceChat();
         }
 
         private void OnDestroy()
         {
-            if (_isInitialized && VivoxService.Instance != null)
+            if (_isInitialized && _vivoxService != null)
             {
-                VivoxService.Instance.ParticipantAddedToChannel -= OnParticipantAdded;
-                VivoxService.Instance.ParticipantRemovedFromChannel -= OnParticipantRemoved;
+                _vivoxService.ParticipantAddedToChannel -= OnParticipantAdded;
+                _vivoxService.ParticipantRemovedFromChannel -= OnParticipantRemoved;
             }
         }
 
@@ -56,54 +109,94 @@ namespace EdgeParty.Infrastructure.VoiceChat
         {
             try
             {
-                // 1. Initialize UGS - inject Vivox credentials so the SDK can read them
-                //    (SDK reads from InitializationOptions, not from code directly)
+                // Đảm bảo UGS đã sẵn sàng (AuthService đã lo phần này)
                 if (UnityServices.State != ServicesInitializationState.Initialized)
                 {
-                    var options = new InitializationOptions();
-                    // These keys match VivoxServiceInternal.k_ServerKey/k_DomainKey/k_IssuerKey/k_TokenKey
-                    options.SetOption("com.unity.services.vivox.server", VivoxConfig.Server);
-                    options.SetOption("com.unity.services.vivox.domain", VivoxConfig.Domain);
-                    options.SetOption("com.unity.services.vivox.issuer", VivoxConfig.TokenIssuer);
-                    options.SetOption("com.unity.services.vivox.token",  VivoxConfig.TokenKey);
-
-                    await UnityServices.InitializeAsync(options);
-                    Debug.Log("[VoiceChat] UGS Initialized.");
+                    Debug.LogWarning($"[VoiceChat] UGS not Initialized yet (State={UnityServices.State}). Aborting.");
+                    return;
                 }
 
-                if (!AuthenticationService.Instance.IsSignedIn)
+                // Ưu tiên lấy IVivoxService từ UGS registry (hoạt động với cả Default và Instance path)
+                IVivoxService vivox = VivoxService.Instance;
+
+                if (vivox == null)
                 {
-                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                    Debug.Log($"[VoiceChat] Signed in as: {AuthenticationService.Instance.PlayerId}");
+                    // Fallback: lấy trực tiếp từ UnityServices registry
+                    try { vivox = UnityServices.Instance.GetService<IVivoxService>(); } catch { }
+                    if (vivox != null)
+                    {
+                        Debug.Log("[VoiceChat] Got IVivoxService via UnityServices.Instance.GetService<> (VivoxService.Instance was null).");
+                    }
+                }
+
+                if (vivox == null)
+                {
+                    Debug.LogWarning("[VoiceChat] VivoxService.Instance is null right after OnSignInSuccess — polling up to 3s...");
+                    vivox = await WaitForVivoxServiceAsync(maxWaitMs: 3000);
+                    if (vivox != null)
+                        Debug.Log("[VoiceChat] VivoxService.Instance became available after polling.");
+                }
+
+                if (vivox == null)
+                {
+                    Debug.LogError("[VoiceChat] Cannot obtain IVivoxService after all attempts.\n" +
+                                   "  → VivoxService.Instance: NULL\n" +
+                                   "  → UnityServices.GetService<IVivoxService>: NULL\n" +
+                                   "  → Poll 3s: NULL\n" +
+                                   "Possible causes:\n" +
+                                   "  1. VivoxPackageInitializer.Register() chạy SAU khi CorePackageRegistry bị Lock()\n" +
+                                   "     → Kiểm tra xem có 'Package registration has been locked' trong log không.\n" +
+                                   "  2. Package com.unity.services.vivox không được cài đúng.\n" +
+                                   "  3. VivoxPackageInitializer constructor throw silently.\n" +
+                                   $"  UGS State: {UnityServices.State}");
+                    return;
                 }
 
                 string playerId = AuthenticationService.Instance.PlayerId;
 
-                // Register our custom token provider BEFORE initializing Vivox
-                VivoxService.Instance.SetTokenProvider(new VivoxManualTokenProvider(playerId));
+                // Since we call options.SetVivoxCredentials in AuthService before UGS InitializeAsync,
+                // Vivox will automatically generate tokens client-side using the Token Key.
+                // No manual token provider is needed for local development.
+                // vivox.SetTokenProvider(new VivoxManualTokenProvider(playerId));
 
-                await VivoxService.Instance.InitializeAsync();
+                await vivox.InitializeAsync();
                 Debug.Log("[VoiceChat] Vivox Initialized.");
 
-                VivoxService.Instance.ParticipantAddedToChannel   += OnParticipantAdded;
-                VivoxService.Instance.ParticipantRemovedFromChannel += OnParticipantRemoved;
+                vivox.ParticipantAddedToChannel   += OnParticipantAdded;
+                vivox.ParticipantRemovedFromChannel += OnParticipantRemoved;
 
                 var loginOptions = new LoginOptions
                 {
                     DisplayName = playerId,
                     ParticipantUpdateFrequency = ParticipantPropertyUpdateFrequency.FivePerSecond
                 };
-                await VivoxService.Instance.LoginAsync(loginOptions);
+                await vivox.LoginAsync(loginOptions);
                 Debug.Log("[VoiceChat] Logged into Vivox.");
 
                 _isInitialized = true;
+                _vivoxService = vivox; // cache for OnDestroy/JoinChannel
                 OnVoiceReady?.Invoke();
                 await JoinChannel(defaultChannelName);
             }
             catch (Exception e)
             {
-                Debug.LogError($"[VoiceChat] Initialization error: {e.Message}");
+                Debug.LogException(e);
             }
+        }
+
+        /// <summary>Polls VivoxService.Instance until non-null or timeout (handles async propagation delay).</summary>
+        private async Task<IVivoxService> WaitForVivoxServiceAsync(int maxWaitMs = 3000)
+        {
+            const int pollIntervalMs = 100;
+            int elapsed = 0;
+            while (elapsed < maxWaitMs)
+            {
+                if (VivoxService.Instance != null)
+                    return VivoxService.Instance;
+                await Task.Delay(pollIntervalMs);
+                elapsed += pollIntervalMs;
+            }
+            return VivoxService.Instance; // null if never became available
         }
 
         public async Task JoinMatchChannel(string matchId)
@@ -140,10 +233,10 @@ namespace EdgeParty.Infrastructure.VoiceChat
 
         public async Task JoinChannel(string channelName)
         {
-            if (!_isInitialized) return;
+            if (!_isInitialized || _vivoxService == null) return;
             try
             {
-                await VivoxService.Instance.JoinPositionalChannelAsync(
+                await _vivoxService.JoinPositionalChannelAsync(
                     channelName,
                     ChatCapability.AudioOnly,
                     new Channel3DProperties());
@@ -157,15 +250,15 @@ namespace EdgeParty.Infrastructure.VoiceChat
 
         public async Task LeaveChannel(string channelName)
         {
-            if (!_isInitialized) return;
-            await VivoxService.Instance.LeaveChannelAsync(channelName);
+            if (!_isInitialized || _vivoxService == null) return;
+            await _vivoxService.LeaveChannelAsync(channelName);
         }
 
         public void SetMute(bool mute)
         {
-            if (!_isInitialized) return;
-            if (mute) VivoxService.Instance.MuteInputDevice();
-            else VivoxService.Instance.UnmuteInputDevice();
+            if (!_isInitialized || _vivoxService == null) return;
+            if (mute) _vivoxService.MuteInputDevice();
+            else _vivoxService.UnmuteInputDevice();
         }
 
         public void ToggleMute()
@@ -173,14 +266,14 @@ namespace EdgeParty.Infrastructure.VoiceChat
             SetMute(!IsMuted);
         }
 
-        public bool IsMuted => _isInitialized && VivoxService.Instance.IsInputDeviceMuted;
+        public bool IsMuted => _isInitialized && _vivoxService != null && _vivoxService.IsInputDeviceMuted;
 
         public bool IsReady => _isInitialized;
 
         public void UpdateParticipantPosition(GameObject participant, string channelName)
         {
-            if (!_isInitialized || !VivoxService.Instance.IsLoggedIn) return;
-            VivoxService.Instance.Set3DPosition(participant, channelName);
+            if (!_isInitialized || _vivoxService == null || !_vivoxService.IsLoggedIn) return;
+            _vivoxService.Set3DPosition(participant, channelName);
         }
 
         public HashSet<string> GetActiveSpeakers() => _activeSpeakers;
@@ -228,6 +321,12 @@ namespace EdgeParty.Infrastructure.VoiceChat
         {
             if (!_isInitialized || VivoxService.Instance == null) return;
 
+            if (Time.time >= _nextDebugLogTime)
+            {
+                _nextDebugLogTime = Time.time + 2f;
+                LogVoiceChatDebugStatus();
+            }
+
             bool voiceEnabled = PlayerPrefs.GetInt("VoiceChatEnabled", 1) == 1;
             if (!voiceEnabled)
             {
@@ -243,30 +342,87 @@ namespace EdgeParty.Infrastructure.VoiceChat
             {
                 string pttKeyName = PlayerPrefs.GetString("KeybindPTT", "V");
                 string mappedPTTKey = MapKeyCodeToKeyName(pttKeyName);
-                if (UnityEngine.InputSystem.Keyboard.current != null && 
-                    System.Enum.TryParse(mappedPTTKey, true, out UnityEngine.InputSystem.Key pttKey) &&
-                    pttKey != UnityEngine.InputSystem.Key.None)
+
+                bool isPressed = false;
+
+                // Primary: New Input System
+                if (UnityEngine.InputSystem.Keyboard.current != null)
                 {
-                    bool isPressed = UnityEngine.InputSystem.Keyboard.current[pttKey].isPressed;
-                    if (isPressed)
+                    if (System.Enum.TryParse(mappedPTTKey, true, out UnityEngine.InputSystem.Key pttKey) &&
+                        pttKey != UnityEngine.InputSystem.Key.None)
                     {
-                        if (VivoxService.Instance.IsInputDeviceMuted)
-                            VivoxService.Instance.UnmuteInputDevice();
+                        isPressed = UnityEngine.InputSystem.Keyboard.current[pttKey].isPressed;
                     }
                     else
                     {
-                        if (!VivoxService.Instance.IsInputDeviceMuted)
-                            VivoxService.Instance.MuteInputDevice();
+                        Debug.LogWarning($"[VoiceChat] PTT key '{pttKeyName}' (mapped: '{mappedPTTKey}') " +
+                                         "could not be parsed as InputSystem.Key. Check keybind setting.");
                     }
+                }
+                else
+                {
+                    // Fallback: Legacy Input System
+                    if (System.Enum.TryParse(pttKeyName, true, out KeyCode legacyKey))
+                    {
+                        isPressed = Input.GetKey(legacyKey);
+                    }
+                }
+
+                if (isPressed)
+                {
+                    if (VivoxService.Instance.IsInputDeviceMuted)
+                        VivoxService.Instance.UnmuteInputDevice();
+                }
+                else
+                {
+                    if (!VivoxService.Instance.IsInputDeviceMuted)
+                        VivoxService.Instance.MuteInputDevice();
                 }
             }
             else
             {
+                // Open Mic mode: always unmuted
                 if (VivoxService.Instance.IsInputDeviceMuted)
                 {
                     VivoxService.Instance.UnmuteInputDevice();
                 }
             }
+        }
+
+        private void LogVoiceChatDebugStatus()
+        {
+            if (!_isInitialized || _vivoxService == null)
+            {
+                Debug.Log("[VoiceChatDebug] Not initialized.");
+                return;
+            }
+
+            bool voiceEnabled = PlayerPrefs.GetInt("VoiceChatEnabled", 1) == 1;
+            bool usePTT = PlayerPrefs.GetInt("TransmissionModePTT", 1) == 1;
+            string pttKeyName = PlayerPrefs.GetString("KeybindPTT", "V");
+            bool isMuted = _vivoxService.IsInputDeviceMuted;
+            string activeDevice = _vivoxService.ActiveInputDevice != null ? _vivoxService.ActiveInputDevice.DeviceName : "None";
+
+            double localEnergy = 0;
+            bool localSpeaking = false;
+            bool foundSelf = false;
+
+            foreach (var channelPair in _vivoxService.ActiveChannels)
+            {
+                foreach (var participant in channelPair.Value)
+                {
+                    if (participant.IsSelf)
+                    {
+                        localEnergy = participant.AudioEnergy;
+                        localSpeaking = participant.SpeechDetected;
+                        foundSelf = true;
+                    }
+                }
+            }
+
+            Debug.Log($"[VoiceChatDebug] Enabled: {voiceEnabled} | Mode: {(usePTT ? $"PTT ({pttKeyName})" : "Open Mic")} | " +
+                      $"Device: {activeDevice} | Muted: {isMuted} | InChannel: {foundSelf} | " +
+                      $"Energy: {localEnergy:F5} | Speaking: {localSpeaking}");
         }
 
         #endregion

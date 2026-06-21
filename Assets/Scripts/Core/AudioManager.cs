@@ -268,7 +268,7 @@ namespace EdgeParty.Core
             }
             else if (soundName.IndexOf("EXPLOSION_sfx", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                volumeScale = 0.04f;
+                volumeScale = 0.08f;
             }
 
             source.volume = s.volume * sfxVolume;
@@ -377,7 +377,7 @@ namespace EdgeParty.Core
             }
             else if (clipName.IndexOf("EXPLOSION_sfx", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                volumeScale = 0.04f;
+                volumeScale = 0.08f;
             }
 
             source.volume = sfxVolume;

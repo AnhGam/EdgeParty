@@ -72,6 +72,7 @@ namespace EdgeParty.Social
         private const float PresenceRefreshInterval = 30f;  // Refresh presence mỗi 30s
         private Unity.Services.Lobbies.Models.Lobby _currentLobby;
         private bool _isInitialized = false;
+        private Task _initTask;  // Guards against concurrent double-init
 
         private float _lobbyPollTimer = 0f;
         private const float LobbyPollInterval = 3f;  // Poll lobby mỗi 3s
@@ -174,19 +175,28 @@ namespace EdgeParty.Social
             LobbyMembers.Clear();
         }
 
-        public async Task InitializeSocialAsync()
+        public Task InitializeSocialAsync()
         {
             if (_isInitialized)
             {
                 _ = RefreshFriendsAndRequestsAsync();
-                return;
+                return Task.CompletedTask;
             }
+            // Prevent concurrent double-init (e.g. ShowHome called twice before first init completes)
+            if (_initTask == null)
+            {
+                _initTask = InitializeSocialInternalAsync();
+            }
+            return _initTask;
+        }
 
+        private async Task InitializeSocialInternalAsync()
+        {
             try
             {
                 if (UnityServices.State == ServicesInitializationState.Uninitialized)
                 {
-                    await UnityServices.InitializeAsync();
+                    await EdgeParty.Auth.AuthService.Instance.EnsureInitializedAsync();
                 }
 
                 if (!AuthenticationService.Instance.IsSignedIn)
@@ -207,9 +217,31 @@ namespace EdgeParty.Social
                 Debug.Log("[FriendLobbyService] Real UGS Friends initialized. Running in real UGS Mode.");
 
                 // Clean up any stale lobbies the player might still be registered in on UGS side
+                // Lobby SDK needs extra time to stabilize its internal HTTP client after auth.
+                // Use retry logic since the NullRef comes from inside WrappedLobbyService (timing issue).
+                await Task.Delay(2000);
                 try
                 {
-                    var joinedLobbyIds = await Unity.Services.Lobbies.LobbyService.Instance.GetJoinedLobbiesAsync();
+                    List<string> joinedLobbyIds = null;
+                    const int maxAttempts = 3;
+                    for (int attempt = 1; attempt <= maxAttempts; attempt++)
+                    {
+                        try
+                        {
+                            joinedLobbyIds = await Unity.Services.Lobbies.LobbyService.Instance.GetJoinedLobbiesAsync();
+                            break; // success
+                        }
+                        catch (NullReferenceException nre) when (attempt < maxAttempts)
+                        {
+                            Debug.LogWarning($"[FriendLobbyService] Lobby SDK not ready (attempt {attempt}/{maxAttempts}): {nre.Message}. Retrying in 1s...");
+                            await Task.Delay(1000);
+                        }
+                        catch (NullReferenceException nre)
+                        {
+                            Debug.LogWarning($"[FriendLobbyService] Lobby SDK not ready after {maxAttempts} attempts: {nre.Message}. Skipping stale cleanup.");
+                        }
+                    }
+
                     if (joinedLobbyIds != null && joinedLobbyIds.Count > 0)
                     {
                         Debug.Log($"[FriendLobbyService] Found {joinedLobbyIds.Count} stale lobbies on login. Cleaning them up...");
@@ -229,7 +261,7 @@ namespace EdgeParty.Social
                 }
                 catch (Exception lobbyCleanEx)
                 {
-                    Debug.LogWarning($"[FriendLobbyService] Failed to query joined lobbies for cleanup: {lobbyCleanEx.Message}");
+                    Debug.LogWarning($"[FriendLobbyService] Stale lobby cleanup failed (non-fatal): {lobbyCleanEx.Message}");
                 }
 
                 // ✅ Đặt presence = Online để bạn bè thấy mình online
@@ -744,7 +776,7 @@ namespace EdgeParty.Social
             return list;
         }
 
-        public async Task UpdateLobbyStatusAsync(string status, string matchIP = "", string matchPort = "")
+        public async Task UpdateLobbyStatusAsync(string status, string matchIP = "", string matchPort = "", string matchId = "")
         {
             if (_useMockMode || string.IsNullOrEmpty(CurrentLobbyId) || !IsHost) return;
 
@@ -754,7 +786,8 @@ namespace EdgeParty.Social
                 {
                     { "MatchStatus", new DataObject(DataObject.VisibilityOptions.Member, status) },
                     { "MatchIP", new DataObject(DataObject.VisibilityOptions.Member, matchIP) },
-                    { "MatchPort", new DataObject(DataObject.VisibilityOptions.Member, matchPort) }
+                    { "MatchPort", new DataObject(DataObject.VisibilityOptions.Member, matchPort) },
+                    { "MatchId", new DataObject(DataObject.VisibilityOptions.Member, matchId) }
                 };
 
                 var options = new Unity.Services.Lobbies.UpdateLobbyOptions { Data = data };
@@ -773,6 +806,7 @@ namespace EdgeParty.Social
             string status = _currentLobby.Data.ContainsKey("MatchStatus") ? _currentLobby.Data["MatchStatus"].Value : "";
             string ip = _currentLobby.Data.ContainsKey("MatchIP") ? _currentLobby.Data["MatchIP"].Value : "";
             string portStr = _currentLobby.Data.ContainsKey("MatchPort") ? _currentLobby.Data["MatchPort"].Value : "";
+            string matchId = _currentLobby.Data.ContainsKey("MatchId") ? _currentLobby.Data["MatchId"].Value : "";
 
             if (status == "Matchmaking")
             {
@@ -787,6 +821,11 @@ namespace EdgeParty.Social
                 {
                     if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null && !EdgeParty.ConnectionManagement.MatchmakingManager.Instance.IsMatchmaking)
                     {
+                        if (!string.IsNullOrEmpty(matchId) && EdgeParty.Infrastructure.VoiceChat.VoiceChatManager.Instance != null)
+                        {
+                            Debug.Log($"[FriendLobbyService] Guest joining Vivox channel: {matchId}");
+                            _ = EdgeParty.Infrastructure.VoiceChat.VoiceChatManager.Instance.JoinMatchChannel(matchId);
+                        }
                         EdgeParty.ConnectionManagement.MatchmakingManager.Instance.ConnectToServer(ip, port);
                     }
                 }

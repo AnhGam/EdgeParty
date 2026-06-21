@@ -3,6 +3,7 @@
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
     "com.edgegap.unity-sdk": "https://github.com/edgegap/edgegap-unity-matchmaking-sdk.git",
     "com.edgegap.unity-servers-plugin": "https://github.com/edgegap/edgegap-unity-plugin.git",
+    "com.unity.2d.sprite": "1.0.0",
     "com.unity.cinemachine": "3.1.6",
     "com.unity.collab-proxy": "2.12.4",
     "com.unity.dedicated-server": "2.0.2",

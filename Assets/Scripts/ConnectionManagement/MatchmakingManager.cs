@@ -30,11 +30,11 @@ namespace EdgeParty.ConnectionManagement
 
         private Edgegap.Ping pingService;
 
-        private string currentTicketId;
+        public string currentTicketId { get; private set; }
         private bool isPolling = false;
         private Coroutine pollCoroutine = null;
         private bool isGuestMatchmaking = false;
-        private string _lastMatchId = "";  // Lưu ticket ID để dùng làm Vivox channel name
+        public string _lastMatchId = "";  // Lưu ticket ID để dùng làm Vivox channel name
 
         public bool IsMatchmaking => isPolling || isGuestMatchmaking;
         public float MatchmakingStartTime { get; private set; }
@@ -420,7 +420,7 @@ namespace EdgeParty.ConnectionManagement
             // Sync connection details to Lobby if Host
             if (FriendLobbyService.Instance != null && FriendLobbyService.Instance.IsHost)
             {
-                _ = FriendLobbyService.Instance.UpdateLobbyStatusAsync("Matched", host, port.ToString());
+                _ = FriendLobbyService.Instance.UpdateLobbyStatusAsync("Matched", host, port.ToString(), _lastMatchId);
             }
 
             ConnectToServer(host, port);

@@ -5,6 +5,8 @@ using System.Collections;
 using EdgeParty.Auth;
 using EdgeParty.Gameplay.Camera;
 using EdgeParty.Gameplay.Items;
+using EdgeParty.Infrastructure.VoiceChat;
+using Unity.Services.Authentication;
 
 namespace EdgeParty.Gameplay.Character
 {
@@ -60,6 +62,12 @@ namespace EdgeParty.Gameplay.Character
             new FixedString64Bytes("Player"),
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Owner);
+            
+        // UGS PlayerId - used to map Voice Chat events (Vivox) to this specific player
+        public NetworkVariable<FixedString64Bytes> ugsPlayerIdSync = new NetworkVariable<FixedString64Bytes>(
+            new FixedString64Bytes(""),
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
         
         [Header("Nameplate")]
         [SerializeField] private Transform headAnchor;
@@ -112,12 +120,14 @@ namespace EdgeParty.Gameplay.Character
             SyncLegacyReferences();
             IgnoreInternalCollisions();
 
-            // Dynamically attach NetworkPlayerAppearance to replicate cosmetics in multiplayer
+            // NetworkPlayerAppearance được add động để đảm bảo luôn có kể cả khi quên add vào prefab.
+            // LƯU Ý: Nếu gặp OverflowException khi join server, kiểm tra xem có GameObject mới nào
+            // được thêm vào hierarchy của prefab làm thay đổi thứ tự NetworkBehaviour không.
             var appearance = GetComponentInChildren<NetworkPlayerAppearance>(true);
             if (appearance == null)
             {
                 appearance = gameObject.AddComponent<NetworkPlayerAppearance>();
-                Debug.Log("[PlayerController] Dynamically attached NetworkPlayerAppearance to player!");
+                Debug.Log("[PlayerController] Dynamically attached NetworkPlayerAppearance to player.");
             }
 
             // Prevent active ragdoll limbs from sinking into the ground or jittering
@@ -165,7 +175,18 @@ namespace EdgeParty.Gameplay.Character
                 if (animController.ghostAnimator == null)
                     animController.ghostAnimator = GetComponentInChildren<Animator>();
             }
+
+            // Auto-fill ghostAnimator trên chính PlayerController để các component khác
+            // (như PlayerAudioController) có thể tìm thấy mà không cần kéo tay vào Inspector.
+            if (ghostAnimator == null)
+            {
+                if (ghostRoot != null)
+                    ghostAnimator = ghostRoot.GetComponentInChildren<Animator>();
+                if (ghostAnimator == null)
+                    ghostAnimator = GetComponentInChildren<Animator>();
+            }
         }
+
 
 
         public override void OnNetworkSpawn()
@@ -182,14 +203,14 @@ namespace EdgeParty.Gameplay.Character
                 nameplateInstance = Instantiate(nameplatePrefab, headAnchor);
                 nameplateInstance.transform.localPosition = Vector3.zero;
                 // Show current synced name (may already be set for late-joiners)
-                nameplateInstance?.SetPlayerName(playerNameSync.Value.ToString());
+                UpdateNameplateName(playerNameSync.Value.ToString());
                 nameplateInstance?.SetTeamColor(TeamID.Value);
                 nameplateInstance.SetMicLevel(0);
             }
 
             playerNameSync.OnValueChanged += (_, newName) =>
             {
-                nameplateInstance?.SetPlayerName(newName.ToString());
+                UpdateNameplateName(newName.ToString());
             };
 
             if (IsLocalPlayer)
@@ -197,6 +218,46 @@ namespace EdgeParty.Gameplay.Character
                 // Write username into the network variable so all clients see it
                 string myName = AuthService.Instance != null ? AuthService.Instance.CachedUsername : $"Player {OwnerClientId}";
                 playerNameSync.Value = new FixedString64Bytes(myName);
+                
+                try 
+                {
+                    if (AuthenticationService.Instance.IsSignedIn)
+                    {
+                        ugsPlayerIdSync.Value = new FixedString64Bytes(AuthenticationService.Instance.PlayerId);
+                    }
+                }
+                catch (System.Exception e) { Debug.LogWarning($"[VoiceChat] Could not sync UGS PlayerId: {e.Message}"); }
+            }
+            
+            // Subscribe to VoiceChat events to light up the mic icon
+            if (VoiceChatManager.Instance != null)
+            {
+                VoiceChatManager.Instance.OnParticipantSpeaking += OnParticipantSpeaking;
+
+                if (IsLocalPlayer)
+                {
+                    // Nếu đang test local / direct connect (không dùng Matchmaking)
+                    // thì tự động join 1 channel mặc định để test Mic
+                    bool hasMatchmaking = false;
+                    var matchMgr = Object.FindFirstObjectByType<EdgeParty.ConnectionManagement.MatchmakingManager>();
+                    if (matchMgr != null && !string.IsNullOrEmpty(matchMgr._lastMatchId))
+                    {
+                        hasMatchmaking = true;
+                    }
+
+                    // Nếu Guest join qua FriendLobbyService thì kiểm tra thêm trong FriendLobbyService
+                    var lobbySvc = Object.FindFirstObjectByType<EdgeParty.Social.FriendLobbyService>();
+                    if (lobbySvc != null && !string.IsNullOrEmpty(lobbySvc.CurrentLobbyId))
+                    {
+                        hasMatchmaking = true; // Đang trong chế độ chơi online qua lobby
+                    }
+
+                    if (!hasMatchmaking)
+                    {
+                        Debug.Log("[PlayerController] No Matchmaking/Lobby active. Joining local Vivox channel.");
+                        _ = VoiceChatManager.Instance.JoinMatchChannel("LocalTestChannel");
+                    }
+                }
             }
 
             if (IsServer)
@@ -251,6 +312,36 @@ namespace EdgeParty.Gameplay.Character
                 {
                     stats.OnDied += () => StartCoroutine(AutoRespawnCoroutine());
                 }
+            }
+        }
+
+        private void UpdateNameplateName(string rawName)
+        {
+            if (nameplateInstance == null) return;
+
+            if (IsLocalPlayer)
+            {
+                nameplateInstance.SetPlayerName("You");
+            }
+            else
+            {
+                int hashIndex = rawName.IndexOf('#');
+                if (hashIndex > 0)
+                {
+                    rawName = rawName.Substring(0, hashIndex);
+                }
+                nameplateInstance.SetPlayerName(rawName);
+            }
+        }
+
+        private void OnParticipantSpeaking(string participantId, bool isSpeaking)
+        {
+            if (nameplateInstance == null) return;
+            
+            // If the person speaking matches this monkey's UGS ID, light up the mic!
+            if (ugsPlayerIdSync.Value.ToString() == participantId)
+            {
+                nameplateInstance.SetMicLevel(isSpeaking ? 100f : 0f);
             }
         }
 
@@ -427,6 +518,10 @@ namespace EdgeParty.Gameplay.Character
 
         public override void OnNetworkDespawn()
         {
+            if (VoiceChatManager.Instance != null)
+            {
+                VoiceChatManager.Instance.OnParticipantSpeaking -= OnParticipantSpeaking;
+            }
             legMultiplier.OnValueChanged -= OnMultiplierChanged;
             armMultiplier.OnValueChanged -= OnMultiplierChanged;
             torsoMultiplier.OnValueChanged -= OnMultiplierChanged;
