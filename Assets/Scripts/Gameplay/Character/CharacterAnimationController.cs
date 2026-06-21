@@ -153,6 +153,8 @@ namespace EdgeParty.Gameplay.Character
         public bool TriggerAttack()
         {
             if (_isDead) return false;
+            // Server-side Input Validation: Attack spam macro prevention
+            if (!CanAttack()) return false;
             if (_stats != null && !_stats.HasStaminaForAttack) return false;
 
             if (!_upperBodyActive)

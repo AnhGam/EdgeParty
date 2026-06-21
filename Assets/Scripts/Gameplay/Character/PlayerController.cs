@@ -616,6 +616,9 @@ namespace EdgeParty.Gameplay.Character
 
         public void OnInputReceived_Server(Vector3 moveDir, bool isRunning)
         {
+            // Server-side Input Validation: Speed Hack prevention
+            moveDir = Vector3.ClampMagnitude(moveDir, 1f);
+
             if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive)
             {
                 motor?.SetMovementInput(Vector3.zero, false);
@@ -637,13 +640,21 @@ namespace EdgeParty.Gameplay.Character
             animController?.SetMovementInput(moveDir, canRun);
         }
 
+        private float _lastJumpTime = -99f;
         public void OnJumpTriggered_Server(Vector3 moveDir)
         {
+            // Server-side Input Validation
+            moveDir = Vector3.ClampMagnitude(moveDir, 1f);
+
             if (ForestGameManager.Instance != null && !ForestGameManager.Instance.IsMatchActive) return;
             if (stats != null && stats.IsDead.Value) return;
             if (_isInputBlocked) return;
             // Only allow jumping when grounded to prevent infinite spam
             if (motor != null && !motor.IsGrounded) return;
+            
+            // Prevent bunny hop macro spam (cooldown 0.75s)
+            if (Time.time - _lastJumpTime < 0.75f) return;
+            _lastJumpTime = Time.time;
             if (motor != null && animController != null)
             {
                 motor.ApplyJump(moveDir);
