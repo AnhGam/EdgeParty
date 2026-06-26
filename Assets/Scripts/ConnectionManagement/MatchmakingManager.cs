@@ -77,6 +77,15 @@ namespace EdgeParty.ConnectionManagement
             StartCoroutine(FetchPublicIpThenMatchmake());
         }
 
+        // Danh sách các IP service fallback — nếu một cái fail thì thử cái tiếp theo
+        private static readonly string[] IpServices = new[]
+        {
+            "https://api.ipify.org",
+            "https://icanhazip.com",
+            "https://checkip.amazonaws.com",
+            "https://ifconfig.me/ip",
+        };
+
         private IEnumerator FetchPublicIpThenMatchmake()
         {
             // Nếu đã cache IP rồi thì dùng luôn
@@ -87,20 +96,38 @@ namespace EdgeParty.ConnectionManagement
                 yield break;
             }
 
-            // Lấy public IP thật của client để tránh Edgegap dùng IP của GCP Cloud Code server
-            using var req = UnityWebRequest.Get("https://api.ipify.org");
-            req.timeout = 5;
-            yield return req.SendWebRequest();
+            // Thử từng IP service cho tới khi lấy được public IP
+            foreach (string url in IpServices)
+            {
+                Debug.Log($"[MatchmakingManager] Trying to fetch public IP from {url}...");
+                using var req = UnityWebRequest.Get(url);
+                req.timeout = 8;
+                yield return req.SendWebRequest();
 
-            if (req.result == UnityWebRequest.Result.Success)
-            {
-                _cachedPublicIp = req.downloadHandler.text.Trim();
-                Debug.Log($"[MatchmakingManager] Public IP fetched: {_cachedPublicIp}");
+                if (req.result == UnityWebRequest.Result.Success)
+                {
+                    string ip = req.downloadHandler.text.Trim();
+                    // Validate: phải có dạng IP (chứa dấu chấm, không quá dài)
+                    if (!string.IsNullOrEmpty(ip) && ip.Contains(".") && ip.Length <= 45)
+                    {
+                        _cachedPublicIp = ip;
+                        Debug.Log($"[MatchmakingManager] Public IP fetched from {url}: {_cachedPublicIp}");
+                        break;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[MatchmakingManager] Invalid IP response from {url}: \"{ip}\"");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"[MatchmakingManager] Failed to fetch IP from {url}: {req.error}");
+                }
             }
-            else
+
+            if (string.IsNullOrEmpty(_cachedPublicIp))
             {
-                Debug.LogWarning($"[MatchmakingManager] Failed to fetch public IP ({req.error}). Edgegap will auto-detect (may use GCP IP).");
-                _cachedPublicIp = null;
+                Debug.LogError("[MatchmakingManager] All IP services failed! Edgegap will auto-detect (may use GCP IP → wrong region).");
             }
 
             _ = GetBeaconsAndPingAsync();

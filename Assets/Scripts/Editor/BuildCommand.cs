@@ -32,6 +32,7 @@ namespace EdgeParty.Editor
             buildPlayerOptions.scenes = scenes;
             buildPlayerOptions.locationPathName = buildPath;
             buildPlayerOptions.target = BuildTarget.StandaloneWindows64;
+            buildPlayerOptions.subtarget = (int)StandaloneBuildSubtarget.Player;
             buildPlayerOptions.options = BuildOptions.None;
 
             var report = BuildPipeline.BuildPlayer(buildPlayerOptions);

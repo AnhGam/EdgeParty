@@ -819,14 +819,22 @@ namespace EdgeParty.Social
             {
                 if (ushort.TryParse(portStr, out ushort port))
                 {
-                    if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null && !EdgeParty.ConnectionManagement.MatchmakingManager.Instance.IsMatchmaking)
+                    var mm = EdgeParty.ConnectionManagement.MatchmakingManager.Instance;
+                    // Skip nếu đã connected (NetworkManager đang chạy client/server)
+                    bool alreadyConnected = Unity.Netcode.NetworkManager.Singleton != null &&
+                                           (Unity.Netcode.NetworkManager.Singleton.IsClient ||
+                                            Unity.Netcode.NetworkManager.Singleton.IsServer);
+                    if (mm != null && !alreadyConnected)
                     {
+                        // Tắt trạng thái guest matchmaking trước khi connect
+                        mm.SetGuestMatchmaking(false);
                         if (!string.IsNullOrEmpty(matchId) && EdgeParty.Infrastructure.VoiceChat.VoiceChatManager.Instance != null)
                         {
                             Debug.Log($"[FriendLobbyService] Guest joining Vivox channel: {matchId}");
                             _ = EdgeParty.Infrastructure.VoiceChat.VoiceChatManager.Instance.JoinMatchChannel(matchId);
                         }
-                        EdgeParty.ConnectionManagement.MatchmakingManager.Instance.ConnectToServer(ip, port);
+                        Debug.Log($"[FriendLobbyService] Guest connecting to matched server: {ip}:{port}");
+                        mm.ConnectToServer(ip, port);
                     }
                 }
             }
