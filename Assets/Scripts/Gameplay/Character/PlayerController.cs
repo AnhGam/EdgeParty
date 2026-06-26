@@ -262,12 +262,10 @@ namespace EdgeParty.Gameplay.Character
 
             if (IsServer)
             {
-                // ─── Balanced 1v1 team assignment ───
-                // Đếm số player đang có trên server → player chẵn vào Team2, lẻ vào Team1
-                int connectedClients = NetworkManager.ConnectedClientsList.Count;
-                TeamID.Value = (connectedClients % 2 == 1) ? 1 : 2;  // 1st=T1, 2nd=T2, 3rd=T1...
+                // ─── Balanced 1v1 team assignment based on ClientId ───
+                TeamID.Value = (OwnerClientId % 2 == 0) ? 1 : 2;  // Client 0=T1, Client 1=T2...
 
-                Debug.Log($"[PlayerController] Client#{connectedClients} assigned to Team {TeamID.Value}");
+                Debug.Log($"[PlayerController] ClientId {OwnerClientId} assigned to Team {TeamID.Value}");
                 SpawnByTeam();
 
                 // Subscribe trước khi TeamID có thể thay đổi

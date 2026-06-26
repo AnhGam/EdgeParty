@@ -162,8 +162,10 @@ module.exports = async ({ params, context, logger, secretManager }) => {
   }
 
   if (Array.isArray(finalPlayers) && finalPlayers.length > 1) {
-    // ── MULTI-PLAYER SOLO MATCHMAKING (POST /tickets for each) ──
-    logger.info(`StartMatchmaking: Creating ${finalPlayers.length} separate solo tickets...`);
+    // ── MULTI-PLAYER MATCHMAKING (POST /tickets riêng cho từng người, không group_id) ──
+    // NOTE: Không dùng group_id vì Edgegap reject format custom ("grp_...") và gây chọn server sai.
+    // Edgegap matchmaker tự ghép các solo tickets lại dựa theo beacon/latency.
+    logger.info(`StartMatchmaking: Creating ${finalPlayers.length} separate solo tickets (no group_id)...`);
     try {
       const tickets = [];
       for (let i = 0; i < finalPlayers.length; i++) {
@@ -181,10 +183,10 @@ module.exports = async ({ params, context, logger, secretManager }) => {
           timeout: 10000,
         });
         tickets.push(response.data);
-        logger.info(`StartMatchmaking: Created ticket for player ${p.username || p.id}: ${response.data.id}`);
+        logger.info(`StartMatchmaking: Created solo ticket for player ${p.username || p.id}: ${response.data.id}`);
       }
 
-      // Encode all ticket IDs separated by semicolon
+      // Encode all ticket IDs separated by semicolon — host polls ticket[0]
       const ticketIdsStr = tickets.map(t => t.id).join(";");
       
       const hostTicket = tickets[0];

@@ -348,7 +348,7 @@ namespace EdgeParty.UI
             }
         }
 
-        public void ShowMatchmaking()
+        public void ShowMatchmaking(bool autoStartMatchmaking = false)
         {
             if (_lockerInstance != null) _lockerInstance.SetActive(false);
             if (matchmakingVisualTree == null) return;
@@ -357,6 +357,19 @@ namespace EdgeParty.UI
             BindSharedHeaderEvents("tab-matchmaking");
             BindMatchmakingEvents();
             ApplyDataBindings();
+
+            if (autoStartMatchmaking)
+            {
+                Debug.Log("[StitchUIController] Auto-starting matchmaking via Play button...");
+                if (EdgeParty.ConnectionManagement.MatchmakingManager.Instance != null)
+                {
+                    EdgeParty.ConnectionManagement.MatchmakingManager.Instance.StartMatchmakingFlow();
+                }
+                else
+                {
+                    Debug.LogWarning("[StitchUIController] MatchmakingManager.Instance is null!");
+                }
+            }
         }
 
         public void ShowLocker()
@@ -695,72 +708,15 @@ namespace EdgeParty.UI
         {
             var btnPlay = _root.Q<Button>("btn-home-play");
             var btnCreateRoom = _root.Q<Button>("btn-home-create-room");
-            var btnTestHost = _root.Q<Button>("btn-home-test-host");
 
             if (btnPlay != null)
             {
-                RegisterHoverAndClick(btnPlay, ShowMatchmaking);
+                RegisterHoverAndClick(btnPlay, () => ShowMatchmaking(true));
             }
 
             if (btnCreateRoom != null)
             {
-                RegisterHoverAndClick(btnCreateRoom, ShowMatchmaking);
-            }
-
-            if (btnTestHost != null)
-            {
-                RegisterHoverAndClick(btnTestHost, () => {
-                    Debug.Log("[StitchUIController] Starting Local Host Test Mode...");
-                    var networkManager = Unity.Netcode.NetworkManager.Singleton;
-#if UNITY_EDITOR
-                    if (networkManager == null)
-                    {
-                        Debug.Log("[StitchUIController] NetworkManager.Singleton is null. Attempting to auto-load Assets/Resources/NetworkManager.prefab in Editor...");
-                        var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/NetworkManager.prefab");
-                        if (prefab != null)
-                        {
-                            var go = Instantiate(prefab);
-                            go.name = "NetworkManager (Auto-Injected)";
-                            networkManager = Unity.Netcode.NetworkManager.Singleton;
-                        }
-                    }
-#endif
-                    if (networkManager != null)
-                    {
-                        if (networkManager.IsListening) networkManager.Shutdown();
-                        var utp = (Unity.Netcode.Transports.UTP.UnityTransport)networkManager.NetworkConfig.NetworkTransport;
-                        if (utp != null)
-                        {
-                            utp.SetConnectionData("127.0.0.1", 7777);
-                        }
-                        global::ForestGameManager.SpawnTestDummiesOnStart = true;
-                        if (networkManager.StartHost())
-                        {
-                            Debug.Log("[StitchUIController] Host started successfully. Loading Forest scene...");
-                            networkManager.SceneManager.LoadScene("DemoScene_Forest", UnityEngine.SceneManagement.LoadSceneMode.Single);
-                        }
-                        else
-                        {
-                            Debug.LogError("[StitchUIController] Failed to start host!");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogError("[StitchUIController] NetworkManager.Singleton is null!");
-                    }
-                });
-            }
-
-            var btnTestInvite = _root.Q<Button>("btn-home-test-invite");
-            if (btnTestInvite != null)
-            {
-                RegisterHoverAndClick(btnTestInvite, () => {
-                    Debug.Log("[StitchUIController] Triggering mock lobby invite...");
-                    if (FriendLobbyService.Instance != null)
-                    {
-                        FriendLobbyService.Instance.TriggerMockInvite("CoolGuy99", "123456");
-                    }
-                });
+                RegisterHoverAndClick(btnCreateRoom, () => ShowMatchmaking(false));
             }
         }
 
@@ -1391,7 +1347,7 @@ namespace EdgeParty.UI
 
                 if (!isActive)
                 {
-                    RegisterHoverAndClick(tabMatchmaking, ShowMatchmaking);
+                    RegisterHoverAndClick(tabMatchmaking, () => ShowMatchmaking(false));
                 }
             }
 

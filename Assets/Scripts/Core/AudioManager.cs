@@ -270,6 +270,10 @@ namespace EdgeParty.Core
             {
                 volumeScale = 0.08f;
             }
+            else if (soundName.IndexOf("Hover", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                volumeScale = 0.33f;
+            }
 
             source.volume = s.volume * sfxVolume;
             source.PlayOneShot(s.clip, volumeScale);
@@ -378,6 +382,10 @@ namespace EdgeParty.Core
             else if (clipName.IndexOf("EXPLOSION_sfx", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 volumeScale = 0.08f;
+            }
+            else if (clipName.IndexOf("Hover", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                volumeScale = 0.33f;
             }
 
             source.volume = sfxVolume;
