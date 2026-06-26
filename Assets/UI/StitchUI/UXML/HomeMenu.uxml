@@ -34,8 +34,6 @@
                 <ui:VisualElement name="lobby-footer-actions" class="lobby-footer-actions">
                     <ui:Button name="btn-home-play" text="PLAY" class="bouncy-btn btn-primary-3d main-action-btn" />
                     <ui:Button name="btn-home-create-room" text="CREATE ROOM" class="bouncy-btn btn-secondary-3d main-action-btn" />
-                    <ui:Button name="btn-home-test-host" text="TEST HOST" class="bouncy-btn btn-surface-3d main-action-btn" style="margin-left: 12px;" />
-                    <ui:Button name="btn-home-test-invite" text="TEST INVITE" class="bouncy-btn btn-surface-3d main-action-btn" style="margin-left: 12px; background-color: #ff9800; border-color: #b36b00;" />
                 </ui:VisualElement>
                 
             </ui:VisualElement>
