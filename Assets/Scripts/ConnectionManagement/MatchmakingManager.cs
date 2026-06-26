@@ -434,19 +434,21 @@ namespace EdgeParty.ConnectionManagement
                 networkManager = FindFirstObjectByType<NetworkManager>(FindObjectsInactive.Include);
             }
 
-#if UNITY_EDITOR
             if (networkManager == null)
             {
-                Debug.Log("[MatchmakingManager] NetworkManager.Singleton is null. Attempting to auto-load Assets/Resources/NetworkManager.prefab in Editor...");
-                var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/NetworkManager.prefab");
+                Debug.Log("[MatchmakingManager] NetworkManager.Singleton is null. Attempting to auto-load NetworkManager from Resources...");
+                var prefab = Resources.Load<GameObject>("NetworkManager");
                 if (prefab != null)
                 {
                     var go = Instantiate(prefab);
                     go.name = "NetworkManager (Auto-Injected)";
                     networkManager = NetworkManager.Singleton;
+                    if (networkManager == null)
+                    {
+                        networkManager = go.GetComponent<NetworkManager>();
+                    }
                 }
             }
-#endif
 
             if (networkManager == null)
             {
